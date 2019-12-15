@@ -3,7 +3,7 @@
 This repository implements the algorithm described in _[Evasion paths in mobile sensor networks](https://arxiv.org/pdf/1308.3536.pdf)_, along with several numerical experiments pertaining to the persistance of evaision paths.
 
 # System Requirements
-This repo uses python modules that are easiest to install using [Anaconda](https://www.anaconda.com/
+This repo uses python modules that are easiest to install using [Anaconda](https://www.anaconda.com/)
 
 # Clone Repository
 To download this repository, use the following 
