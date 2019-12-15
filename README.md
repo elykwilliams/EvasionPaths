@@ -1,4 +1,4 @@
-# Sensor Network
+# Evasion Paths
 
 This repository implements the algorithm described in _[Evasion paths in mobile sensor networks](https://arxiv.org/pdf/1308.3536.pdf)_, along with several numerical experiments pertaining to the persistance of evaision paths.
 
@@ -8,7 +8,7 @@ This repo uses python modules that are easiest to install using [Anaconda](https
 # Clone Repository
 To download this repository, use the following 
 
-`git clone https://KyleWill@bitbucket.org/KyleWill/sensor-network.git`
+`git clone https://KyleWill@bitbucket.org/KyleWill/evasion-paths.git`
 
 # Configuration 
 The `enviroment.yml` file specifies the exact python enviroment used to ensure consistant resutls. 
