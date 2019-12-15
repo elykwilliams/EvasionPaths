@@ -1,8 +1,7 @@
-import gudhi
+from gudhi import AlphaComplex
 import networkx as nx
 from combinatorial_map import *
 from brownian_motion import *
-import time
 
 from matplotlib.animation import FuncAnimation
 
@@ -20,14 +19,16 @@ def is_hole(graph):
 
 
 def update(i):
+    # Parameters
+    sensing_radius = 0.015
+    max_alpha_square = 2*sensing_radius
+
     global mypoints  # Use same points defined outside of function.
     mypoints = update_position(mypoints)  # update via brownian motion
 
     # get alpha_complex
-    alpha_complex = gudhi.AlphaComplex(mypoints)
+    alpha_complex = AlphaComplex(mypoints)
 
-    sensing_radius = 0.015
-    max_alpha_square = 2*sensing_radius
     simplex_tree = alpha_complex.create_simplex_tree(max_alpha_square)
 
     # Get 1-simplices as edges for graph
@@ -42,7 +43,7 @@ def update(i):
     cmap = CMap(G, mypoints)
 
     # filter out all cycles that are not holes(see function at top)
-    holes = list(filter(lambda cycle: is_hole(cycle), boundary_cycle_nodes(cmap)))
+    holes = list(filter(lambda cycle: is_hole(cycle), boundary_cycle_graphs(cmap)))
     
     # plot graph, and replot each hole but in red (since holes will be a list of graphs)
     ax.clear()
@@ -53,7 +54,7 @@ def update(i):
 
 # Animate
 ax = plt.gca()
-fig= plt.figure(1)
+fig = plt.figure(1)
 
 # repeat process 250 times
 ani = FuncAnimation(fig, update, interval=100, frames=1)

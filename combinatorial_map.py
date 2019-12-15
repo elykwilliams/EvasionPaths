@@ -121,9 +121,8 @@ class CMap :
         return output
 
 
-def boundary_cycle_nodes(cmap):
-    cycle = cmap.boundary_cycles()[1]
-    simplices = []
+def boundary_cycle_graphs(cmap):
+    bcycles = []
     for cycle in cmap.boundary_cycles():
         simplex_edges = [cmap.dart2edge[dart] for dart in cycle]
         simplex_nodes = list(set((node for (node, _) in simplex_edges)))
@@ -132,9 +131,9 @@ def boundary_cycle_nodes(cmap):
         G.add_nodes_from(simplex_nodes)
         G.add_edges_from(simplex_edges)
 
-        simplices.append(G)
+        bcycles.append(G)
 
-    return simplices
+    return bcycles
 
 
 if __name__=="__main__":
