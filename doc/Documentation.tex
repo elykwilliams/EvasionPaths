@@ -1,0 +1,130 @@
+\documentclass[12pt]{article}
+
+\usepackage{mathtools}
+\usepackage{amssymb}
+\usepackage{amsthm}
+
+\usepackage[dvipsnames, table]{xcolor}
+\colorlet{DarkRed}{Red!90!black}
+\colorlet{LightRed}{Red!10!white}
+\colorlet{DarkGreen}{Green!50!black}
+\colorlet{LightGreen}{Green!10!white}
+\usepackage{colortbl} % https://texblog.org/2011/04/19/highlight-table-rowscolumns-with-color/
+
+% sections
+\usepackage{titlesec} % https://latex.org/forum/viewtopic.php?t=10456
+\titleformat*{\section}{\large\bfseries}
+\titlespacing*{\section}{0pt}{2mm}{2mm}
+\titleformat{\subsection}[runin]% runin puts it in the same paragraph
+{\normalfont\bfseries}% formatting commands to apply to the whole heading
+{\thesubsection}% the label and number
+{0.5em}% space between label/number and subsection title
+{}% formatting commands applied just to subsection title
+[.]% punctuation or other commands following subsection title
+%\titleformat{\section}[runin]{\normalfont\bfseries}{\thesection}{0.5em}{}[.]
+\titleformat{\subsubsection}[runin]{\normalfont\bfseries}{\thesubsubsection}{0.5em}{}[.]
+
+% links
+\usepackage{hyperref}
+\hypersetup{
+	colorlinks,
+	linkcolor={DarkRed},
+	citecolor={DarkRed},
+	urlcolor={blue}
+}
+
+\usepackage{geometry}
+\newgeometry{
+	left=2cm, right=1.5cm, top=1.5cm, bottom=1.5cm,
+	includefoot, heightrounded
+}
+
+\usepackage[parfill]{parskip} % https://tex.stackexchange.com/a/16703/135296
+
+% sub figures / grids of pictures
+\usepackage{pdfpages}
+\usepackage{subcaption}
+\usepackage{graphicx}
+\graphicspath{{img/}} % includegraphics path
+% \usepackage[export]{adjustbox} % https://tex.stackexchange.com/questions/20640/how-to-add-border-for-an-image
+\newcommand{\includegraphicsw}[2][1.]{\includegraphics[width=#1\linewidth]{#2}}
+\newcommand{\svginput}[1]{\input{img/#1}} % pdf_tex path
+\newcommand{\svginputw}[2][\linewidth]{\def\svgwidth{#1}\input{img/#2}} % pdf_tex path
+
+% tables
+\usepackage{longtable}
+\usepackage{multirow}
+\usepackage{hhline}
+\usepackage{float} % for H
+
+% bold for everything
+\usepackage{bm}
+\newcommand{\vect}[1]{\boldsymbol{\mathbf{#1}}}
+
+% differentials
+\newcommand*\diff{\mathop{}\!\mathrm{d}}
+\newcommand*\Diff[1]{\mathop{}\!\mathrm{d^#1}}
+
+\DeclareMathOperator{\Div}{div}
+\DeclareMathOperator{\Dist}{dist}
+\newcommand{\sphere}{{\Gamma_{\text{sph}}}}
+\newcommand{\tor}{{\Gamma_{\text{tor}}}}
+
+\newcommand{\HOne}{{\mathbb H^1}}
+\newcommand{\LTwo}{{\mathbb L^2}}
+\newcommand{\LTwoSpace}[1][\Gamma]{{\mathbb L^2\left({#1}\right)}}
+\newcommand{\HOneSpace}[1][\Gamma]{{\mathbb H^1\left({#1}\right)}}
+
+\newcommand{\cl}[1]{\texttt{\$~#1}}
+
+\usepackage{listings}
+\definecolor{mygreen}{rgb}{0,0.6,0}
+\lstset{
+	language=C++,
+	basicstyle=\small\ttfamily,
+	breaklines=true,
+	commentstyle=\color{mygreen},
+	frame=l,
+	xleftmargin=5pt,
+	tabsize=2,
+	belowskip=-1pt
+} 
+
+% https://tex.stackexchange.com/questions/9425/how-to-fix-footnote-position-at-the-bottom-of-the-page
+\usepackage[bottom]{footmisc}
+\newcommand{\KW}[1]{{\color{blue}\textbf{KW}:~#1}}
+\newcommand{\dimSize}{N}
+\newcommand{\dofspercell}{k}
+
+\title{Evasion Path Persistence }
+\author{
+	Kyle Williams\thanks{Department of Mathematics, University of Houston, Houston, Texas 77204 (kylew@math.uh.edu).}
+}
+
+
+\begin{document}
+	
+\maketitle
+
+\tableofcontents
+\vfill
+\clearpage
+\let\oldtabular\tabular
+\renewcommand{\tabular}[1][1.5]{\def\arraystretch{#1}\oldtabular}
+\renewcommand\arraystretch{1.3}
+
+\section{Code Structure}
+
+\section{Combinatorial Map}
+
+\section{GUDHI AlphaComplex}
+
+\section{Brownian Motion}
+
+\section{Hole Detection}
+
+\section{Evasion Path Detection}
+
+
+
+\end{document}
