@@ -1,3 +1,7 @@
+*.git
+initial_data.csv
+
+
 # Editor temporary/working/backup files #
 #########################################
 .#*

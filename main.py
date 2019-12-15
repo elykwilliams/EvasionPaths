@@ -1,6 +1,6 @@
 import gudhi
 import networkx as nx
-from CMap import *
+from combinatorial_map import *
 from brownian_motion import *
 
 from matplotlib.animation import FuncAnimation
@@ -16,7 +16,7 @@ def is_hole(graph, points, simplices):
     # A hole cannot contatin the boundary, or be a simplex
     # return not ( set(alpha_shape).issubset(set(graph.nodes())) or graph.order() == 3)
 
-filename = 'pointgenration.txt'
+filename = 'initial_data.csv'
 
 with open(filename) as file:
     mypoints = [tuple(map(float, line.strip("\n").split(","))) for line in file]

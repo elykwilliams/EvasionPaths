@@ -1,7 +1,7 @@
 import numpy as np
 import csv
 
-filename = 'pointgenration.txt'
+filename = 'initial_data.csv'
 
 r = 0.25
 n_interior_sensors = 30
