@@ -2,6 +2,7 @@ import gudhi
 import networkx as nx
 from combinatorial_map import *
 from brownian_motion import *
+import csv
 
 from matplotlib.animation import FuncAnimation
 
@@ -16,6 +17,7 @@ def is_hole(graph, points, simplices):
     # A hole cannot contatin the boundary, or be a simplex
     # return not ( set(alpha_shape).issubset(set(graph.nodes())) or graph.order() == 3)
 
+
 filename = 'initial_data.csv'
 
 with open(filename) as file:
@@ -25,12 +27,12 @@ with open(filename) as file:
 def update(i):
     global mypoints # USe same points defined outside of function.
     mypoints = update_position(mypoints) # update via brownina motian
-    
+
     # get alpha_complex
     alpha_complex = gudhi.AlphaComplex(mypoints)
 
     # Note, you can you alpha_square as input??
-    #max_alpha_square = 0.04 ??
+    # max_alpha_square = 0.04 ??
     simplex_tree = alpha_complex.create_simplex_tree()
 
     # get edges with filtration <= 0.04
@@ -39,7 +41,7 @@ def update(i):
     simplices = [set(simplex[0]) for simplex in simplex_tree.get_skeleton(2) if len(simplex[0]) == 3]
     # Use Edges to create graph
     G = nx.Graph()
-    G.add_nodes_from(range(len(mypoints))) #nodes numbered 0 though Nppoitns -1
+    G.add_nodes_from(range(len(mypoints))) #nodes numbered 0 though N points -1
     G.add_edges_from(edges)
 
     # Use Graph and points to create cmap.
@@ -53,6 +55,7 @@ def update(i):
     nx.draw(G, mypoints)
     for h in holes:
         nx.draw(h, mypoints, node_color='red', edge_color="red", ax=ax)
+
 
 # Animate
 ax = plt.gca()
