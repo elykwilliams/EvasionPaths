@@ -3,7 +3,7 @@ import csv
 
 filename = 'initial_data.csv'
 
-r = 0.25
+r = 0.05
 n_interior_sensors = 30
 with open(filename,'w') as file:
     csv_file = csv.writer(file, delimiter=",")
@@ -19,5 +19,3 @@ with open(filename,'w') as file:
     
     for _ in range(n_interior_sensors):
         csv_file.writerow(np.random.uniform(r, 1-r, 2))
-        
-          

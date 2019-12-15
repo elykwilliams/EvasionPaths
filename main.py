@@ -2,7 +2,7 @@ import gudhi
 import networkx as nx
 from combinatorial_map import *
 from brownian_motion import *
-import csv
+import time
 
 from matplotlib.animation import FuncAnimation
 
@@ -54,7 +54,7 @@ def update(i):
     ax.clear()
     nx.draw(G, mypoints)
     for h in holes:
-        nx.draw(h, mypoints, node_color='red', edge_color="red", ax=ax)
+       nx.draw(h, mypoints, node_color='red', edge_color="red", ax=ax)
 
 
 # Animate
@@ -62,7 +62,7 @@ ax = plt.gca()
 fig= plt.figure(1)
 
 # repeat process 250 times
-ani = FuncAnimation(fig, update, interval=1, frames=1)
+ani = FuncAnimation(fig, update, interval=100, frames=1)
 ani.save('animation_working.gif', writer='imagemagick')
 
 plt.show()
