@@ -4,12 +4,12 @@ from gudhi import AlphaComplex
 
 
 class EvasionPathSimulation:
-    def __init__(self):
+    def __init__(self, dt, end_time):
         # Parameters
         self.n_interior_sensors = 30
         self.sensing_radius = 0.015
-        self.dt = 0.00001
-        self.Tend = 1
+        self.dt = dt
+        self.Tend = end_time
         self.time = 0
         self.brownian_motion = BrownianMotion(self.dt, sigma=0.1)
 
@@ -26,13 +26,27 @@ class EvasionPathSimulation:
 
         self.G = None
         self.cmap = None
-        self.holes = None
 
         # Complex Coloring
         self.cell_coloring = None
+        self.holes = None
+        self.evasion_paths = None
 
     def run(self):
-        pass
+        if self.Tend > self.dt:
+            while self.time < self.Tend:
+                self.time += self.dt
+                self.do_timestep()
+                print(self.time)
+            return bool(self.evasion_paths)
+        else:
+            while self.evasion_paths:
+                self.time += self.dt
+                self.do_timestep()
+            return self.time
+
+
+
 
     def do_timestep(self):
 

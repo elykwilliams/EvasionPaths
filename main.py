@@ -3,7 +3,8 @@ from matplotlib.animation import FuncAnimation
 from matplotlib.pyplot import fill
 import networkx as nx
 
-simulation = EvasionPathSimulation()
+simulation = EvasionPathSimulation(0.0001, 0.01)
+simulation.run()
 
 
 def update(timestep):
@@ -19,10 +20,10 @@ def update(timestep):
 # Animate
 ax = plt.gca()
 fig = plt.figure(1)
-
-# repeat process  and animate
-ani = FuncAnimation(fig, update, interval=500, frames=1)
-ani.save('animation_working.gif', writer='imagemagick')
-
+update(0)
+# # repeat process  and animate
+# ani = FuncAnimation(fig, update, interval=500, frames=1)
+# ani.save('animation_working.gif', writer='imagemagick')
+#
 plt.show()
 
