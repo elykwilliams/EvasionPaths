@@ -37,7 +37,6 @@ class EvasionPathSimulation:
             while self.time < self.Tend:
                 self.time += self.dt
                 self.do_timestep()
-                print(self.time)
             return bool(self.evasion_paths)
         else:
             while self.evasion_paths:
@@ -45,19 +44,16 @@ class EvasionPathSimulation:
                 self.do_timestep()
             return self.time
 
-
-
-
     def do_timestep(self):
 
         # Update Points
         self.points = self.brownian_motion.update_points(self.points)
 
-        # Create Alpha Complex
+        # Update Alpha Complex
         self.alpha_complex = AlphaComplex(self.points)
         self.simplex_tree = self.alpha_complex.create_simplex_tree(2 * self.sensing_radius)
 
-        # Build Graph
+        # Update Graph
         self.edges = [simplex for simplex, _ in self.simplex_tree.get_skeleton(1) if len(simplex) == 2]
         self.faces = [simplex for simplex, _ in self.simplex_tree.get_skeleton(2) if len(simplex) == 3]
 
@@ -65,10 +61,10 @@ class EvasionPathSimulation:
         self.G.add_nodes_from(range(self.n_sensors))  # nodes numbered 0 though N points -1
         self.G.add_edges_from(self.edges)
 
-        # Build Combinatorial Map
+        # Update Combinatorial Map
         self.cmap = CMap(self.G, self.points)
 
-        # Find Holes
+        # Update Holes
         self.find_holes()
 
         # Find Evasion Path

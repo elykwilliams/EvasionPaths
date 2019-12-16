@@ -124,7 +124,7 @@ This code currently contains the following classes:
 	\item {\bf CMap}: This class implements a combinatorial map used to find the boundary cycles.
 	\item {\bf BoundaryInfo}: This class manages all info related to the boundary. If a new geometry for the domain were desired, ideally only this class would change.
 	\item {\bf BrownianMotion}: This class handles all feature related to the generation and movement of the physical positions of the sensors. Ideally, the motion model for the sensors only requires changes to this class.
-	\item {\bf Simulation}: This class manages the time stepping. Currently this is where the geometrical movements and the combinatorial features are combined to detect holes and track evasion paths.
+	\item {\bf EvasionPathSimulation}: This class manages the time stepping. Currently this is where the geometrical movements and the combinatorial features are combined to detect holes and track evasion paths.
 	\item {\bf Animation}: Auxiliary class used to create animations of a given simulation.
 \end{itemize}
 
@@ -220,10 +220,49 @@ It was found to be convenient to have all boundary information packaged together
 % \subsection{Model}
 % \subsection{Boundary Conditions}
 
-\section{Simulation}
+\section{EvasionPathSimulation}
 The idea for this class is that a single object is instantiated with given parameters, then a "run" function is called which iterates until there are no evasion paths returning the amount of time required to close all evasion paths. This should be able to be run in parallel to allow for several instantiations simultaneously Then do several hundreds of runs for a given set of parameters in order to retrieve statistical information. 
+\subsection{Usage}
+The class has a very minimal interface, we simply initialize the object with simulation parameters, and then run
+\begin{python}
+simulation = EvasionPathSimulation(dt=0.0001, end_time=0.01)
+simulation.run()
+\end{python}
+\subsection{Implementation}
+There are two function in this class, one that is essentially just a loop over time steps, and another that implements a single timesteps.
 
+In a single timestep we do the following
+\begin{enumerate}
+\item Update sensor positions
+\item Compute updated AlphaComplex
+\item Extract Graph
+\item Build Combinatorial Map
+\item Find holes
+\item Determine possible Evasion Paths
+\end{enumerate}
 
+The program is currently set up for two different timestepping scenarios, (1) run until no more Evasion Paths, and (2) Run for fixed amount of time.
+
+In the first case we have the following
+\begin{python}
+while evasion_paths != []:
+	time += dt
+	do_timestep()
+return time
+\end{python}
+Here we return the time taken for the evasion path to be closed. to select this option, set \pythoninline{end_time = 0}. 
+
+For the second case we have
+\begin{python}
+while time < end_time:
+	time += dt
+	do_timestep()
+if evasion_paths == []:
+	return False
+else:
+	return True
+\end{python}
+In this case we return a boolian of wether the evasion path lasted for a given amount of time. To select this option, set \pythoninline{end_time > 0}
 
 \section{Evasion Path Detection}
 So far, this program only implements the hole detection which is a key component in detecting evasion paths. It is able to detect (true/false) if a given face is a hole or not.
@@ -231,11 +270,12 @@ So far, this program only implements the hole detection which is a key component
 \section{Known Issues}
 The known issues include the following:
 \begin{itemize}
-	\item If a node moves onto the boundary it seems to "get stuck" there and this incorrectly causes the boundary to be labeled as a hole.
-	\item Not sure how to exactly set the boundary sensor spacing
-	\item If the a sensor gets to close to the boundary and the spacing is "large" , it distorts the boundary connectivity.
-	\item The code does not currently track evasion paths
-	\item No longer implements animation
+	\item If a node moves onto the boundary it seems to "get stuck" there and this incorrectly causes the boundary to be labeled as a hole. \KW{This particular problem seems to be fixed, but the boundary still flickers as a hole, then return to normal}
+	\item \KW{Not sure how to exactly set the boundary sensor spacing}
+	\item \KW{If the a sensor gets to close to the boundary and the spacing is "large" , it distorts the boundary connectivity.}
+	\item \KW{The code does not currently track evasion paths, but does find holes}
+	\item \KW{Animations currently done manually in main.py}
+	\item \KW{Does not check if graph is connected at each timestep} (easy fix)
 \end{itemize}
 
 \section{Experiments}
@@ -254,6 +294,6 @@ Both of these experiments will be tested with independent variables including \p
 
 
 \section{Verification/Validation Tests}
-So far tests have been mostly empirical. It is planned to add unit tests with known results to verify that all modules are working correctly. It is also planned to go back and write documentation using DOxygen and write a few example use cases.
+So far tests have been mostly empirical. It is planned to add unit tests with known results to verify that all modules are working correctly. It is also planned to go back and write documentation using DOxygen and write a few example use cases as time permits.
 
 \end{document}
