@@ -57,44 +57,48 @@
 \usepackage{hhline}
 \usepackage{float} % for H
 
-% bold for everything
-\usepackage{bm}
-\newcommand{\vect}[1]{\boldsymbol{\mathbf{#1}}}
-
-% differentials
-\newcommand*\diff{\mathop{}\!\mathrm{d}}
-\newcommand*\Diff[1]{\mathop{}\!\mathrm{d^#1}}
-
-\DeclareMathOperator{\Div}{div}
-\DeclareMathOperator{\Dist}{dist}
-\newcommand{\sphere}{{\Gamma_{\text{sph}}}}
-\newcommand{\tor}{{\Gamma_{\text{tor}}}}
-
-\newcommand{\HOne}{{\mathbb H^1}}
-\newcommand{\LTwo}{{\mathbb L^2}}
-\newcommand{\LTwoSpace}[1][\Gamma]{{\mathbb L^2\left({#1}\right)}}
-\newcommand{\HOneSpace}[1][\Gamma]{{\mathbb H^1\left({#1}\right)}}
-
 \newcommand{\cl}[1]{\texttt{\$~#1}}
 
 \usepackage{listings}
-\definecolor{mygreen}{rgb}{0,0.6,0}
-\lstset{
-	language=C++,
-	basicstyle=\small\ttfamily,
-	breaklines=true,
-	commentstyle=\color{mygreen},
-	frame=l,
-	xleftmargin=5pt,
-	tabsize=2,
-	belowskip=-1pt
-} 
+\DeclareFixedFont{\ttb}{T1}{txtt}{bx}{n}{10} % for bold
+\DeclareFixedFont{\ttm}{T1}{txtt}{m}{n}{10}  % for normal
+
+% Custom colors
+\usepackage{color}
+\definecolor{deepblue}{rgb}{0,0,0.5}
+\definecolor{deepred}{rgb}{0.6,0,0}
+\definecolor{deepgreen}{rgb}{0,0.5,0}
+
+\usepackage{listings}
+
+% Python style for highlighting
+\newcommand\pythonstyle{\lstset{
+language=Python,
+basicstyle=\ttm,
+otherkeywords={self},             % Add keywords here
+keywordstyle=\ttb\color{deepblue},
+emph={MyClass,__init__},          % Custom highlighting
+emphstyle=\ttb\color{deepred},    % Custom highlighting style
+stringstyle=\color{deepgreen},
+frame=tb,                         % Any extra options here
+showstringspaces=false            % 
+}}
+
+
+% Python environment
+\lstnewenvironment{python}[1][]
+{
+\pythonstyle
+\lstset{#1}
+}
+{} 
+\newcommand\pythoninline[1]{{\pythonstyle\lstinline!#1!}}
+
 
 % https://tex.stackexchange.com/questions/9425/how-to-fix-footnote-position-at-the-bottom-of-the-page
 \usepackage[bottom]{footmisc}
 \newcommand{\KW}[1]{{\color{blue}\textbf{KW}:~#1}}
-\newcommand{\dimSize}{N}
-\newcommand{\dofspercell}{k}
+
 
 \title{Evasion Path Persistence }
 \author{
@@ -115,16 +119,141 @@
 
 \section{Code Structure}
 
+This code currently contains the following classes:
+\begin{itemize}
+	\item {\bf CMap}: This class implements a combinatorial map used to find the boundary cycles.
+	\item {\bf BoundaryInfo}: This class manages all info related to the boundary. If a new geometry for the domain were desired, ideally only this class would change.
+	\item {\bf BrownianMotion}: This class handles all feature related to the generation and movement of the physical positions of the sensors. Ideally, the motion model for the sensors only requires changes to this class.
+	\item {\bf Simulation}: This class manages the time stepping. Currently this is where the geometrical movements and the combinatorial features are combined to detect holes and track evasion paths.
+	\item {\bf Animation}: Auxiliary class used to create animations of a given simulation.
+\end{itemize}
+
 \section{Combinatorial Map}
+The only reason we implement the combinatorial map to begin with is in order to find the boundary cycles in a given complex. Because of this, the intended interface is rather small. The class represents the combinatorial map as a graph internally while also storing the geometric positions of the nodes of the graph.
+
+ This module also provides a helper function to determine if a given boundary cycle (represented as a graph) is a {\it hole} or not. A hole in this code is defined as a cycle with more than 3 vertices that is not the boundary.
+
+\subsection{Usage}
+ In all that is desired is to find the boundary cycles, then one needs to only do the following:
+ \begin{python}
+ from combinatorial_map import *
+ # Initialize the combinatorial map
+ comb_map = CMap(G, points)
+ boundary_cycles = comb_map.get_boundary_cycles()
+ \end{python}
+ Note that is is up to the user to ensure that (1) the number of graph nodes is the same as the number of points, and (2) that the nodes are numbered in the same way as the points. In the example given, the \pythoninline{boundary_cycles} returns a list of boundary cycles, each of which is represented by a list of darts. The boundary cycle darts are guaranteed to be a partition.  
+
+A more useful representation for each of these boundary cycles is as a graph. To this end, the helper function \pythoninline{boundary_cycle_graphs()} is provided.
+\begin{python}
+ from combinatorial_map import *
+ # Initialize the combinatorial map
+ comb_map = CMap(G, points)
+ bcycle_graphs = boundary_cycle_graphs(comb_map) 
+ \end{python}
+ In this example, \pythoninline{bcycle_graphs} is a list of \pythoninline{networkx} graphs.
+ 
+ To find holes in a given complex, we can use the following:
+ \begin{python}
+ from combinatorial_map import *
+ # Initialize the combinatorial map
+ cmap = CMap(G, points)
+ 
+ # Initialize alpha_shape
+ alpha_shape = get_boundary() # function does not exist
+ 
+ for cycle in boundary_cycle_graphs(cmap):
+ 	if is_hole(cycle, alpha_shape): print(True)
+ 	 
+ \end{python}
+Note that the \pythoninline{alpha_shape} is needed as an input because \pythoninline{CMap} has no knowledge of the domain geometry. 
+
+% \subsection{Implementation Details}
 
 \section{GUDHI AlphaComplex}
+We use the python wrappers for the GUDHI library %\cite{gudhi}. 
+The usage of this library is rather minimal and described here. Full documentation can be found here %https://gudhi.inria.fr/python/latest/alpha\_complex\_user.html.
+
+\begin{python}
+from gudhi import AlphaComplex
+from networkx import Graph
+max_alpha_square = 2*sensing_radius
+
+# Create Alpha Complex
+alpha_complex = AlphaComplex(points)
+simplex_tree = alpha_complex.create_simplex_tree(max_alpha_square)
+
+# Get 1-simplices as edges for graph
+edges = []
+for simplex, _ in simplex_tree.get_skeleton(1):
+	if len(simplex) == 2:
+		edges.append(simplex)
+
+# Use Edges to create graph
+G = Graph()
+G.add_nodes_from(range(N_points)))  # nodes numbered 0 though Npts - 1
+G.add_edges_from(edges)
+\end{python}
+Here we are guaranteed that the maximum filtration value for any simplex is \pythoninline{max_alpha_square}. In particular, we can be sure that there are no 2-simplices with an edge with length greater than the set max filtration value. 
+
+The 2-simplices can also be easily extracted for comparison
+\begin{python}
+from gudhi import AlphaComplex
+max_alpha_square = 2*sensing_radius
+
+# Create Alpha Complex
+alpha_complex = AlphaComplex(mypoints)
+simplex_tree = alpha_complex.create_simplex_tree(max_alpha_square)
+
+# Get 2-simplices
+simplices2 = []
+for simplex, _ in simplex_tree.get_skeleton(2):
+	if len(simplex) == 3:
+		simplices2.append(simplex)
+\end{python}
+\section{Boundary Info}
+It was found to be convenient to have all boundary information packaged together in the same class. This makes it easy to check if a sensor is at the boundary, and to change the boundary easily if needed. This information is only needed by the Brownian Motion class; the only other place the boundary is needed is in detecting holes; but even then, only the node numbers are needed, not the boundary node positions. 
+
 
 \section{Brownian Motion}
+% \subsection{Usage}
+% \subsection{Initial Point Generation}
+% \subsection{Model}
+% \subsection{Boundary Conditions}
 
-\section{Hole Detection}
+\section{Simulation}
+The idea for this class is that a single object is instantiated with given parameters, then a "run" function is called which iterates until there are no evasion paths returning the amount of time required to close all evasion paths. This should be able to be run in parallel to allow for several instantiations simultaneously Then do several hundreds of runs for a given set of parameters in order to retrieve statistical information. 
+
+
 
 \section{Evasion Path Detection}
+So far, this program only implements the hole detection which is a key component in detecting evasion paths. It is able to detect (true/false) if a given face is a hole or not.
+
+\section{Known Issues}
+The known issues include the following:
+\begin{itemize}
+	\item If a node moves onto the boundary it seems to "get stuck" there and this incorrectly causes the boundary to be labeled as a hole.
+	\item Not sure how to exactly set the boundary sensor spacing
+	\item If the a sensor gets to close to the boundary and the spacing is "large" , it distorts the boundary connectivity.
+	\item The code does not currently track evasion paths
+	\item No longer implements animation
+\end{itemize}
+
+\section{Experiments}
+The experiments that will be run, will be somthing along the lines of the following:
+\begin{itemize}
+\item Set up a complex with a hole, and let the simulation run until all possible evasion paths have closed. This will be repeated enough times to infer statistics accurately. 
+\item Set up a complex with a hole. Run the simulation for a fixed amount of time, and determine if there is an evasion path remaining at the end time. This will be repeated for several instances of a given time, and several choices of end time. 
+\end{itemize}
+Both of these experiments will be tested with independent variables including \pythoninline{boundary_radius}, \\ 
+\pythoninline{sensing_radius}, 
+\pythoninline{n_interior_sensors},
+\pythoninline{dt}, 
+\pythoninline{sigma} as well as the general form of the brownian motion model.
 
 
+
+
+\section{Verification/Validation Tests}
+So far tests have been mostly empirical. It is planned to add unit tests with known results to verify that all modules are working correctly. It is also planned to go back and write documentation using DOxygen and write a few example use cases.
 
 \end{document}
