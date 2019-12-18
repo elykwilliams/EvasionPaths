@@ -1,8 +1,6 @@
-from gudhi import AlphaComplex
+# Kyle Williams 12/16/19
+
 import numpy as np
-from itertools import filterfalse
-from numpy import random, sqrt
-from combinatorial_map import *
 
 
 class Boundary:
