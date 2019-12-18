@@ -1,6 +1,10 @@
+# Kyle Williams 12/16/19
+
 from brownian_motion import *
+from combinatorial_map import *
 from numpy import sqrt
 from gudhi import AlphaComplex
+import networkx as nx
 
 
 class EvasionPathSimulation:
@@ -61,8 +65,12 @@ class EvasionPathSimulation:
         self.G.add_nodes_from(range(self.n_sensors))  # nodes numbered 0 though N points -1
         self.G.add_edges_from(self.edges)
 
+        # Check if graph is connected
+        if not nx.is_connected(self.G):
+            raise Exception("Graph is not connected")
+
         # Update Combinatorial Map
-        self.cmap = CMap(self.G, self.points)
+        self.cmap = CMap(self.G, points=self.points)
 
         # Update Holes
         self.find_holes()
@@ -72,15 +80,24 @@ class EvasionPathSimulation:
 
     def find_holes(self):
         boundary_cycles = boundary_cycle_graphs(self.cmap)
-        self.holes = list(filter(lambda cycle: is_hole(cycle, self.alpha_shape), boundary_cycles))
-        # self.cell_coloring = dict(zip(boundary_cycles, coloring))
+        self.holes = list(filter(self.is_hole, boundary_cycles))
+        self.holes = list(map(self.is_hole, boundary_cycles))
 
     def find_evasion_paths(self):
         pass
 
+    def is_hole(self, graph):
+        for face in self.faces:
+            if set(graph.nodes()) == set(face):
+                return False
+        if set(self.alpha_shape).issubset(set(graph.nodes())):
+            return False
+        if graph.order() >= 3:
+            return True
+
 
 if __name__ == "__main__":
-    simplex = EvasionPathSimulation()
+    simplex = EvasionPathSimulation(0.1, 1)
     simplex.do_timestep()
 
     ax = plt.gca()
