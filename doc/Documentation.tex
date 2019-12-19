@@ -297,9 +297,8 @@ So far, this program only implements the hole detection which is a key component
 The known issues include the following:
 \begin{itemize}
 	\item If a node moves onto the boundary it seems to "get stuck" there and this incorrectly causes the boundary to be labeled as a hole. \KW{This particular problem seems to be fixed, but the boundary still flickers as a hole, then return to normal}
-	\item \KW{Not sure how to exactly set the boundary sensor spacing} Boundary sensors will be spaced at $0.9*2*sensing_radius$. (Or possibly just $sensing\_radius$?
 	\item \KW{If the a sensor gets to close to the boundary and the spacing is "large" , it distorts the boundary connectivity.}
-	\item \KW{The code does not currently track evasion paths, but does find holes}
+	\item \KW{The code does not currently track evasion paths}, but does find holes and detect which combinatorial change has occurred.
 	\item \KW{Animations currently done manually in main.py}
 \end{itemize}
 
