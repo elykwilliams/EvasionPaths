@@ -37,12 +37,18 @@ class EvasionPathSimulation:
         self.cmap = CMap(self.G, self.points)
 
         # Complex Coloring
-        self.boundary_cycles = boundary_cycle_graphs(self.cmap)
+        self.boundary_cycles = []
+        self.get_boundary_cycles()
         self.old_cycles = self.boundary_cycles.copy()
 
         self.holes = []
-        self.cell_coloring = []
         self.evasion_paths = ""
+        self.cell_label = dict()
+        for bcycle in self.boundary_cycles:
+            self.cell_label[str(sorted(tuple(bcycle.nodes())))] = True
+        for simplex in self.simplices:
+            self.cell_label[str(sorted(tuple(simplex)))] = False
+
 
     def run(self):
         if self.Tend > self.dt:
@@ -88,13 +94,13 @@ class EvasionPathSimulation:
         self.cmap = CMap(self.G, points=self.points)
 
         # Update Holes
-        self.find_holes()
+        self.get_boundary_cycles()
 
         # Find Evasion Path
         self.find_evasion_paths()
 
-    def find_holes(self):
-        self.boundary_cycles = boundary_cycle_graphs(self.cmap)
+    def get_boundary_cycles(self):
+        self.boundary_cycles = [cycle for cycle in boundary_cycle_graphs(self.cmap) if set(cycle.nodes) != set(self.alpha_shape)]
 
     def find_evasion_paths(self):
         edges_added = set(self.edges).difference(set(self.old_edges))
@@ -147,11 +153,25 @@ class EvasionPathSimulation:
         if graph.order() >= 3:
             return True
 
+    def plot(self, ax, fig):
+        nx.draw(simplex.G, dict(enumerate(simplex.points)), node_color="g", edge_color="g")
+        nx.draw_networkx_labels(simplex.G, dict(enumerate(simplex.points)))
+
+        for s in simplex.boundary_cycles:
+            if simplex.is_hole(s):
+                nx.draw(s, simplex.points, node_color="r", edge_color="r")
+
+        plt.show()
 
 if __name__ == "__main__":
     simplex = EvasionPathSimulation(0.0001, 100)
+    print(simplex.cell_label)
 
-    for i in range(0, 10000):
+    ax = plt.gca()
+    fig = plt.figure(1)
+    simplex.plot(ax, fig)
+
+    for i in range(0, 0):
 
         new_edges = set(simplex.edges).difference(set(simplex.old_edges))
         removed_edges = set(simplex.old_edges).difference(set(simplex.edges))
