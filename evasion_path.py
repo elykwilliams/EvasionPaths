@@ -100,6 +100,7 @@ class EvasionPathSimulation:
         self.find_evasion_paths()
 
     def get_boundary_cycles(self):
+        self.old_cycles = self.boundary_cycles
         self.boundary_cycles = [cycle for cycle in boundary_cycle_graphs(self.cmap) if set(cycle.nodes) != set(self.alpha_shape)]
 
     def find_evasion_paths(self):
@@ -115,32 +116,72 @@ class EvasionPathSimulation:
             self.evasion_paths = "No Change"
         elif case == (1, 0, 0, 0) and cycle_change == 1:  # Add Edge
             self.evasion_paths = "One edge added"
+            edge = set(list(edges_added)[0])
+            newcycles = [str(sorted(tuple(s.nodes))) for s in self.boundary_cycles if edge.issubset(set(s.nodes()))]
+            oldcycle = [str(sorted(tuple(s.nodes))) for s in self.old_cycles if edge.issubset(set(s.nodes()))][0]
+            for new_s in newcycles:
+                self.cell_label[new_s] = self.cell_label[oldcycle]
+            del self.cell_label[oldcycle]
+
         elif case == (0, 1, 0, 0) and cycle_change == -1:  # Remove Edge
             self.evasion_paths = "One edge removed"
+            edge = set(list(edges_removed)[0])
+            oldcycles = [str(sorted(tuple(s.nodes))) for s in self.old_cycles if edge.issubset(set(s.nodes()))]
+            newcycle = [str(sorted(tuple(s.nodes))) for s in self.boundary_cycles if edge.issubset(set(s.nodes()))][0]
+            self.cell_label[newcycle] = any([self.cell_label[s] for s in oldcycles])
+            for s in oldcycles:
+                del self.cell_label[s]
         elif case == (0, 0, 1, 0) and cycle_change == 0:  # Add Simplex
             self.evasion_paths = "One simplex added"
+            newcycle = list(simplices_added)[0]
+            self.cell_label[str(sorted(tuple(newcycle)))] = False
         elif case == (0, 0, 0, 1) and cycle_change == 0:  # Remove Simplex
             self.evasion_paths = "One simplex removed"
+            # No label change needed
         elif case == (1, 0, 1, 0) and cycle_change == 1:  # Edge and Simplex Added
-            e = list(edges_added)[0]
-            s = list(simplices_added)[0]
-            if not set(e).issubset(set(s)):
+            newedge = set(list(edges_added)[0])
+            newsimplex = set(list(simplices_added)[0])
+            if not newedge.issubset(newsimplex):
                 raise Exception("Invalid State Change")
             self.evasion_paths = "Edge and Simplex added"
+            newcycles = [str(sorted(tuple(s.nodes))) for s in self.boundary_cycles if newedge.issubset(set(s.nodes()))]
+            oldcycle = [str(sorted(tuple(s.nodes))) for s in self.old_cycles if newedge.issubset(set(s.nodes()))][0]
+
+            newsimplex = str(sorted(tuple(newsimplex)))
+            newcycles.remove(newsimplex)
+            newcycle = newcycles[0]
+            self.cell_label[newsimplex] = False
+            self.cell_label[newcycle] = self.cell_label[oldcycle]
+            del self.cell_label[oldcycle]
+
         elif case == (0, 1, 0, 1) and cycle_change == -1:  # Edge and Simplex Removed
-            e = list(edges_removed)[0]
-            s = list(simplices_removed)[0]
-            if not set(e).issubset(set(s)):
+            oldedge = set(list(edges_removed)[0])
+            oldsimplex = set(list(simplices_removed)[0])
+            if not oldedge.issubset(oldsimplex):
                 raise Exception("Invalid State Change")
             self.evasion_paths = "Edge and simplex removed"
+            oldcycles = [str(sorted(tuple(s.nodes))) for s in self.old_cycles if oldedge.issubset(set(s.nodes()))]
+            newcycle = [str(sorted(tuple(s.nodes))) for s in self.boundary_cycles if oldedge.issubset(set(s.nodes()))][0]
+            self.cell_label[newcycle] = any([self.cell_label[s] for s in oldcycles])
+            for s in oldcycles:
+                del self.cell_label[s]
         elif case == (1, 1, 2, 2) and cycle_change == 0:  # Delunay Flip
-            e = set(list(edges_removed)[0])
-            if not all([e.issubset(set(s)) for s in list(simplices_removed)]):
+            oldedge = set(list(edges_removed)[0])
+            if not all([oldedge.issubset(s) for s in set(list(simplices_removed))]):
                 raise Exception("Invalid State Change")
-            e = set(list(edges_added)[0])
-            if not all([e.issubset(set(s)) for s in list(simplices_added)]):
+            newedge = set(list(edges_added)[0])
+            if not all([newedge.issubset(s) for s in set(list(simplices_added))]):
                 raise Exception("Invalid State Change")
             self.evasion_paths = "Delunay Flip"
+            oldsimplices = list(simplices_removed)
+            newsimplices = list(simplices_added)
+
+            for s in oldsimplices:
+                del self.cell_label[str(sorted(tuple(s)))]
+            for s in newsimplices:
+                self.cell_label[str(sorted(tuple(s)))] = False
+
+
         else:
             raise Exception("Invalid State Change")
 
@@ -153,7 +194,7 @@ class EvasionPathSimulation:
         if graph.order() >= 3:
             return True
 
-    def plot(self, ax, fig):
+    def plot(self):
         nx.draw(simplex.G, dict(enumerate(simplex.points)), node_color="g", edge_color="g")
         nx.draw_networkx_labels(simplex.G, dict(enumerate(simplex.points)))
 
@@ -161,17 +202,16 @@ class EvasionPathSimulation:
             if simplex.is_hole(s):
                 nx.draw(s, simplex.points, node_color="r", edge_color="r")
 
-        plt.show()
-
 if __name__ == "__main__":
     simplex = EvasionPathSimulation(0.0001, 100)
-    print(simplex.cell_label)
+    for key in simplex.cell_label:
+        print(key, simplex.cell_label[key])
 
     ax = plt.gca()
     fig = plt.figure(1)
-    simplex.plot(ax, fig)
+    simplex.plot()
 
-    for i in range(0, 0):
+    for i in range(0, 3000):
 
         new_edges = set(simplex.edges).difference(set(simplex.old_edges))
         removed_edges = set(simplex.old_edges).difference(set(simplex.edges))
@@ -181,6 +221,12 @@ if __name__ == "__main__":
             print("Time = ", i)
             print(simplex.evasion_paths)
 
+    for key in simplex.cell_label:
+        print(key, simplex.cell_label[key])
+
+    ax = plt.gca()
+    fig = plt.figure(2)
+    simplex.plot()
 
         # ax = plt.gca()
         # fig = plt.figure(1)
