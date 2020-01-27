@@ -16,7 +16,7 @@ def update(timestep):
         nx.draw(hole, simulation.points, node_color='red', edge_color="red")
 
 
-simulation = EvasionPathSimulation(dt=0.0001, end_time=0.01)
+simulation = EvasionPathSimulation(dt=0.00001, end_time=5)
 ax = plt.gca()
 fig = plt.figure(1)
 update(0)

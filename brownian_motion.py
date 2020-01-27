@@ -16,8 +16,8 @@ class BrownianMotion:
     def generate_points(self, n_interior_pts, radius):
         pts = self.boundary.generate(radius)
         for _ in range(n_interior_pts):
-            rand_x = np.random.uniform(radius, self.boundary.x_max - radius)
-            rand_y = np.random.uniform(radius, self.boundary.y_max - radius)
+            rand_x = np.random.uniform(radius/2, self.boundary.x_max - radius/2)
+            rand_y = np.random.uniform(radius/2, self.boundary.y_max - radius/2)
             pts.append([rand_x, rand_y])
         return pts
 

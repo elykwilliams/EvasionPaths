@@ -10,12 +10,12 @@ import networkx as nx
 class EvasionPathSimulation:
     def __init__(self, dt, end_time):
         # Parameters
-        self.n_interior_sensors = 10
+        self.n_interior_sensors = 15
         self.sensing_radius = 0.15
         self.dt = dt
         self.Tend = end_time
         self.time = 0
-        self.brownian_motion = BrownianMotion(self.dt, sigma=0.1)
+        self.brownian_motion = BrownianMotion(self.dt, sigma=0.01)
 
         # Point data
         self.points = self.brownian_motion.generate_points(self.n_interior_sensors, self.sensing_radius)
@@ -48,7 +48,10 @@ class EvasionPathSimulation:
         if self.Tend > self.dt:
             while self.time < self.Tend:
                 self.time += self.dt
-                self.do_timestep()
+                try:
+                    self.do_timestep()
+                except Exception:
+                    raise Exception("Invalid state change at time " + str(self.time))
             return bool(self.evasion_paths)
         else:
             while self.evasion_paths:
@@ -125,10 +128,12 @@ class EvasionPathSimulation:
                 raise Exception("Invalid State Change")
             self.evasion_paths = "Edge and simplex removed"
         elif case == (1, 1, 2, 2) and cycle_change == 0:  # Delunay Flip
-            self.evasion_paths = "Delunay Flip"
-        elif case == (1, 1, 1, 1) and cycle_change == 0:  # Delunay Flip
-            self.evasion_paths = "Delunay Flip"
-        elif case == (1, 1, 0, 0) and cycle_change == 0:  # Delunay Flip
+            e = set(list(edges_removed)[0])
+            if not all([e.issubset(set(s)) for s in list(simplices_removed)]):
+                raise Exception("Invalid State Change")
+            e = set(list(edges_added)[0])
+            if not all([e.issubset(set(s)) for s in list(simplices_added)]):
+                raise Exception("Invalid State Change")
             self.evasion_paths = "Delunay Flip"
         else:
             raise Exception("Invalid State Change")
@@ -144,9 +149,9 @@ class EvasionPathSimulation:
 
 
 if __name__ == "__main__":
-    simplex = EvasionPathSimulation(0.00001, 1)
+    simplex = EvasionPathSimulation(0.0001, 100)
 
-    for i in range(1, 1000):
+    for i in range(0, 10000):
 
         new_edges = set(simplex.edges).difference(set(simplex.old_edges))
         removed_edges = set(simplex.old_edges).difference(set(simplex.edges))
@@ -155,13 +160,13 @@ if __name__ == "__main__":
         if simplex.evasion_paths != "No Change":
             print("Time = ", i)
             print(simplex.evasion_paths)
-            
-        if False:
-            ax = plt.gca()
-            fig = plt.figure(1)
-            plt.subplot(3, 3, (i // 10) + 1, title="iter "+str(i+1)+" "+simplex.evasion_paths)
-            nx.draw(simplex.G, simplex.points)
-            nx.draw_networkx_edges(simplex.G, simplex.points, list(new_edges), edge_color="green", ax=ax, width=3)
-            nx.draw_networkx_edges(simplex.G, simplex.points, list(removed_edges), edge_color="red", ax=ax, width=3)
+
+
+        # ax = plt.gca()
+        # fig = plt.figure(1)
+        # plt.subplot(3, 3, i+ 1, title="iter "+str(i+1)+" "+simplex.evasion_paths)
+        # nx.draw(simplex.G, simplex.points)
+        # nx.draw_networkx_edges(simplex.G, simplex.points, list(new_edges), edge_color="green", ax=ax, width=3)
+        # nx.draw_networkx_edges(simplex.G, simplex.points, list(removed_edges), edge_color="red", ax=ax, width=3)
 
 plt.show()
