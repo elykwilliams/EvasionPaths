@@ -112,75 +112,118 @@ class EvasionPathSimulation:
         cycle_change = len(self.boundary_cycles) - len(self.old_cycles)
 
         case = (len(edges_added), len(edges_removed), len(simplices_added), len(simplices_removed))
-        if case == (0, 0, 0, 0) and cycle_change == 0:  # No Change
+
+        # No Change
+        if case == (0, 0, 0, 0) and cycle_change == 0:
             self.evasion_paths = "No Change"
-        elif case == (1, 0, 0, 0) and cycle_change == 1:  # Add Edge
+
+        # Add Edge
+        elif case == (1, 0, 0, 0) and cycle_change == 1:
             self.evasion_paths = "One edge added"
-            edge = set(list(edges_added)[0])
-            newcycles = [str(sorted(tuple(s.nodes))) for s in self.boundary_cycles if edge.issubset(set(s.nodes()))]
-            oldcycle = [str(sorted(tuple(s.nodes))) for s in self.old_cycles if edge.issubset(set(s.nodes()))][0]
+            # Find relevant boundary cycles
+            newedge = set(edges_added.pop())
+            newcycles = [str(sorted(tuple(s.nodes))) for s in self.boundary_cycles if newedge.issubset(set(s.nodes))]
+            oldcycle = [str(sorted(tuple(s.nodes))) for s in self.old_cycles if newedge.issubset(set(s.nodes))].pop()
+
+            # Add new boundary cycles
             for new_s in newcycles:
                 self.cell_label[new_s] = self.cell_label[oldcycle]
+
+            # Remove old boundary cycle
             del self.cell_label[oldcycle]
 
-        elif case == (0, 1, 0, 0) and cycle_change == -1:  # Remove Edge
+        # Remove Edge
+        elif case == (0, 1, 0, 0) and cycle_change == -1:
             self.evasion_paths = "One edge removed"
-            edge = set(list(edges_removed)[0])
-            oldcycles = [str(sorted(tuple(s.nodes))) for s in self.old_cycles if edge.issubset(set(s.nodes()))]
-            newcycle = [str(sorted(tuple(s.nodes))) for s in self.boundary_cycles if edge.issubset(set(s.nodes()))][0]
+            # Find relevant boundary cycles
+            oldedge = set(edges_removed.pop())
+            oldcycles = [str(sorted(tuple(s.nodes))) for s in self.old_cycles if oldedge.issubset(set(s.nodes))]
+            newcycle = [str(sorted(tuple(s.nodes))) for s in self.boundary_cycles if oldedge.issubset(set(s.nodes))].pop()
+
+            # Add new boundary cycle
             self.cell_label[newcycle] = any([self.cell_label[s] for s in oldcycles])
+
+            # Remove old boundary cycles
             for s in oldcycles:
                 del self.cell_label[s]
+
+        # Add Simplex
         elif case == (0, 0, 1, 0) and cycle_change == 0:  # Add Simplex
             self.evasion_paths = "One simplex added"
-            newcycle = list(simplices_added)[0]
+
+            # Find relevant boundary cycle
+            newcycle = simplices_added.pop()
+
+            # Update existing boundary cycle
             self.cell_label[str(sorted(tuple(newcycle)))] = False
-        elif case == (0, 0, 0, 1) and cycle_change == 0:  # Remove Simplex
+
+        # Remove Simplex
+        elif case == (0, 0, 0, 1) and cycle_change == 0:
             self.evasion_paths = "One simplex removed"
             # No label change needed
-        elif case == (1, 0, 1, 0) and cycle_change == 1:  # Edge and Simplex Added
-            newedge = set(list(edges_added)[0])
-            newsimplex = set(list(simplices_added)[0])
+
+        # Edge and Simplex Added
+        elif case == (1, 0, 1, 0) and cycle_change == 1:
+            # Check that new edge is an edge of new simplex
+            newedge = set(edges_added.pop())
+            newsimplex = set(simplices_added.pop())
             if not newedge.issubset(newsimplex):
                 raise Exception("Invalid State Change")
             self.evasion_paths = "Edge and Simplex added"
-            newcycles = [str(sorted(tuple(s.nodes))) for s in self.boundary_cycles if newedge.issubset(set(s.nodes()))]
-            oldcycle = [str(sorted(tuple(s.nodes))) for s in self.old_cycles if newedge.issubset(set(s.nodes()))][0]
+
+            # Get relevant boundary cycles
+            newcycles = [str(sorted(tuple(s.nodes))) for s in self.boundary_cycles if newedge.issubset(set(s.nodes))]
+            oldcycle = [str(sorted(tuple(s.nodes))) for s in self.old_cycles if newedge.issubset(set(s.nodes))].pop()
 
             newsimplex = str(sorted(tuple(newsimplex)))
             newcycles.remove(newsimplex)
-            newcycle = newcycles[0]
+            newcycle = newcycles.pop()
+
+            # Add new boundary cycles
             self.cell_label[newsimplex] = False
             self.cell_label[newcycle] = self.cell_label[oldcycle]
+
+            # Remove old boundary cycle
             del self.cell_label[oldcycle]
 
-        elif case == (0, 1, 0, 1) and cycle_change == -1:  # Edge and Simplex Removed
-            oldedge = set(list(edges_removed)[0])
-            oldsimplex = set(list(simplices_removed)[0])
+        # Edge and Simplex Removed
+        elif case == (0, 1, 0, 1) and cycle_change == -1:
+            # Check that removed edge is subset of removed boundary cycle
+            oldedge = set(edges_removed.pop())
+            oldsimplex = set(simplices_removed.pop())
             if not oldedge.issubset(oldsimplex):
                 raise Exception("Invalid State Change")
+
             self.evasion_paths = "Edge and simplex removed"
-            oldcycles = [str(sorted(tuple(s.nodes))) for s in self.old_cycles if oldedge.issubset(set(s.nodes()))]
-            newcycle = [str(sorted(tuple(s.nodes))) for s in self.boundary_cycles if oldedge.issubset(set(s.nodes()))][0]
+            # Find relevant boundary cycles
+            oldcycles = [str(sorted(tuple(s.nodes))) for s in self.old_cycles if oldedge.issubset(set(s.nodes))]
+            newcycle = [str(sorted(tuple(s.nodes))) for s in self.boundary_cycles if oldedge.issubset(set(s.nodes))].pop()
+
+            # Add new boundary cycle
             self.cell_label[newcycle] = any([self.cell_label[s] for s in oldcycles])
+
+            # Remove old boundary cycles
             for s in oldcycles:
                 del self.cell_label[s]
-        elif case == (1, 1, 2, 2) and cycle_change == 0:  # Delunay Flip
-            oldedge = set(list(edges_removed)[0])
-            if not all([oldedge.issubset(s) for s in set(list(simplices_removed))]):
-                raise Exception("Invalid State Change")
-            newedge = set(list(edges_added)[0])
-            if not all([newedge.issubset(s) for s in set(list(simplices_added))]):
-                raise Exception("Invalid State Change")
-            self.evasion_paths = "Delunay Flip"
-            oldsimplices = list(simplices_removed)
-            newsimplices = list(simplices_added)
 
-            for s in oldsimplices:
-                del self.cell_label[str(sorted(tuple(s)))]
-            for s in newsimplices:
+        # Delunay Flip
+        elif case == (1, 1, 2, 2) and cycle_change == 0:
+            # Check that edges correspond to correct boundary cycles
+            oldedge = set(edges_removed.pop())
+            if not all([oldedge.issubset(set(s)) for s in simplices_removed]):
+                raise Exception("Invalid State Change")
+            newedge = set(edges_added.pop())
+            if not all([newedge.issubset(s) for s in simplices_added]):
+                raise Exception("Invalid State Change")
+
+            self.evasion_paths = "Delunay Flip"
+            # Add new boundary cycles
+            for s in simplices_added:
                 self.cell_label[str(sorted(tuple(s)))] = False
 
+            # Remove old boundary cycles
+            for s in simplices_removed:
+                del self.cell_label[str(sorted(tuple(s)))]
 
         else:
             raise Exception("Invalid State Change")
