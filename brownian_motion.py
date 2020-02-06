@@ -1,29 +1,29 @@
-# Kyle Williams 12/16/19
+# Kyle Williams 2/4/20
 
 from boundary_geometry import *
 from numpy import sqrt, random
 
 
 class BrownianMotion:
-    def __init__(self, dt, sigma):
-        self.boundary = Boundary()
+    def __init__(self, dt, sigma, sensing_radius, boundary):
+        self.radius = sensing_radius
+        self.boundary = boundary
         self.sigma = sigma
         self.dt = dt
 
     def epsilon(self):  # Model selected by Deepjoyti
         return self.sigma*sqrt(self.dt)*random.normal(0, 1)
 
-    def generate_points(self, n_interior_pts, radius):
-        pts = self.boundary.generate(radius)
+    def generate_points(self, n_interior_pts):
+        interior_pts = []
         for _ in range(n_interior_pts):
-            rand_x = np.random.uniform(radius/2, self.boundary.x_max - radius/2)
-            rand_y = np.random.uniform(radius/2, self.boundary.y_max - radius/2)
-            pts.append([rand_x, rand_y])
-        return pts
+            rand_x = np.random.uniform(self.boundary.x_min + self.radius/2, self.boundary.x_max - self.radius/2)
+            rand_y = np.random.uniform(self.boundary.y_min + self.radius/2, self.boundary.y_max - self.radius/2)
+            interior_pts.append((rand_x, rand_y))
+        return self.boundary.points + interior_pts
 
     def update_points(self, old_points):
-        boundary_pts = old_points[:self.boundary.n_points]
-        interior_pts = old_points[self.boundary.n_points:]
+        interior_pts = old_points[len(self.boundary):]
 
         interior_pts = [(x + self.epsilon(), y + self.epsilon()) for (x, y) in interior_pts]
 
@@ -38,4 +38,4 @@ class BrownianMotion:
             if y <= 0:
                 interior_pts[n] = (x, -y + self.epsilon())
 
-        return boundary_pts + interior_pts
+        return self.boundary.points + interior_pts
