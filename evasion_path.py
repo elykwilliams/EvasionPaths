@@ -1,5 +1,5 @@
 # Kyle Williams 12/16/19
-
+from boundary_geometry import Boundary
 from brownian_motion import *
 from combinatorial_map import *
 from numpy import sqrt
@@ -7,26 +7,42 @@ from gudhi import AlphaComplex
 import networkx as nx
 
 
+def nodes2str(nodes): return str(sorted(tuple(nodes)))
+
+
+def interpolate_points(old_points, new_points, t):
+    assert(len(old_points) == len(new_points))
+    return[(old_points[n][0]*t + new_points[n][0]*(1-t), old_points[n][1]*t + new_points[n][1]*(1-t))
+           for n in range(len(old_points))]
+
+
 class EvasionPathSimulation:
     def __init__(self, dt, end_time):
         # Parameters
-        self.n_interior_sensors = 15
+        self.n_interior_sensors = 25
         self.sensing_radius = 0.15
         self.dt = dt
         self.Tend = end_time
         self.time = 0
-        self.brownian_motion = BrownianMotion(self.dt, sigma=0.01)
+        boundary = Boundary(spacing=self.sensing_radius,
+                            x_min=0.0, y_min=0.0, x_max=1.0, y_max=1.0)
+
+        self.brownian_motion = BrownianMotion(dt=self.dt,
+                                              sigma=0.01,
+                                              sensing_radius=self.sensing_radius,
+                                              boundary=boundary)
 
         # Point data
-        self.points = self.brownian_motion.generate_points(self.n_interior_sensors, self.sensing_radius)
+        self.points = self.brownian_motion.generate_points(n_interior_pts=self.n_interior_sensors)
+        self.old_points = self.points.copy()
         self.n_sensors = len(self.points)
-        self.alpha_shape = list(range(self.brownian_motion.boundary.n_points))
+        self.alpha_shape = list(range(len(self.brownian_motion.boundary)))
 
         # Complex info
-        self.alpha_complex = AlphaComplex(self.points)
-        self.simplex_tree = self.alpha_complex.create_simplex_tree(self.sensing_radius**2)
-        self.edges = [tuple(simplex) for simplex, _ in self.simplex_tree.get_skeleton(1) if len(simplex) == 2]
-        self.simplices = [tuple(simplex) for simplex, _ in self.simplex_tree.get_skeleton(2) if len(simplex) == 3]
+        alpha_complex = AlphaComplex(self.points)
+        simplex_tree = alpha_complex.create_simplex_tree(self.sensing_radius**2)
+        self.edges = [tuple(simplex) for simplex, _ in simplex_tree.get_skeleton(1) if len(simplex) == 2]
+        self.simplices = [tuple(simplex) for simplex, _ in simplex_tree.get_skeleton(2) if len(simplex) == 3]
 
         self.old_edges = self.edges.copy()
         self.old_simplices = self.simplices.copy()
@@ -45,10 +61,13 @@ class EvasionPathSimulation:
         self.evasion_paths = ""
         self.cell_label = dict()
         for bcycle in self.boundary_cycles:
-            self.cell_label[str(sorted(tuple(bcycle.nodes())))] = True
+            self.cell_label[nodes2str(bcycle.nodes())] = True
         for simplex in self.simplices:
-            self.cell_label[str(sorted(tuple(simplex)))] = False
+            self.cell_label[nodes2str(simplex)] = False
 
+        for key in self.cell_label:
+            print(key, self.cell_label[key])
+        print("#####")
 
     def run(self):
         if self.Tend > self.dt:
@@ -67,20 +86,16 @@ class EvasionPathSimulation:
 
     def do_timestep(self):
 
-        self.old_edges = self.edges.copy()
-        self.old_simplices = self.simplices.copy()
-        self.old_cycles = self.boundary_cycles.copy()
-
         # Update Points
         self.points = self.brownian_motion.update_points(self.points)
 
         # Update Alpha Complex
-        self.alpha_complex = AlphaComplex(self.points)
-        self.simplex_tree = self.alpha_complex.create_simplex_tree(self.sensing_radius**2)
+        alpha_complex = AlphaComplex(self.points)
+        simplex_tree = alpha_complex.create_simplex_tree(self.sensing_radius**2)
 
         # Update Graph
-        self.edges = [tuple(simplex) for simplex, _ in self.simplex_tree.get_skeleton(1) if len(simplex) == 2]
-        self.simplices = [tuple(simplex) for simplex, _ in self.simplex_tree.get_skeleton(2) if len(simplex) == 3]
+        self.edges = [tuple(simplex) for simplex, _ in simplex_tree.get_skeleton(1) if len(simplex) == 2]
+        self.simplices = [tuple(simplex) for simplex, _ in simplex_tree.get_skeleton(2) if len(simplex) == 3]
 
         self.G = nx.Graph()
         self.G.add_nodes_from(range(self.n_sensors))  # nodes numbered 0 though N points -1
@@ -94,14 +109,78 @@ class EvasionPathSimulation:
         self.cmap = CMap(self.G, points=self.points)
 
         # Update Holes
+        self.old_cycles = self.boundary_cycles
         self.get_boundary_cycles()
 
         # Find Evasion Path
-        self.find_evasion_paths()
+        try:
+            self.find_evasion_paths()
+            if self.evasion_paths != "No Change":
+                print(self.evasion_paths)
+        except Exception:
+            self.do_adaptive_step(self.old_points, self.points, rec=1)
+        finally:
+            self.time = self.time + self.dt
+
+        # Update old data
+        self.old_edges = self.edges.copy()
+        self.old_simplices = self.simplices.copy()
+        self.old_cycles = self.boundary_cycles.copy()
+        self.old_points = self.points.copy()
+
+    def do_adaptive_step(self, old_points, new_points, rec=1):
+        print("Recursion level", rec)
+        # Reset current level to previous step
+        self.points = self.old_points.copy()
+        self.edges = self.old_edges.copy()
+        self.simplices = self.old_simplices.copy()
+        self.boundary_cycles = self.old_cycles.copy()
+
+        # Then to 100 substeps
+        temp_dt = 1/2
+        for t in np.arange(temp_dt, 1.0, temp_dt):
+            # Update Points
+            self.points = interpolate_points(self.old_points, new_points, t)
+
+            # Update Alpha Complex
+            alpha_complex = AlphaComplex(self.points)
+            simplex_tree = alpha_complex.create_simplex_tree(self.sensing_radius ** 2)
+
+            # Update Graph
+            self.edges = [tuple(simplex) for simplex, _ in simplex_tree.get_skeleton(1) if len(simplex) == 2]
+            self.simplices = [tuple(simplex) for simplex, _ in simplex_tree.get_skeleton(2) if len(simplex) == 3]
+
+            self.G = nx.Graph()
+            self.G.add_nodes_from(range(self.n_sensors))  # nodes numbered 0 though N points -1
+            self.G.add_edges_from(self.edges)
+
+            # Check if graph is connected
+            if not nx.is_connected(self.G):
+                raise Exception("Graph is not connected")
+
+            # Update Combinatorial Map
+            self.cmap = CMap(self.G, points=self.points)
+
+            # Update Holes
+            self.get_boundary_cycles()
+
+            # Find Evasion Path
+            try:
+                self.find_evasion_paths()
+                if self.evasion_paths != "No Change":
+                    print(self.evasion_paths)
+            except Exception:
+                self.do_adaptive_step(self.old_points, self.points, rec=rec+1)
+
+            # Update old data
+            self.old_edges = self.edges.copy()
+            self.old_simplices = self.simplices.copy()
+            self.old_cycles = self.boundary_cycles.copy()
+            self.old_points = self.points.copy()
 
     def get_boundary_cycles(self):
-        self.old_cycles = self.boundary_cycles
-        self.boundary_cycles = [cycle for cycle in boundary_cycle_graphs(self.cmap) if set(cycle.nodes) != set(self.alpha_shape)]
+        self.boundary_cycles = [cycle for cycle in boundary_cycle_graphs(self.cmap)
+                                if set(cycle.nodes) != set(self.alpha_shape)]
 
     def find_evasion_paths(self):
         edges_added = set(self.edges).difference(set(self.old_edges))
@@ -122,8 +201,11 @@ class EvasionPathSimulation:
             self.evasion_paths = "One edge added"
             # Find relevant boundary cycles
             newedge = set(edges_added.pop())
-            newcycles = [str(sorted(tuple(s.nodes))) for s in self.boundary_cycles if newedge.issubset(set(s.nodes))]
-            oldcycle = [str(sorted(tuple(s.nodes))) for s in self.old_cycles if newedge.issubset(set(s.nodes))].pop()
+            newcycles = [nodes2str(s.nodes) for s in self.boundary_cycles
+                         if newedge.issubset(set(s.nodes))]
+
+            oldcycle = [nodes2str(s.nodes) for s in self.old_cycles
+                        if newedge.issubset(set(s.nodes))].pop()
 
             # Add new boundary cycles
             for new_s in newcycles:
@@ -137,8 +219,11 @@ class EvasionPathSimulation:
             self.evasion_paths = "One edge removed"
             # Find relevant boundary cycles
             oldedge = set(edges_removed.pop())
-            oldcycles = [str(sorted(tuple(s.nodes))) for s in self.old_cycles if oldedge.issubset(set(s.nodes))]
-            newcycle = [str(sorted(tuple(s.nodes))) for s in self.boundary_cycles if oldedge.issubset(set(s.nodes))].pop()
+            oldcycles = [nodes2str(s.nodes) for s in self.old_cycles
+                         if oldedge.issubset(set(s.nodes))]
+
+            newcycle = [nodes2str(s.nodes) for s in self.boundary_cycles
+                        if oldedge.issubset(set(s.nodes))].pop()
 
             # Add new boundary cycle
             self.cell_label[newcycle] = any([self.cell_label[s] for s in oldcycles])
@@ -155,7 +240,7 @@ class EvasionPathSimulation:
             newcycle = simplices_added.pop()
 
             # Update existing boundary cycle
-            self.cell_label[str(sorted(tuple(newcycle)))] = False
+            self.cell_label[nodes2str(newcycle)] = False
 
         # Remove Simplex
         elif case == (0, 0, 0, 1) and cycle_change == 0:
@@ -165,17 +250,20 @@ class EvasionPathSimulation:
         # Edge and Simplex Added
         elif case == (1, 0, 1, 0) and cycle_change == 1:
             # Check that new edge is an edge of new simplex
-            newedge = set(edges_added.pop())
-            newsimplex = set(simplices_added.pop())
-            if not newedge.issubset(newsimplex):
+            newedge = edges_added.pop()
+            newsimplex = simplices_added.pop()
+            if not set(newedge).issubset(set(newsimplex)):
                 raise Exception("Invalid State Change")
             self.evasion_paths = "Edge and Simplex added"
 
             # Get relevant boundary cycles
-            newcycles = [str(sorted(tuple(s.nodes))) for s in self.boundary_cycles if newedge.issubset(set(s.nodes))]
-            oldcycle = [str(sorted(tuple(s.nodes))) for s in self.old_cycles if newedge.issubset(set(s.nodes))].pop()
+            newcycles = [nodes2str(s.nodes) for s in self.boundary_cycles
+                         if set(newedge).issubset(set(s.nodes))]
 
-            newsimplex = str(sorted(tuple(newsimplex)))
+            oldcycle = [nodes2str(s.nodes) for s in self.old_cycles
+                        if set(newedge).issubset(set(s.nodes))].pop()
+
+            newsimplex = nodes2str(newsimplex)
             newcycles.remove(newsimplex)
             newcycle = newcycles.pop()
 
@@ -189,15 +277,18 @@ class EvasionPathSimulation:
         # Edge and Simplex Removed
         elif case == (0, 1, 0, 1) and cycle_change == -1:
             # Check that removed edge is subset of removed boundary cycle
-            oldedge = set(edges_removed.pop())
-            oldsimplex = set(simplices_removed.pop())
-            if not oldedge.issubset(oldsimplex):
+            oldedge = edges_removed.pop()
+            oldsimplex = simplices_removed.pop()
+            if not set(oldedge).issubset(set(oldsimplex)):
                 raise Exception("Invalid State Change")
 
             self.evasion_paths = "Edge and simplex removed"
             # Find relevant boundary cycles
-            oldcycles = [str(sorted(tuple(s.nodes))) for s in self.old_cycles if oldedge.issubset(set(s.nodes))]
-            newcycle = [str(sorted(tuple(s.nodes))) for s in self.boundary_cycles if oldedge.issubset(set(s.nodes))].pop()
+            oldcycles = [nodes2str(s.nodes) for s in self.old_cycles
+                         if set(oldedge).issubset(set(s.nodes))]
+
+            newcycle = [nodes2str(s.nodes) for s in self.boundary_cycles
+                        if set(oldedge).issubset(set(s.nodes))].pop()
 
             # Add new boundary cycle
             self.cell_label[newcycle] = any([self.cell_label[s] for s in oldcycles])
@@ -209,21 +300,21 @@ class EvasionPathSimulation:
         # Delunay Flip
         elif case == (1, 1, 2, 2) and cycle_change == 0:
             # Check that edges correspond to correct boundary cycles
-            oldedge = set(edges_removed.pop())
-            if not all([oldedge.issubset(set(s)) for s in simplices_removed]):
+            oldedge = edges_removed.pop()
+            if not all([set(oldedge).issubset(set(s)) for s in simplices_removed]):
                 raise Exception("Invalid State Change")
-            newedge = set(edges_added.pop())
-            if not all([newedge.issubset(s) for s in simplices_added]):
+            newedge = edges_added.pop()
+            if not all([set(newedge).issubset(set(s)) for s in simplices_added]):
                 raise Exception("Invalid State Change")
 
             self.evasion_paths = "Delunay Flip"
             # Add new boundary cycles
             for s in simplices_added:
-                self.cell_label[str(sorted(tuple(s)))] = False
+                self.cell_label[nodes2str(s)] = False
 
             # Remove old boundary cycles
             for s in simplices_removed:
-                del self.cell_label[str(sorted(tuple(s)))]
+                del self.cell_label[nodes2str(s)]
 
         else:
             raise Exception("Invalid State Change")
@@ -237,45 +328,47 @@ class EvasionPathSimulation:
         if graph.order() >= 3:
             return True
 
-    def plot(self):
-        nx.draw(simplex.G, dict(enumerate(simplex.points)), node_color="g", edge_color="g")
-        nx.draw_networkx_labels(simplex.G, dict(enumerate(simplex.points)))
+    def plot(self, fig, ax):
+        ax.clear()
+        nx.draw_networkx_labels(self.G, dict(enumerate(self.points)))
 
-        for s in simplex.boundary_cycles:
-            if simplex.is_hole(s):
-                nx.draw(s, simplex.points, node_color="r", edge_color="r")
+        # for s in self.boundary_cycles:
+        #     if self.is_hole(s):
+        #         nx.draw(s, self.points, node_color="r", edge_color="r")
+
+        for cycle in boundary_cycle_nodes(self.cmap):
+            x_pts = [self.points[n][0] for n in cycle]
+            y_pts = [self.points[n][1] for n in cycle]
+            if set(cycle) == set(self.alpha_shape):
+                continue
+            if self.cell_label[nodes2str(cycle)]:
+                ax.fill(x_pts, y_pts, 'r')
+            else:
+                ax.fill(x_pts, y_pts, 'g')
+
+        nx.draw(self.G, dict(enumerate(self.points)), node_color="b", edge_color="k")
+
+
 
 if __name__ == "__main__":
-    simplex = EvasionPathSimulation(0.0001, 100)
+    simplex = EvasionPathSimulation(0.01, 100)
     for key in simplex.cell_label:
         print(key, simplex.cell_label[key])
 
     ax = plt.gca()
     fig = plt.figure(1)
-    simplex.plot()
+    fig.add_axes(ax)
+    simplex.plot(fig, ax)
 
-    for i in range(0, 3000):
-
-        new_edges = set(simplex.edges).difference(set(simplex.old_edges))
-        removed_edges = set(simplex.old_edges).difference(set(simplex.edges))
-
+    for i in range(0, 5000):
         simplex.do_timestep()
-        if simplex.evasion_paths != "No Change":
-            print("Time = ", i)
-            print(simplex.evasion_paths)
 
     for key in simplex.cell_label:
         print(key, simplex.cell_label[key])
 
-    ax = plt.gca()
     fig = plt.figure(2)
-    simplex.plot()
-
-        # ax = plt.gca()
-        # fig = plt.figure(1)
-        # plt.subplot(3, 3, i+ 1, title="iter "+str(i+1)+" "+simplex.evasion_paths)
-        # nx.draw(simplex.G, simplex.points)
-        # nx.draw_networkx_edges(simplex.G, simplex.points, list(new_edges), edge_color="green", ax=ax, width=3)
-        # nx.draw_networkx_edges(simplex.G, simplex.points, list(removed_edges), edge_color="red", ax=ax, width=3)
+    ax2 = plt.gca()
+    fig.add_axes(ax2)
+    simplex.plot(fig, ax2)
 
 plt.show()
