@@ -3,38 +3,28 @@
 from evasion_path import *
 from matplotlib.animation import FuncAnimation
 import matplotlib.pyplot as plt
-import networkx as nx
 
 
 def update(timestep):
     global simulation
     simulation.do_timestep()
 
-    ax.clear()
-    nx.draw(simulation.G, simulation.points)
-    for hole in simulation.holes:
-        nx.draw(hole, simulation.points, node_color='red', edge_color="red")
+    fig = plt.figure(1)
+    ax = plt.gca()
+    fig.add_axes(ax)
+    simulation.plot(fig, ax)
+
+    fig.suptitle("Timestep = " + str(timestep))
+
+    print(timestep)
 
 
-simulation = EvasionPathSimulation(dt=0.00001, end_time=5)
-ax = plt.gca()
+simulation = EvasionPathSimulation(0.1, 100)
+# repeat process  and animate
+n_steps = 50
 fig = plt.figure(1)
-update(0)
+ani = FuncAnimation(fig, update, interval=500, frames=n_steps)
+ani.save('animation_working.gif', writer='imagemagick')
 
-
-fig2 = plt.figure(2)
-ax = plt.gca()
-simulation.run()
-update(0)
-plt.show()
-
-# Animate
-# ax = plt.gca()
-# fig = plt.figure(1)
-# update(0)
-# # repeat process  and animate
-# ani = FuncAnimation(fig, update, interval=500, frames=1)
-# ani.save('animation_working.gif', writer='imagemagick')
-#
 
 

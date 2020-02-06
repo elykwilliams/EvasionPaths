@@ -143,6 +143,15 @@ def boundary_cycle_graphs(cmap):
     return bcycles
 
 
+def boundary_cycle_nodes(cmap):
+    simplex_nodes = []
+    for n, cycle in enumerate(cmap.boundary_cycles()):
+        simplex_edges = [cmap.dart2edge[dart] for dart in cycle]
+        simplex_nodes.append([node for (node, _) in simplex_edges])
+
+    return simplex_nodes
+
+
 if __name__ == "__main__":
     G = nx.house_x_graph()
     G.remove_edge(0, 1)
