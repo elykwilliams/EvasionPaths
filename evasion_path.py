@@ -11,9 +11,38 @@ def nodes2str(nodes): return str(sorted(tuple(nodes)))
 
 
 def interpolate_points(old_points, new_points, t):
-    assert(len(old_points) == len(new_points))
-    return[(old_points[n][0]*t + new_points[n][0]*(1-t), old_points[n][1]*t + new_points[n][1]*(1-t))
-           for n in range(len(old_points))]
+    assert (len(old_points) == len(new_points))
+    return [(old_points[n][0] * (1 - t) + new_points[n][0] * t, old_points[n][1] * (1 - t) + new_points[n][1] * t)
+            for n in range(len(old_points))]
+
+
+class InvalidStateChange(Exception):
+    def __init__(self, new_e, old_e, new_s, old_s, delta_bcycle):
+        self.new_edges = new_e
+        self.new_simplices = new_s
+        self.removed_edges = old_e
+        self.removed_simplices = old_s
+        self.boundary_cycle_change = delta_bcycle
+
+    def __str__(self):
+        case = (len(self.new_edges), len(self.removed_edges),
+                len(self.new_simplices), len(self.removed_simplices)
+                , self.boundary_cycle_change)
+
+        return "Invalid State Change:" + str(case) + "\n"\
+               + "New edges:" + str(self.new_edges) + "\n"\
+               + "Removed edges:" + str(self.removed_edges) + "\n"\
+               + "New Simplices:" + str(self.new_simplices) + "\n"\
+               + "Removed Simplices:" + str(self.removed_simplices) + "\n"\
+               + "Change in Number Boundary Cycles:" + str(self.boundary_cycle_change)
+
+
+class MaxRecursionDepth(Exception):
+    def __init__(self, invalidstatechange):
+        self.state = invalidstatechange
+
+    def __str__(self):
+        return "Max Recursion depth exceeded \n\n" + str(self.state)
 
 
 class EvasionPathSimulation:
@@ -40,7 +69,7 @@ class EvasionPathSimulation:
 
         # Complex info
         alpha_complex = AlphaComplex(self.points)
-        simplex_tree = alpha_complex.create_simplex_tree(self.sensing_radius**2)
+        simplex_tree = alpha_complex.create_simplex_tree(self.sensing_radius ** 2)
         self.edges = [tuple(simplex) for simplex, _ in simplex_tree.get_skeleton(1) if len(simplex) == 2]
         self.simplices = [tuple(simplex) for simplex, _ in simplex_tree.get_skeleton(2) if len(simplex) == 3]
 
@@ -65,23 +94,28 @@ class EvasionPathSimulation:
         for simplex in self.simplices:
             self.cell_label[nodes2str(simplex)] = False
 
-        for key in self.cell_label:
-            print(key, self.cell_label[key])
-        print("#####")
+        # for key in self.cell_label:
+        #     print(key, self.cell_label[key])
+        # print("#####")
 
     def run(self):
         if self.Tend > self.dt:
             while self.time < self.Tend:
                 self.time += self.dt
+                self.do_timestep()
+            return
+        else:
+            while any(self.cell_label.values()):
+                self.time += self.dt
                 try:
                     self.do_timestep()
-                except Exception:
-                    raise Exception("Invalid state change at time " + str(self.time))
-            return bool(self.evasion_paths)
-        else:
-            while self.evasion_paths:
-                self.time += self.dt
-                self.do_timestep()
+                except Exception as e:
+                    # print(self.time, self.dt, self.time/self.dt)
+                    # nx.draw(self.G, self.points)
+                    # plt.show()
+                    # for cycle in self.old_cycles:
+                    #     print(cycle.nodes)
+                    raise e
             return self.time
 
     def do_timestep(self):
@@ -91,7 +125,7 @@ class EvasionPathSimulation:
 
         # Update Alpha Complex
         alpha_complex = AlphaComplex(self.points)
-        simplex_tree = alpha_complex.create_simplex_tree(self.sensing_radius**2)
+        simplex_tree = alpha_complex.create_simplex_tree(self.sensing_radius ** 2)
 
         # Update Graph
         self.edges = [tuple(simplex) for simplex, _ in simplex_tree.get_skeleton(1) if len(simplex) == 2]
@@ -115,12 +149,13 @@ class EvasionPathSimulation:
         # Find Evasion Path
         try:
             self.find_evasion_paths()
-            if self.evasion_paths != "No Change":
-                print(self.evasion_paths)
-        except Exception:
-            self.do_adaptive_step(self.old_points, self.points, rec=1)
-        finally:
-            self.time = self.time + self.dt
+            # if self.evasion_paths != "No Change":
+            #print(self.evasion_paths)
+        except InvalidStateChange:
+            try:
+                self.do_adaptive_step(self.old_points, self.points, rec=1)
+            except MaxRecursionDepth as exception:
+                raise MaxRecursionDepth(exception)
 
         # Update old data
         self.old_edges = self.edges.copy()
@@ -129,7 +164,7 @@ class EvasionPathSimulation:
         self.old_points = self.points.copy()
 
     def do_adaptive_step(self, old_points, new_points, rec=1):
-        print("Recursion level", rec)
+        #print("Recursion level", rec)
         # Reset current level to previous step
         self.points = self.old_points.copy()
         self.edges = self.old_edges.copy()
@@ -137,8 +172,9 @@ class EvasionPathSimulation:
         self.boundary_cycles = self.old_cycles.copy()
 
         # Then to 100 substeps
-        temp_dt = 1/2
-        for t in np.arange(temp_dt, 1.0, temp_dt):
+        temp_dt = 1 / 2
+        for t in np.arange(temp_dt, 1.01, temp_dt):
+            #print("t = ", t)
             # Update Points
             self.points = interpolate_points(self.old_points, new_points, t)
 
@@ -167,10 +203,16 @@ class EvasionPathSimulation:
             # Find Evasion Path
             try:
                 self.find_evasion_paths()
-                if self.evasion_paths != "No Change":
-                    print(self.evasion_paths)
-            except Exception:
-                self.do_adaptive_step(self.old_points, self.points, rec=rec+1)
+                # if self.evasion_paths != "No Change":
+                #print(self.evasion_paths)
+            except InvalidStateChange as exception:
+                if rec > 20:
+                    raise MaxRecursionDepth(exception)
+                try:
+                    self.do_adaptive_step(self.old_points, self.points, rec=rec + 1)
+                except MaxRecursionDepth as exception:
+                    raise MaxRecursionDepth(exception)
+
 
             # Update old data
             self.old_edges = self.edges.copy()
@@ -253,7 +295,8 @@ class EvasionPathSimulation:
             newedge = edges_added.pop()
             newsimplex = simplices_added.pop()
             if not set(newedge).issubset(set(newsimplex)):
-                raise Exception("Invalid State Change")
+                raise InvalidStateChange(edges_added, edges_removed, simplices_added,
+                                         simplices_removed, cycle_change)
             self.evasion_paths = "Edge and Simplex added"
 
             # Get relevant boundary cycles
@@ -280,7 +323,8 @@ class EvasionPathSimulation:
             oldedge = edges_removed.pop()
             oldsimplex = simplices_removed.pop()
             if not set(oldedge).issubset(set(oldsimplex)):
-                raise Exception("Invalid State Change")
+                raise InvalidStateChange(edges_added, edges_removed, simplices_added,
+                                         simplices_removed, cycle_change)
 
             self.evasion_paths = "Edge and simplex removed"
             # Find relevant boundary cycles
@@ -302,10 +346,12 @@ class EvasionPathSimulation:
             # Check that edges correspond to correct boundary cycles
             oldedge = edges_removed.pop()
             if not all([set(oldedge).issubset(set(s)) for s in simplices_removed]):
-                raise Exception("Invalid State Change")
+                raise InvalidStateChange(edges_added, edges_removed, simplices_added,
+                                         simplices_removed, cycle_change)
             newedge = edges_added.pop()
             if not all([set(newedge).issubset(set(s)) for s in simplices_added]):
-                raise Exception("Invalid State Change")
+                raise InvalidStateChange(edges_added, edges_removed, simplices_added,
+                                         simplices_removed, cycle_change)
 
             self.evasion_paths = "Delunay Flip"
             # Add new boundary cycles
@@ -317,7 +363,8 @@ class EvasionPathSimulation:
                 del self.cell_label[nodes2str(s)]
 
         else:
-            raise Exception("Invalid State Change")
+            raise InvalidStateChange(edges_added, edges_removed, simplices_added,
+                                     simplices_removed, cycle_change)
 
     def is_hole(self, graph):
         for face in self.simplices:
@@ -349,26 +396,31 @@ class EvasionPathSimulation:
         nx.draw(self.G, dict(enumerate(self.points)), node_color="b", edge_color="k")
 
 
-
 if __name__ == "__main__":
-    simplex = EvasionPathSimulation(0.01, 100)
-    for key in simplex.cell_label:
-        print(key, simplex.cell_label[key])
+    time = []
+    for _ in range(10):
+        simplex = EvasionPathSimulation(0.1, 0)
+        # for key in simplex.cell_label:
+        #     print(key, simplex.cell_label[key])
 
-    ax = plt.gca()
-    fig = plt.figure(1)
-    fig.add_axes(ax)
-    simplex.plot(fig, ax)
+        # ax = plt.gca()
+        # fig = plt.figure(1)
+        # fig.add_axes(ax)
+        # simplex.plot(fig, ax)
 
-    for i in range(0, 5000):
-        simplex.do_timestep()
+        try:
+            time.append(simplex.run())
+        except Exception:
+            print("Exception Caught, skipping simulaiton")
+        else:
+            print(time[-1])
 
-    for key in simplex.cell_label:
-        print(key, simplex.cell_label[key])
+        # for key in simplex.cell_label:
+        #     print(key, simplex.cell_label[key])
 
-    fig = plt.figure(2)
-    ax2 = plt.gca()
-    fig.add_axes(ax2)
-    simplex.plot(fig, ax2)
+        # fig = plt.figure(2)
+        # ax2 = plt.gca()
+        # fig.add_axes(ax2)
+        # simplex.plot(fig, ax2)
 
-plt.show()
+        # plt.show()
