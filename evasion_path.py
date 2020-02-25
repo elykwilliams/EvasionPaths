@@ -54,29 +54,24 @@ class GraphNotConnected(Exception):
 
 
 class EvasionPathSimulation:
-    def __init__(self, dt, end_time=0, ):
+    def __init__(self, boundary, motion_model, n_sensors, sensing_radius, dt, end_time=0):
+
+        self.motion_model = motion_model
+
         # Parameters
-        self.n_interior_sensors = 15
-        self.sensing_radius = 0.15
         self.dt = dt
         self.Tend = end_time
 
-        boundary = Boundary(spacing=self.sensing_radius)
-
-        points = generate_points(boundary, self.n_interior_sensors, self.sensing_radius)
-
-        self.brownian_motion = BrownianMotion(dt=self.dt,
-                                              sigma=0.01,
-                                              sensing_radius=self.sensing_radius,
-                                              boundary=boundary)
         # Internal time keeping
         self.time = 0
         self.n_steps = 0
 
         # Point data
-        self.points = points
+        self.n_sensors = n_sensors
+        self.sensing_radius = sensing_radius
+        self.points = generate_points(boundary, self.n_sensors, self.sensing_radius)
         self.old_points = self.points.copy()
-        self.n_sensors = len(self.points)
+
         self.alpha_shape = list(range(len(boundary)))
 
         # Complex info
@@ -122,18 +117,13 @@ class EvasionPathSimulation:
                 try:
                     self.do_timestep()
                 except Exception as e:
-                    # print(self.time, self.dt, self.time/self.dt)
-                    # nx.draw(self.G, self.points)
-                    # plt.show()
-                    # for cycle in self.old_cycles:
-                    #     print(cycle.nodes)
-                    raise e
+                    raise
             return self.time
 
     def do_timestep(self):
 
         # Update Points
-        self.points = self.brownian_motion.update_points(self.points)
+        self.points = self.motion_model.update_points(self.points)
 
         # Update Alpha Complex
         alpha_complex = AlphaComplex(self.points)
@@ -168,7 +158,7 @@ class EvasionPathSimulation:
             try:
                 self.do_adaptive_step(self.old_points, self.points, rec=1)
             except MaxRecursionDepth as exception:
-                raise MaxRecursionDepth(exception)
+                raise
 
         # Update old data
         self.old_edges = self.edges.copy()
@@ -225,7 +215,7 @@ class EvasionPathSimulation:
                 try:
                     self.do_adaptive_step(self.old_points, self.points, rec=rec + 1)
                 except MaxRecursionDepth as exception:
-                    raise MaxRecursionDepth(exception)
+                    raise
 
             # Update old data
             self.old_edges = self.edges.copy()
@@ -646,43 +636,17 @@ def plot(Graph, points, fig, ax):
     #         nx.draw(s, self.points, node_color="r", edge_color="r")
 
     # for cycle in boundary_cycle_nodes(self.cmap):
-        # x_pts = [points[n][0] for n in cycle]
-        # y_pts = [points[n][1] for n in cycle]
-        # if set(cycle) == set(self.alpha_shape):
-        #    continue
-        # if self.cell_label[nodes2str(cycle)]:
-        #     ax.fill(x_pts, y_pts, 'r')
-        # else:
-        #     ax.fill(x_pts, y_pts, 'g')
+    # x_pts = [points[n][0] for n in cycle]
+    # y_pts = [points[n][1] for n in cycle]
+    # if set(cycle) == set(self.alpha_shape):
+    #    continue
+    # if self.cell_label[nodes2str(cycle)]:
+    #     ax.fill(x_pts, y_pts, 'r')
+    # else:
+    #     ax.fill(x_pts, y_pts, 'g')
 
     nx.draw(Graph, dict(enumerate(points)), node_color="b", edge_color="k")
 
 
 if __name__ == "__main__":
-    time = []
-    for _ in range(10):
-        simplex = EvasionPathSimulation(0.1, 0)
-        # for key in simplex.cell_label:
-        #     print(key, simplex.cell_label[key])
-
-        # ax = plt.gca()
-        # fig = plt.figure(1)
-        # fig.add_axes(ax)
-        # simplex.plot(fig, ax)
-
-        try:
-            time.append(simplex.run())
-        except Exception:
-            print("Exception Caught, skipping simulaiton")
-        else:
-            print(time[-1])
-
-        # for key in simplex.cell_label:
-        #     print(key, simplex.cell_label[key])
-
-        # fig = plt.figure(2)
-        # ax2 = plt.gca()
-        # fig.add_axes(ax2)
-        # simplex.plot(fig, ax2)
-
-        # plt.show()
+    pass
