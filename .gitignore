@@ -1,5 +1,9 @@
 *.gif
 initial_data.csv
+*.png
+output
+doc
+
 
 ## Core latex/pdflatex auxiliary files:
 *.aux

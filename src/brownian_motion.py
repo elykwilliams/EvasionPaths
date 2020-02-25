@@ -42,3 +42,14 @@ class BrownianMotion:
                 interior_pts[n] = (x, self.boundary.y_min + dx + abs(self.epsilon()))
 
         return self.boundary.points + interior_pts
+
+
+class BilliardMotion:
+    def __init__(self, dt, sigma, sensing_radius, boundary, points):
+        pass
+
+    def epsilon(self):
+        return self.sigma*sqrt(self.dt)*random.normal(0, 1)
+
+    def update_points(self, old_points):
+        pass
