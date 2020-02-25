@@ -1,5 +1,4 @@
-
-# Kyle Williams, 11/25/2019
+# Kyle Williams 2/25/20
 
 # Note that networkx does support planar-graph
 # https://networkx.github.io/documentation/stable/reference/algorithms/planarity.html

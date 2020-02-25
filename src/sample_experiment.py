@@ -1,4 +1,5 @@
-from evasion_path import *
+# Kyle Williams 2/25/20
+from .evasion_path import *
 from statistics import *
 from joblib import Parallel, delayed
 

@@ -1,6 +1,6 @@
-# Kyle Williams 12/16/19
+# Kyle Williams 2/25/20
 
-from evasion_path import *
+from .evasion_path import *
 from matplotlib.animation import FuncAnimation
 import matplotlib.pyplot as plt
 
