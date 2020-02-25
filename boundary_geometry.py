@@ -7,7 +7,7 @@ class Boundary:
     """This class defines the boundary and stores data related to the boundary geometry. It does not store the boundary
         points, simply generates and returns them """
 
-    def __init__(self, spacing: float = 0.2,
+    def __init__(self, spacing: float = 0.2,  # default of 0.2, with unit square
                  x_min: float = 0, x_max: float = 1,
                  y_min: float = 0, y_max: float = 1) -> None:
 
@@ -23,16 +23,16 @@ class Boundary:
     def at_boundary(self, point: tuple) -> bool:
         """This function defines the boundary by determining if a point is at the boundary or not. """
         return point[0] == self.x_min \
-               or point[1] == self.y_min \
-               or point[0] == self.x_max \
-               or point[1] == self.y_max
+            or point[1] == self.y_min \
+            or point[0] == self.x_max \
+            or point[1] == self.y_max
 
     def in_domain(self, point: tuple) -> bool:
         """This function determines if a point is in the interior of the domain or not """
         return point[0] > self.x_min \
-               or point[1] > self.y_min \
-               or point[0] < self.x_max \
-               or point[1] < self.y_max
+            or point[1] > self.y_min \
+            or point[0] < self.x_max \
+            or point[1] < self.y_max
 
     def generate(self, spacing: float) -> list:
         """ Generate a list of points (represent by tuples)

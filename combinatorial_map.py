@@ -69,8 +69,8 @@ class CMap:
         return self.sigma(self.alpha(dart))
 
     def plot(self):
-        nx.draw_networkx_labels(self.G, self.points)
-        nx.draw_networkx_edge_labels(self.G, self.points, self.edge2dart, label_pos=0.15)
+        nx.draw_networkx_labels(self.G, dict(enumerate(self.points)))
+        nx.draw_networkx_edge_labels(self.G, dict(enumerate(self.points)), self.edge2dart, label_pos=0.15)
         nx.draw(self.G, self.points)
         plt.show()
 
@@ -129,6 +129,8 @@ def get_rotational_data(graph, points):
 
 
 def boundary_cycle_graphs(cmap):
+    """This function converts the boundary_cycle() data into a graph for each boundary\
+            cycle in a given combinatorial map"""
     bcycles = []
     for cycle in cmap.boundary_cycles():
         simplex_edges = [cmap.dart2edge[dart] for dart in cycle]
@@ -143,11 +145,13 @@ def boundary_cycle_graphs(cmap):
     return bcycles
 
 
-def boundary_cycle_nodes(cmap):
+def boundary_cycle_nodes(cmap: CMap):
+    """This function converts the boundary_cycle() data into a list of nodes for each boundary\
+        cycle in a given combinatorial map"""
     simplex_nodes = []
     for n, cycle in enumerate(cmap.boundary_cycles()):
-        simplex_edges = [cmap.dart2edge[dart] for dart in cycle]
-        simplex_nodes.append([node for (node, _) in simplex_edges])
+        simplex_edges = [cmap.dart2edge[dart] for dart in cycle]  # get next edge
+        simplex_nodes.append([node for (node, _) in simplex_edges])  # get first node from edge
 
     return simplex_nodes
 
