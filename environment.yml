@@ -1,5 +1,6 @@
 name: gudhi
 channels:
+  - anaconda
   - conda-forge
   - defaults
 dependencies:
@@ -7,7 +8,7 @@ dependencies:
   - blas=1.0=mkl
   - boost-cpp=1.69.0=ha2d47e9_1001
   - bzip2=1.0.8=h516909a_2
-  - ca-certificates=2019.11.28=hecc5488_0
+  - ca-certificates=2020.1.1=0
   - certifi=2019.11.28=py36_0
   - cgal-cpp=4.14=h4f13b39_0
   - cycler=0.10.0=py36_0
@@ -24,6 +25,7 @@ dependencies:
   - gudhi=3.0.0=py36he256dcf_0
   - icu=58.2=h9c2bf20_1
   - intel-openmp=2019.4=243
+  - joblib=0.14.1=py_0
   - jpeg=9b=h024ee3a_2
   - kiwisolver=1.1.0=py36he6710b0_0
   - libedit=3.1.20181209=hc058e9b_0
@@ -45,7 +47,7 @@ dependencies:
   - networkx=2.4=py_0
   - numpy=1.17.4=py36hc1035e2_0
   - numpy-base=1.17.4=py36hde5b4d6_0
-  - openssl=1.1.1d=h516909a_0
+  - openssl=1.1.1=h7b6447c_0
   - pcre=8.43=he6710b0_0
   - pip=19.3.1=py36_0
   - pyparsing=2.4.5=py_0
@@ -64,4 +66,5 @@ dependencies:
   - wheel=0.33.6=py36_0
   - xz=5.2.4=h14c3975_4
   - zlib=1.2.11=h7b6447c_3
+prefix: /home/kylew/.conda/envs/gudhi
 
