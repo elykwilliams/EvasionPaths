@@ -2,31 +2,33 @@ from evasion_path import *
 from statistics import *
 from joblib import Parallel, delayed
 
+
 # Setup
-#   Step 1: Define problem parameters in run_experiment()
-#   Step 2: Create Boundary and Motion Objects
-#   Step 3: Create Evasion Paths Object, this is the main simulation object
-#   Step 4: Set number of runs per data save, n_runs
-#   Step 5: Set number of saves in main(), m_runs, for a total of m_runs*n_runs data points
-#   Step 6: Set output directory, and data filename_base in main(),
-#           ** Old data file with same name will be APPENDED to **
-#           output directory is relative to this file location
+#   Set parameters at top of script
+#   Motion Model or Boundary type are set in simulate()
 
 # Run
-#   run script as main
+#   python sample_experiment.py
 
 # Output
-# There will be one output file in the selected output directory named filename_base.txt
-# Each line will contain an element from the returned data points from run_experiment().
-# Errors will be indicated, a seperate error-x.log file will appear if there were simulation
-# errors with full details.
-# Unhandled errors will be dumped to standard out; user can redirect if wished.
+#   There will be one output file in the selected output directory named filename_base.txt
+#   Each line will contain an element from the returned data points from run_experiment() or
+#       indicate an error.
+#   Detailed error messages will be dumped to error-x.log where x is the jobid.
+#   Unhandled errors will be dumped to standard out; user can redirect if wished.
+
+n_sensors = 15
+sensing_radius = 0.2
+dt = 0.01
+
+output_dir = "./output"
+filename_base = "data"
+
+runs_per_save = 5
+n_checkpoints = 1
 
 
-def run_experiment():
-    n_sensors = 15
-    sensing_radius = 0.2
-    dt = 0.01
+def simulate(jobid):
 
     unit_square = Boundary(spacing=sensing_radius)
 
@@ -35,47 +37,58 @@ def run_experiment():
                                      sensing_radius=sensing_radius,
                                      boundary=unit_square)
 
-    my_sim = EvasionPathSimulation(unit_square, brownian_motion, n_sensors, sensing_radius, dt)
-    error_log = lambda i: "err-" + str(i) + ".log"
+    simulation = EvasionPathSimulation(boundary=unit_square,
+                                       motion_model=brownian_motion,
+                                       n_sensors=n_sensors,
+                                       sensing_radius=sensing_radius,
+                                       dt=dt)
 
-    n_runs = 5
-    times = Parallel(n_jobs=-1)(delayed(simulate)(my_sim, error_log(i))
-                                for i in range(n_runs))
-
-    return times
-
-
-def simulate(simulation, error_log=""):
+    error_log = output_dir+"/error-" + str(jobid) + ".log"
 
     try:
         simulation.run()
     except GraphNotConnected:
         return "Graph not connected"
+
     except KeyError as err:
         with open(error_log, "a+") as file:
             file.write("Key Error Found\n")
-            file.write("\tAttempted to find boundary cycle:"+str(err))
-            file.write("\tDuring attempted:" + simulation.evasion_paths)
+            file.write("\tAttempted to find boundary cycle:" + str(err)+"\n")
+            file.write("\tDuring attempted:" + simulation.evasion_paths+"\n")
         return "Key Error"
+
     except MaxRecursionDepth as err:
         return "Max recursion depth exceeded"
+
     except InvalidStateChange as err:
         with open(error_log, "a+") as file:
-            file.write("Unhandled state change error")
-            file.write(str(err))
+            file.write("Unhandled state change error"+"\n")
+            file.write(str(err)+"\n")
         return "Unhandled State Change"
+
     except AssertionError as err:
         with open(error_log, "a+") as file:
-            file.write("Key Error Found")
-            file.write("\tAttempted to find boundary cycle:" + str(err))
-            file.write("\tDuring attempted:" + simulation.evasion_paths)
+            file.write("Key Error Found"+"\n")
+            file.write("\tAttempted to find boundary cycle:" + str(err)+"\n")
+            file.write("\tDuring attempted:" + simulation.evasion_paths+"\n")
         return "Assert Error"
+
     except Exception as err:
         with open(error_log, "a+") as file:
-            file.write("Unknown Error Occured" + str(err))
+            file.write("Unknown Error Occured" + str(err)+"\n")
         return "Unknown Error"
+
     else:
         return simulation.time
+
+
+def run_experiment():
+    times = \
+        Parallel(n_jobs=-1)(
+            delayed(simulate)(i)
+            for i in range(runs_per_save)
+        )
+    return times
 
 
 def output_data(filename, data_points):
@@ -85,11 +98,8 @@ def output_data(filename, data_points):
 
 
 def main():
-    output_dir = "./output"
-    filename_base = "data"
     data = []
-    m_runs = 3
-    for run in range(m_runs):
+    for run in range(n_checkpoints):
         file_name = output_dir + "/" + filename_base + ".txt"
         try:
             data = run_experiment()
