@@ -5,6 +5,7 @@ from combinatorial_map import *
 from numpy import sqrt
 from gudhi import AlphaComplex
 import networkx as nx
+import matplotlib.pyplot as plt
 
 
 def nodes2str(nodes): return str(sorted(tuple(nodes)))
@@ -626,26 +627,31 @@ class EvasionPathSimulation:
         if graph.order() >= 3:
             return True
 
+    def plot(self, fig_num, filename_base=""):
+        fig = plt.figure(fig_num+1)
+        ax = plt.gca()
+        fig.add_axes(ax)
+        nx.draw_networkx_labels(self.G, dict(enumerate(self.points)))
 
-def plot(Graph, points, fig, ax):
-    ax.clear()
-    nx.draw_networkx_labels(Graph, dict(enumerate(points)))
+        # for s in self.boundary_cycles:
+        #     if self.is_hole(s):
+        #         nx.draw(s, self.points, node_color="r", edge_color="r")
 
-    # for s in self.boundary_cycles:
-    #     if self.is_hole(s):
-    #         nx.draw(s, self.points, node_color="r", edge_color="r")
+        for cycle in boundary_cycle_nodes(self.cmap):
+            x_pts = [self.points[n][0] for n in cycle]
+            y_pts = [self.points[n][1] for n in cycle]
+            if set(cycle) == set(self.alpha_shape):
+                continue
+            if self.cell_label[nodes2str(cycle)]:
+                ax.fill(x_pts, y_pts, 'r')
+            else:
+                ax.fill(x_pts, y_pts, 'g')
 
-    # for cycle in boundary_cycle_nodes(self.cmap):
-    # x_pts = [points[n][0] for n in cycle]
-    # y_pts = [points[n][1] for n in cycle]
-    # if set(cycle) == set(self.alpha_shape):
-    #    continue
-    # if self.cell_label[nodes2str(cycle)]:
-    #     ax.fill(x_pts, y_pts, 'r')
-    # else:
-    #     ax.fill(x_pts, y_pts, 'g')
-
-    nx.draw(Graph, dict(enumerate(points)), node_color="b", edge_color="k")
+        nx.draw(self.G, dict(enumerate(self.points)), node_color="b", edge_color="k")
+        if filename_base:
+            plt.savefig(filename_base)
+        else:
+            plt.show()
 
 
 if __name__ == "__main__":
