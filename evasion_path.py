@@ -54,15 +54,16 @@ class GraphNotConnected(Exception):
 
 
 class EvasionPathSimulation:
-    def __init__(self, dt, end_time=0):
+    def __init__(self, dt, end_time=0, ):
         # Parameters
         self.n_interior_sensors = 15
         self.sensing_radius = 0.15
         self.dt = dt
         self.Tend = end_time
 
-        boundary = Boundary(spacing=self.sensing_radius,
-                            x_min=0.0, y_min=0.0, x_max=1.0, y_max=1.0)
+        boundary = Boundary(spacing=self.sensing_radius)
+
+        points = generate_points(boundary, self.n_interior_sensors, self.sensing_radius)
 
         self.brownian_motion = BrownianMotion(dt=self.dt,
                                               sigma=0.01,
@@ -73,10 +74,10 @@ class EvasionPathSimulation:
         self.n_steps = 0
 
         # Point data
-        self.points = self.brownian_motion.generate_points(n_interior_pts=self.n_interior_sensors)
+        self.points = points
         self.old_points = self.points.copy()
         self.n_sensors = len(self.points)
-        self.alpha_shape = list(range(len(self.brownian_motion.boundary)))
+        self.alpha_shape = list(range(len(boundary)))
 
         # Complex info
         alpha_complex = AlphaComplex(self.points)

@@ -1,7 +1,16 @@
 # Kyle Williams 2/4/20
 
 from boundary_geometry import *
-from numpy import sqrt, random
+from numpy import sqrt, random, sin, pi
+
+
+def generate_points(boundary, n_sensors, radius):
+    interior_pts = []
+    for _ in range(n_sensors):
+        rand_x = np.random.uniform(boundary.x_min + radius, boundary.x_max - radius)
+        rand_y = np.random.uniform(boundary.y_min + radius, boundary.y_max - radius)
+        interior_pts.append((rand_x, rand_y))
+    return boundary.points + interior_pts
 
 
 class BrownianMotion:
@@ -14,16 +23,8 @@ class BrownianMotion:
     def epsilon(self):  # Model selected by Deepjoyti
         return self.sigma*sqrt(self.dt)*random.normal(0, 1)
 
-    def generate_points(self, n_interior_pts):
-        interior_pts = []
-        for _ in range(n_interior_pts):
-            rand_x = np.random.uniform(self.boundary.x_min + self.radius, self.boundary.x_max - self.radius)
-            rand_y = np.random.uniform(self.boundary.y_min + self.radius, self.boundary.y_max - self.radius)
-            interior_pts.append((rand_x, rand_y))
-        return self.boundary.points + interior_pts
-
     def update_points(self, old_points):
-        dx = self.radius
+        dx = self.radius*sin(pi/3)
 
         interior_pts = old_points[len(self.boundary):]
 
