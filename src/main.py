@@ -1,6 +1,6 @@
 # Kyle Williams 2/25/20
 
-from .evasion_path import *
+from evasion_path import *
 from matplotlib.animation import FuncAnimation
 import matplotlib.pyplot as plt
 
@@ -34,10 +34,10 @@ def fun(i):
     else:
         return simplex.n_steps, time
 
-
+if __name__=="__main__":
 #print(Parallel(n_jobs=-1)(delayed(fun)(i) for i in range(1, 11)))
 # print(Parallel(n_jobs=-1)(delayed(fun)() for _ in range(4)))
-print(fun(1))
+    print(fun(1))
 
 # def update(timestep):
 #     global simulation

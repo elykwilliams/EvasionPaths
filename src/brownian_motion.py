@@ -1,6 +1,6 @@
 # Kyle Williams 2/25/20
 
-from .boundary_geometry import *
+from boundary_geometry import *
 from numpy import sqrt, random, sin, pi
 
 

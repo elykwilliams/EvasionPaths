@@ -1,5 +1,8 @@
 # Kyle Williams 2/25/20
-from .evasion_path import *
+import sys, os
+sys.path.insert(1, '../src')
+
+from evasion_path import *
 from statistics import *
 from joblib import Parallel, delayed
 
@@ -25,8 +28,8 @@ dt = 0.01
 output_dir = "./output"
 filename_base = "data"
 
-runs_per_save = 5
-n_checkpoints = 1
+n_runs = 10000
+n_checkpoints = 200
 
 
 def simulate(jobid):
@@ -87,7 +90,7 @@ def run_experiment():
     times = \
         Parallel(n_jobs=-1)(
             delayed(simulate)(i)
-            for i in range(runs_per_save)
+            for i in range(int(n_runs/n_checkpoints))
         )
     return times
 
@@ -100,8 +103,13 @@ def output_data(filename, data_points):
 
 def main():
     data = []
+    file_name = output_dir + "/" + filename_base + ".txt"
+    
+    # Make sure output directory exists
+    if not os.path.exists(output_dir):
+        os.mkdir(output_dir)
+    
     for run in range(n_checkpoints):
-        file_name = output_dir + "/" + filename_base + ".txt"
         try:
             data = run_experiment()
         except Exception as e:
@@ -109,14 +117,13 @@ def main():
             print(type(e), e)
             print("Dumping Data:")
             print(data)
-        else:
-            try:
-                output_data(file_name, data)
-            except Exception as e:
-                print("Output Failed")
-                print(type(e), e)
-                print("Dumping Data:")
-                print(data)
+        try:
+            output_data(file_name, data)
+        except Exception as e:
+            print("Output from Experiment #" + str(run) + "has failed")
+            print(type(e), e)
+            print("Dumping Data:")
+            print(data)
 
 
 if __name__ == "__main__":
