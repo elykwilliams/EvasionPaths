@@ -100,10 +100,6 @@ class EvasionPathSimulation:
         for simplex in self.simplices:
             self.cell_label[nodes2str(simplex)] = False
 
-        # for key in self.cell_label:
-        #     print(key, self.cell_label[key])
-        # print("#####")
-
     def run(self):
         if self.Tend > self.dt:
             while self.time < self.Tend:
