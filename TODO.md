@@ -2,13 +2,14 @@
  - Billiard Motion
  - Run and Tumble Motion
  - Compress long animations
- - Add color legend to animation
+ - Add simplex.evasion_path to list per timestep to generate log
  
 # Bugs:
  - Fix Environment files to be portable
  - Unknown Error somewhere in evasion_path.run(): 
-    
+ 
         "list assignment index out of range"
+ 
     
 # Development:
  - Work towards allowing disconnected graph
@@ -26,13 +27,17 @@
  - DOxygen?
  
 # Structural:
- - Refactor do_timestep() and do_adaptive_timestep() into one function
+ - Incorporate virtual boundary into Boundary not MotionModel
  - Simplify example scripts
  - Is it possible to separate out find_evasion_paths() function from EvasionPath class?
+ - ....Somthing like find_evasion_path(old_complex, new_complex)
  - Use dart representation of boundary cycles instead of of just a set of nodes
- - Figure out confusing `sorted_edges[]` in Combinatorial Map 
-
+ - Rework Combinatorial Map using networkx.DiGraph?
+ - ....or use dart representation of bcycles. Maybe manage dart mapping directly by comparing added/removed edges?
+ - Refactor EvasionPathSimulation.points completely into MotionModel  
+ - Move point generation inside boundary class
 # Experiments
- - R-slice
+ - N - slice
+ - R - slice
  - N-R sample
  

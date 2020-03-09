@@ -18,8 +18,6 @@ def theta(a, center):
 
 class CMap:
     def __init__(self, graph, points=[], rotation_data=[]):
-        self.sorted_edges = dict()
-        self.sorted_neighbors = dict()
         self.sorted_darts = dict()
 
         self.edge2dart = dict()
@@ -27,10 +25,10 @@ class CMap:
 
         for n, edge in enumerate(graph.edges()):
             self.edge2dart[edge] = 2*n
-            self.edge2dart[(edge[1], edge[0])] = 2*n + 1
+            self.edge2dart[tuple(reversed(edge))] = 2*n + 1
 
             self.dart2edge[2*n] = edge
-            self.dart2edge[2*n+1] = (edge[1], edge[0])
+            self.dart2edge[2*n+1] = tuple(reversed(edge))
 
         # Get rotational information
         if rotation_data:
@@ -42,9 +40,10 @@ class CMap:
         for node in graph.nodes():
             self.sorted_darts[node] = [self.edge2dart[(e2, e1)] for (e1, e2) in sorted_edges[node]]
 
-        self.G = graph
-        self.points = points  # only used for plotting
         self.darts = list(range(2*graph.size()))
+
+        self.G = graph          # only used for plotting
+        self.points = points    # only used for plotting
 
     def sigma(self, dart):
         # Get node
@@ -54,15 +53,17 @@ class CMap:
         index = self.sorted_darts[node].index(dart)
 
         # Number of neighbors
-        size = len(list(self.G.neighbors(node)))
+        size = len(self.sorted_darts[node])
 
         # Get next dart, wrap-around if out of range
         return self.sorted_darts[node][(index+1) % size]
 
     def alpha(self, dart):
-        # swap edge nodes, for other complement dart
+        # get corresponding edge nodes
         e1, e2 = self.dart2edge[dart]
-        return self.edge2dart[(e2, e1)] 
+
+        # swap edge nodes to get corresponding dart
+        return self.edge2dart[(e2, e1)]
 
     def phi(self, dart):
         return self.sigma(self.alpha(dart))
@@ -119,7 +120,9 @@ def get_rotational_data(graph, points):
         anticlockwise, clockwise = False, True
 
         # Sort
-        sorted_zip = sorted(neighbor_zip, key=lambda pair: theta(pair[1], points[node]), reverse=anticlockwise)
+        sorted_zip = sorted(neighbor_zip,
+                            key=lambda pair: theta(pair[1], points[node]),
+                            reverse=anticlockwise)
 
         # Extract sorted edges
         sorted_edges[node] = [(node, n) for (n, _) in sorted_zip]
@@ -150,7 +153,7 @@ def boundary_cycle_nodes(cmap: CMap):
     simplex_nodes = []
     for n, cycle in enumerate(cmap.boundary_cycles()):
         simplex_edges = [cmap.dart2edge[dart] for dart in cycle]  # get next edge
-        simplex_nodes.append([node for (node, _) in simplex_edges])  # get first node from edge
+        simplex_nodes.append(tuple([node for (node, _) in simplex_edges]))  # get first node from edge
 
     return simplex_nodes
 
@@ -162,6 +165,8 @@ if __name__ == "__main__":
     G.remove_edge(1, 3)
     G.add_edge(1, 0)
     G.add_edge(4, 0)
+
+    print(len(G[0]))
     # G = nx.gnm_random_graph(10, 15)
     mypoints = [(cos(theta), sin(theta)) for theta in [2*pi*n/G.order() for n in range(G.order())]]
 
@@ -170,6 +175,9 @@ if __name__ == "__main__":
     plt.show()
 
     c_map = CMap(G, mypoints)
+
+    c_map.plot()
+    plt.show()
 
     print(c_map.boundary_cycles())
 
