@@ -2,11 +2,10 @@
 from evasion_path import *
 import matplotlib.pyplot as plt
 from matplotlib.animation import FuncAnimation
-import matplotlib.patches as mpatches
 
 num_sensors = 10
 sensing_radius = 0.2
-timestep_size = 0.01
+timestep_size = 0.1
 
 run_number = 5
 output_dir = './'
@@ -55,21 +54,17 @@ def plot_alpha_complex(sim):
         ypts = [sim.points[n][1] for n in edge]
         ax.plot(xpts, ypts, color='r', alpha=0.15)
 
-    # Shrink current axis by 20%
-    red_patch = mpatches.Patch(color='red', label='The red data', alpha=0.1)
-    ax.add_artist(ax.legend(handles=[red_patch], loc='center left', bbox_to_anchor=(1, 0.5)))
-
 
 def plot_no_intruder(sim):
     fig = plt.gcf()
     ax = fig.gca()
 
-    for cycle in boundary_cycle_nodes(sim.cmap):
+    for cycle in sim.get_boundary_cycles():
         x_pts = [sim.points[n][0] for n in cycle]
         y_pts = [sim.points[n][1] for n in cycle]
         if set(cycle) == set(sim.alpha_shape):
             continue
-        if sim.cell_label[nodes2str(cycle)]:
+        if sim.cell_label[node2hash(cycle)]:
             ax.fill(x_pts, y_pts, color='k', alpha=0.2)
         else:
             pass
@@ -86,7 +81,7 @@ def update(timestep):
     ax.cla()
     ax.axis("off")
     ax.axis("equal")
-    ax.set_title("T = " + str(round(simulation.dt*timestep, 2)), loc="left")
+    ax.set_title("T = " + "{:5.2f}".format(timestep_size*timestep), loc="left")
     fig.add_axes(ax)
 
     plot_no_intruder(simulation)
@@ -95,8 +90,8 @@ def update(timestep):
 
 
 def animate():
-    n_steps = 50
-    ms_per_frame = 100
+    n_steps = 500
+    ms_per_frame = 100*timestep_size
     fig = plt.figure(1)
     try:
         ani = FuncAnimation(fig, update, interval=ms_per_frame, frames=n_steps)
