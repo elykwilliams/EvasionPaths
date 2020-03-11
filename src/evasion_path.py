@@ -1,12 +1,8 @@
-# Kyle Williams 2/25/20
+# Kyle Williams 3/8/20
 from brownian_motion import *
 from combinatorial_map import *
 from gudhi import AlphaComplex
 import networkx as nx
-import matplotlib.pyplot as plt
-
-
-def node2hash(nodes): return tuple(sorted(nodes))
 
 
 def interpolate_points(old_points, new_points, t):
@@ -48,11 +44,7 @@ class MaxRecursionDepth(Exception):
 
 
 class GraphNotConnected(Exception):
-    def __init__(self):
-        pass
-
-    def __str__(self):
-        return "Graph not connected"
+    def __str__(self): return "Graph not connected"
 
 
 class EvasionPathSimulation:
@@ -91,18 +83,6 @@ class EvasionPathSimulation:
         self.edges = [tuple(simplex) for simplex, _ in simplex_tree.get_skeleton(1) if len(simplex) == 2]
         self.simplices = [tuple(simplex) for simplex, _ in simplex_tree.get_skeleton(2) if len(simplex) == 3]
 
-        # Set initial labeling
-        self.boundary_cycles = self.get_boundary_cycles()
-
-        for bcycle in self.boundary_cycles:
-            self.cell_label[node2hash(bcycle)] = True
-        for simplex in self.simplices:
-            self.cell_label[node2hash(simplex)] = False
-
-        # Update old data
-        self.update_old_data()
-
-    def get_boundary_cycles(self):
         graph = nx.Graph()
         graph.add_nodes_from(range(self.n_sensors))
         graph.add_edges_from(self.edges)
@@ -111,8 +91,22 @@ class EvasionPathSimulation:
         if not nx.is_connected(graph):
             raise GraphNotConnected()
 
-        cmap = CMap(graph, self.points)
-        return [bc for bc in boundary_cycle_nodes(cmap) if set(bc) != set(self.alpha_shape)]
+        self.cmap = CMap(graph, self.points)
+
+        # Set initial labeling
+        self.boundary_cycles = self.get_boundary_cycles()
+
+        for cycle in self.boundary_cycles:
+            self.cell_label[cycle] = True
+        for simplex in self.simplices:
+            self.cell_label[self.cmap.nodes2cycle(simplex)] = False
+
+        # Update old data
+        self.update_old_data()
+
+    def get_boundary_cycles(self):
+        return [bc for bc in self.cmap.get_boundary_cycles()
+                if bc != self.cmap.nodes2cycle(self.alpha_shape)]
 
     def update_old_data(self):
         self.old_points = self.points.copy()
@@ -139,12 +133,10 @@ class EvasionPathSimulation:
             return self.time
 
     def do_timestep(self, new_points=(), level=0):
+
+        t_values = [0.5, 1.0]
         if level == 0:
-            t_values = [1]
-        else:
-            temp_dt = 0.5
-            t_values = np.arange(temp_dt, 1.01, temp_dt)
-            assert new_points != []
+            t_values = [1.0]
 
         for t in t_values:
 
@@ -161,6 +153,16 @@ class EvasionPathSimulation:
             self.edges = [tuple(simplex) for simplex, _ in simplex_tree.get_skeleton(1) if len(simplex) == 2]
             self.simplices = [tuple(simplex) for simplex, _ in simplex_tree.get_skeleton(2) if len(simplex) == 3]
 
+            graph = nx.Graph()
+            graph.add_nodes_from(range(self.n_sensors))
+            graph.add_edges_from(self.edges)
+
+            # Check if graph is connected
+            if not nx.is_connected(graph):
+                raise GraphNotConnected()
+
+            self.cmap = CMap(graph, self.points)
+
             # Update Holes
             self.boundary_cycles = self.get_boundary_cycles()
 
@@ -170,27 +172,30 @@ class EvasionPathSimulation:
                 self.n_steps += 1
 
             except InvalidStateChange as exception:
+
                 if level == 20:
                     raise MaxRecursionDepth(exception)
 
                 # Reset current level to previous step
                 self.reset_current_data()
-                self.do_timestep(self.points, level=level+1)
+                self.do_timestep(self.points, level=level + 1)
 
             # Update old data
             self.update_old_data()
 
     def find_evasion_paths(self):
-        edges_added = set(self.edges).difference(set(self.old_edges))
-        edges_removed = set(self.old_edges).difference(set(self.edges))
-        simplices_added = set(self.simplices).difference(set(self.old_simplices))
-        simplices_removed = set(self.old_simplices).difference(set(self.simplices))
 
-        tempnewcycles = [node2hash(cycle) for cycle in self.boundary_cycles]
-        tempoldcycles = [node2hash(cycle) for cycle in self.old_cycles]
+        def set_difference(list1, list2):
+            return set(list1).difference(set(list2))
 
-        cycles_added = set(tempnewcycles).difference(set(tempoldcycles))
-        cycles_removed = set(tempoldcycles).difference(set(tempnewcycles))
+        edges_added = set_difference(self.edges, self.old_edges)
+        edges_removed = set_difference(self.old_edges, self.edges)
+
+        simplices_added = set_difference(self.simplices, self.old_simplices)
+        simplices_removed = set_difference(self.old_simplices, self.simplices)
+
+        cycles_added = set_difference(self.boundary_cycles, self.old_cycles)
+        cycles_removed = set_difference(self.old_cycles, self.boundary_cycles)
 
         cycle_change = len(self.boundary_cycles) - len(self.old_cycles)
 
@@ -203,107 +208,49 @@ class EvasionPathSimulation:
             self.evasion_paths = "No Change"
 
         # Add Edge
-        elif case == (1, 0, 0, 0, 2, 1) or case == (1, 0, 0, 0, 1, 0):
+        elif case == (1, 0, 0, 0, 2, 1):
             self.evasion_paths = "One edge added"
 
-            # newedge  = (n1, n2)
-            edge = edges_added.pop()
-
-            # Find all current boundary cycles that contain n1 and n2
-            relevant_new_cycles = [node2hash(s) for s in self.boundary_cycles
-                                   if set(edge).issubset(set(s))]
-
-            # Find all old boundary cycles containing n1 and n2
-            relevant_old_cycles = [node2hash(s) for s in self.old_cycles
-                                   if set(edge).issubset(set(s))]
-
-            # Filter out unchanged cycles from newcycle
-            new_cycles = set(relevant_new_cycles).difference(set(relevant_old_cycles))
-            old_cycles = set(relevant_old_cycles).difference(set(relevant_new_cycles))
-
-            # Check for case where cycle is formed in other cycle interior
-            if len(old_cycles) == 0 and len(new_cycles) == 1:
-                new_cycles = relevant_new_cycles
-                old_cycles = relevant_old_cycles
-
-            # Assumption:
-            # There are exactly two new boundary cycles, and only one old cycle that was removed
-
-            if len(new_cycles) != 2 or len(old_cycles) != 1:
-                print("Old: ", relevant_old_cycles)
-                print("New: ", relevant_new_cycles)
-                assert (len(new_cycles) == 2 and len(old_cycles) == 1)
-
-            removed_cycle = old_cycles.pop()
+            old_cycle = cycles_removed.pop()
 
             # Add new boundary cycles to dictionary, they retain the same label as the old cycle
-            for cycle in new_cycles:
-                self.cell_label[cycle] = self.cell_label[removed_cycle]
+            for cycle in cycles_added:
+                self.cell_label[cycle] = self.cell_label[old_cycle]
 
             # Remove old boundary cycle from dictionary
-            if removed_cycle not in new_cycles:
-                del self.cell_label[removed_cycle]
+            del self.cell_label[old_cycle]
 
         # Remove Edge
-        elif case == (0, 1, 0, 0, 1, 2) or case == (0, 1, 0, 0, 0, 1):
+        elif case == (0, 1, 0, 0, 1, 2):
             self.evasion_paths = "One edge removed"
-            # Find relevant boundary cycles
 
-            # edge = (n1, n2)
-            edge = edges_removed.pop()
+            new_cycle = cycles_added.pop()
 
-            # Find all current boundary cycles that contain n1 and n2
-            relevant_new_cycles = [node2hash(s) for s in self.boundary_cycles
-                                   if set(edge).issubset(set(s))]
+            # Add new boundary cycles to dictionary, they retain the same label as the old cycle
+            self.cell_label[new_cycle] = any([self.cell_label[s] for s in cycles_removed])
 
-            # Find all old boundary cycles containing n1 and n2
-            relevant_old_cycles = [node2hash(s) for s in self.old_cycles
-                                   if set(edge).issubset(set(s))]
-
-            # Filter out unchanged cycles from newcycle
-            new_cycles = set(relevant_new_cycles).difference(set(relevant_old_cycles))
-            old_cycles = set(relevant_old_cycles).difference(set(relevant_new_cycles))
-
-            # Check for case where cycle is formed in other cycle interior
-            if len(old_cycles) == 1 and len(new_cycles) == 0:
-                new_cycles = relevant_new_cycles
-                old_cycles = relevant_old_cycles
-
-            # Assumption:
-            # There are exactly two old boundary cycles, and only one new cycle
-
-            if len(new_cycles) != 1 or len(old_cycles) != 2:
-                print("Old: ", relevant_old_cycles)
-                print("New: ", relevant_new_cycles)
-                assert (len(new_cycles) == 1 and len(old_cycles) == 2)
-
-            added_cycle = new_cycles.pop()
-
-            # Add new boundary cycle to dictionary, label will be true if either old cycle label was true
-            self.cell_label[added_cycle] = any([self.cell_label[s] for s in old_cycles])
-
-            # Remove old boundary cycles from dictionary
-            for cycle in old_cycles:
-                if cycle != added_cycle:
-                    del self.cell_label[cycle]
+            # Remove old boundary cycle from dictionary
+            for cycle in cycles_removed:
+                del self.cell_label[cycle]
 
         # Add Simplex
         elif case == (0, 0, 1, 0, 0, 0):
             self.evasion_paths = "One simplex added"
 
+            new_simplex = simplices_added.pop()
             # Find relevant boundary cycle
-            cycle = node2hash(simplices_added.pop())
+            cycle = self.cmap.nodes2cycle(new_simplex)
 
             # Update existing boundary cycle
             self.cell_label[cycle] = False
 
         # Remove Simplex
-        elif case == (0, 0, 0, 1, 0, 0) and cycle_change == 0:
+        elif case == (0, 0, 0, 1, 0, 0):
             self.evasion_paths = "One simplex removed"
             # No label change needed
 
         # Edge and Simplex Added
-        elif case == (1, 0, 1, 0, 2, 1) or case == (1, 0, 1, 0, 1, 0):
+        elif case == (1, 0, 1, 0, 2, 1):
             edge = edges_added.pop()
             simplex = simplices_added.pop()
             if not set(edge).issubset(set(simplex)):
@@ -315,50 +262,20 @@ class EvasionPathSimulation:
 
             self.evasion_paths = "Edge and Simplex added"
 
-            # Given:
-            # The added edge is an edge of the simplex.
-
-            # Find all current boundary cycles that contain n1 and n2
-            relevant_new_cycles = [node2hash(s) for s in self.boundary_cycles
-                                   if set(edge).issubset(set(s))]
-
-            # Find all old boundary cycles containing n1 and n2
-            relevant_old_cycles = [node2hash(s) for s in self.old_cycles
-                                   if set(edge).issubset(set(s))]
-
-            # Filter out unchanged cycles from newcycle
-            new_cycles = set(relevant_new_cycles).difference(set(relevant_old_cycles))
-            old_cycles = set(relevant_old_cycles).difference(set(relevant_new_cycles))
-
-            # Check for case where cycle is formed in other cycle interior
-            if len(old_cycles) == 0 and len(new_cycles) == 1:
-                new_cycles = relevant_new_cycles
-                old_cycles = relevant_old_cycles
-
-            # Assumption:
-            # There are exactly two new boundary cycles, and only one old cycle that was removed
-
-            if len(new_cycles) != 2 or len(old_cycles) != 1:
-                print("Old: ", relevant_old_cycles)
-                print("New: ", relevant_new_cycles)
-                assert (len(new_cycles) == 2 and len(old_cycles) == 1)
-
-            removed_cycle = old_cycles.pop()
-            added_simplex = node2hash(simplex)
+            old_cycle = cycles_removed.pop()
+            added_simplex = self.cmap.nodes2cycle(simplex)
 
             # Add new boundary cycles to dictionary, they retain the same label as the old cycle
-            for cycle in new_cycles:
-                self.cell_label[cycle] = self.cell_label[removed_cycle]
+            for cycle in cycles_added:
+                self.cell_label[cycle] = self.cell_label[old_cycle]
 
-            # Set label of simplex as false
             self.cell_label[added_simplex] = False
 
             # Remove old boundary cycle from dictionary
-            if removed_cycle not in new_cycles:
-                del self.cell_label[removed_cycle]
+            del self.cell_label[old_cycle]
 
         # Edge and Simplex Removed
-        elif case == (0, 1, 0, 1, 1, 2) or case == (0, 1, 0, 1, 0, 1):
+        elif case == (0, 1, 0, 1, 1, 2):
             edge = edges_removed.pop()
             simplex = simplices_removed.pop()
             if not set(edge).issubset(set(simplex)):
@@ -369,41 +286,14 @@ class EvasionPathSimulation:
                                          cycle_change)
 
             self.evasion_paths = "Edge and simplex removed"
+            new_cycle = cycles_added.pop()
 
-            # Find all current boundary cycles that contain n1 and n2
-            relevant_new_cycles = [node2hash(s) for s in self.boundary_cycles
-                                   if set(edge).issubset(set(s))]
+            # Add new boundary cycles to dictionary, they retain the same label as the old cycle
+            self.cell_label[new_cycle] = any([self.cell_label[s] for s in cycles_removed])
 
-            # Find all old boundary cycles containing n1 and n2
-            relevant_old_cycles = [node2hash(s) for s in self.old_cycles
-                                   if set(edge).issubset(set(s))]
-
-            # Filter out unchanged cycles from newcycle
-            new_cycles = set(relevant_new_cycles).difference(set(relevant_old_cycles))
-            old_cycles = set(relevant_old_cycles).difference(set(relevant_new_cycles))
-
-            # Check for case where cycle is formed in other cycle interior
-            if len(old_cycles) == 1 and len(new_cycles) == 0:
-                new_cycles = relevant_new_cycles
-                old_cycles = relevant_old_cycles
-
-            # Assumption:
-            # There are exactly two old boundary cycles, and only one new cycle
-
-            if len(new_cycles) != 1 or len(old_cycles) != 2:
-                print("Old: ", relevant_old_cycles)
-                print("New: ", relevant_new_cycles)
-                assert (len(new_cycles) == 1 and len(old_cycles) == 2)
-
-            added_cycle = new_cycles.pop()
-
-            # Add new boundary cycle to dictionary, label will be true if either old cycle label was true
-            self.cell_label[added_cycle] = any([self.cell_label[s] for s in old_cycles])
-
-            # Remove old boundary cycles from dictionary
-            for s in old_cycles:
-                if s != added_cycle:
-                    del self.cell_label[s]
+            # Remove old boundary cycle from dictionary
+            for cycle in cycles_removed:
+                del self.cell_label[cycle]
 
         # Delunay Flip
         elif case == (1, 1, 2, 2, 2, 2):
@@ -428,12 +318,12 @@ class EvasionPathSimulation:
             self.evasion_paths = "Delunay Flip"
 
             # Add new boundary cycles
-            for cycle in simplices_added:
-                self.cell_label[node2hash(cycle)] = False
+            for cycle in cycles_added:
+                self.cell_label[cycle] = False
 
             # Remove old boundary cycles
-            for cycle in simplices_removed:
-                del self.cell_label[node2hash(cycle)]
+            for cycle in cycles_removed:
+                del self.cell_label[cycle]
 
         else:
             raise InvalidStateChange(edges_added, edges_removed, simplices_added,

@@ -16,19 +16,24 @@ def theta(a, center):
     return atan2(oa[1], oa[0])
 
 
+def edge2dart(edge: tuple):
+    return ",".join(map(str, edge))
+
+
+def dart2edge(dart: str):
+    return tuple(map(int, dart.split(",")))
+
+
 class CMap:
-    def __init__(self, graph, points=[], rotation_data=[]):
-        self.sorted_darts = dict()
 
-        self.edge2dart = dict()
-        self.dart2edge = dict()
+    def nodes2cycle(self, nodes):
+        index = self._boundary_cycle_nodes_unique.index(set(nodes))
+        return tuple(sorted(self._boundary_cycles[index]))
 
-        for n, edge in enumerate(graph.edges()):
-            self.edge2dart[edge] = 2*n
-            self.edge2dart[tuple(reversed(edge))] = 2*n + 1
-
-            self.dart2edge[2*n] = edge
-            self.dart2edge[2*n+1] = tuple(reversed(edge))
+    def __init__(self, graph, points=(), rotation_data=()):
+        self._sorted_darts = dict()
+        self._boundary_cycles = []
+        self._boundary_cycle_nodes_unique = []
 
         # Get rotational information
         if rotation_data:
@@ -36,45 +41,49 @@ class CMap:
         else:
             sorted_edges = get_rotational_data(graph, points)
 
-        # Not 100% sure why e1, e2 need to be flipped to make things work
         for node in graph.nodes():
-            self.sorted_darts[node] = [self.edge2dart[(e2, e1)] for (e1, e2) in sorted_edges[node]]
+            self._sorted_darts[node] = [edge2dart((e2, e1)) for (e1, e2) in sorted_edges[node]]
 
-        self.darts = list(range(2*graph.size()))
+        self.darts = [edge2dart((e1, e2)) for e1, e2 in graph.edges]
+        self.darts.extend([edge2dart((e2, e1)) for e1, e2 in graph.edges])
 
         self.G = graph          # only used for plotting
         self.points = points    # only used for plotting
 
+        self.set_boundary_cycles()
+
     def sigma(self, dart):
         # Get node
-        neighbor, node = self.dart2edge[dart]  # flip order?
+        neighbor, node = dart2edge(dart)
 
         # Get index of given dart
-        index = self.sorted_darts[node].index(dart)
+        index = self._sorted_darts[node].index(dart)
 
         # Number of neighbors
-        size = len(self.sorted_darts[node])
+        size = len(self._sorted_darts[node])
 
         # Get next dart, wrap-around if out of range
-        return self.sorted_darts[node][(index+1) % size]
+        return self._sorted_darts[node][(index + 1) % size]
 
     def alpha(self, dart):
         # get corresponding edge nodes
-        e1, e2 = self.dart2edge[dart]
+        e1, e2 = dart2edge(dart)
 
         # swap edge nodes to get corresponding dart
-        return self.edge2dart[(e2, e1)]
+        return edge2dart((e2, e1))
 
     def phi(self, dart):
         return self.sigma(self.alpha(dart))
 
     def plot(self):
+        temp_dict = {edge: edge2dart(edge) for edge in self.G.edges}
+        temp_dict.update({reversed(edge): edge2dart(reversed(edge)) for edge in self.G.edges})
         nx.draw_networkx_labels(self.G, dict(enumerate(self.points)))
-        nx.draw_networkx_edge_labels(self.G, dict(enumerate(self.points)), self.edge2dart, label_pos=0.15)
+        nx.draw_networkx_edge_labels(self.G, dict(enumerate(self.points)), temp_dict, label_pos=0.15)
         nx.draw(self.G, self.points)
         plt.show()
 
-    def boundary_cycles(self):
+    def set_boundary_cycles(self):
         """
             This function returns a list of the boundary cycles
             by iterating on phi(x).
@@ -106,7 +115,16 @@ class CMap:
             # cycle finished when next_dart is root
             output.append(cycle)
 
-        return output
+        self._boundary_cycles = output
+
+        self._boundary_cycle_nodes_unique = [set([dart2edge(dart)[0] for dart in cycle])
+                                             for cycle in output]
+
+    def boundary_cycle_nodes_ordered(self):
+        return [tuple([dart2edge(dart)[0] for dart in cycle]) for cycle in self._boundary_cycles]
+
+    def get_boundary_cycles(self):
+        return [tuple(sorted(cycle)) for cycle in self._boundary_cycles]
 
 
 def get_rotational_data(graph, points):
@@ -130,34 +148,6 @@ def get_rotational_data(graph, points):
     return sorted_edges
 
 
-def boundary_cycle_graphs(cmap):
-    """This function converts the boundary_cycle() data into a graph for each boundary\
-            cycle in a given combinatorial map"""
-    bcycles = []
-    for cycle in cmap.boundary_cycles():
-        simplex_edges = [cmap.dart2edge[dart] for dart in cycle]
-        simplex_nodes = list(set((node for (node, _) in simplex_edges)))
-
-        G = nx.Graph()
-        G.add_nodes_from(simplex_nodes)
-        G.add_edges_from(simplex_edges)
-
-        bcycles.append(G)
-
-    return bcycles
-
-
-def boundary_cycle_nodes(cmap: CMap):
-    """This function converts the boundary_cycle() data into a list of nodes for each boundary\
-        cycle in a given combinatorial map"""
-    simplex_nodes = []
-    for n, cycle in enumerate(cmap.boundary_cycles()):
-        simplex_edges = [cmap.dart2edge[dart] for dart in cycle]  # get next edge
-        simplex_nodes.append(tuple([node for (node, _) in simplex_edges]))  # get first node from edge
-
-    return simplex_nodes
-
-
 if __name__ == "__main__":
     G = nx.house_x_graph()
     G.remove_edge(0, 1)
@@ -179,19 +169,21 @@ if __name__ == "__main__":
     c_map.plot()
     plt.show()
 
-    print(c_map.boundary_cycles())
+    print(c_map._boundary_cycles)
+    print(c_map.boundary_cycle_nodes_ordered())
 
-    simplices = boundary_cycle_graphs(c_map)
+    print(c_map.nodes2cycle([0, 2, 1, 3, 4]))
+    # simplices = boundary_cycle_graphs(c_map)
+    #
+    # boundary = [1, 2, 3, 4, 0]
+    #
+    # print([set(boundary) == set(G.nodes()) for G in simplices])
 
-    boundary = [1, 2, 3, 4, 0]
+    # for i, simplex in enumerate(simplices, start=1):
+    #     plot_num = str(2)+str(len(simplices)//2)+str(i)
+    #     plt.subplot(int(plot_num))
+    #     nx.draw_networkx_nodes(G, dict(enumerate(mypoints)), node_color="b")
+    #     nx.draw_networkx_labels(G, dict(enumerate(mypoints)))
+    #     nx.draw(simplex, mypoints, node_color="r")
 
-    print([set(boundary) == set(G.nodes()) for G in simplices])
-
-    for i, simplex in enumerate(simplices, start=1):
-        plot_num = str(2)+str(len(simplices)//2)+str(i)
-        plt.subplot(int(plot_num))
-        nx.draw_networkx_nodes(G, dict(enumerate(mypoints)), node_color="b")
-        nx.draw_networkx_labels(G, dict(enumerate(mypoints)))
-        nx.draw(simplex, mypoints, node_color="r")
-
-    plt.show()
+    # plt.show()

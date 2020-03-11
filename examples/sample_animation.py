@@ -5,7 +5,7 @@ from matplotlib.animation import FuncAnimation
 
 num_sensors = 10
 sensing_radius = 0.2
-timestep_size = 0.1
+timestep_size = 0.01
 
 run_number = 5
 output_dir = './'
@@ -59,12 +59,12 @@ def plot_no_intruder(sim):
     fig = plt.gcf()
     ax = fig.gca()
 
-    for cycle in sim.get_boundary_cycles():
+    for cycle in sim.cmap.boundary_cycle_nodes_ordered():
         x_pts = [sim.points[n][0] for n in cycle]
         y_pts = [sim.points[n][1] for n in cycle]
         if set(cycle) == set(sim.alpha_shape):
             continue
-        if sim.cell_label[node2hash(cycle)]:
+        if sim.cell_label[sim.cmap.nodes2cycle(cycle)]:
             ax.fill(x_pts, y_pts, color='k', alpha=0.2)
         else:
             pass
@@ -75,13 +75,13 @@ def update(timestep):
     if not any(simulation.cell_label.values()):
         raise SimulationOver
     simulation.do_timestep()
-
+    simulation.time += simulation.dt
     fig = plt.figure(1)
     ax = plt.gca()
     ax.cla()
     ax.axis("off")
     ax.axis("equal")
-    ax.set_title("T = " + "{:5.2f}".format(timestep_size*timestep), loc="left")
+    ax.set_title("T = " + "{:5.2f}".format(simulation.time), loc="left")
     fig.add_axes(ax)
 
     plot_no_intruder(simulation)
@@ -100,6 +100,7 @@ def animate():
     finally:
         # ani.save(filename_base+'.mp4')
         plt.show()
+        print("done")
 
 
 if __name__ == "__main__":

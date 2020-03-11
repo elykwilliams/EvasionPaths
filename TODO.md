@@ -18,7 +18,7 @@
  - Work towards fully distributed algorithm
  - 3D?
  - Smart Motion Model?
-
+ - decaying radii?
 # Documentation:
  - Finish writing documentation
  - Go through and comment files
@@ -28,15 +28,12 @@
  
 # Structural:
  - Incorporate virtual boundary into Boundary not MotionModel
+ - move reflection into boundary class??
+ - Move point generation inside boundary class??
  - Simplify example scripts
  - Is it possible to separate out find_evasion_paths() function from EvasionPath class?
- - ....Somthing like find_evasion_path(old_complex, new_complex)
- - Use dart representation of boundary cycles instead of of just a set of nodes
- - Rework Combinatorial Map using networkx.DiGraph?
- - ....or use dart representation of bcycles. Maybe manage dart mapping directly by comparing added/removed edges?
- - Refactor EvasionPathSimulation.points completely into MotionModel  
- - Move point generation inside boundary class
-# Experiments
+ - ....Something like find_evasion_path(old_complex, new_complex)
+  # Experiments
  - N - slice
  - R - slice
  - N-R sample
