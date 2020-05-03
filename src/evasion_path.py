@@ -71,7 +71,7 @@ class EvasionPathSimulation:
 
         # Point data
         self.sensing_radius = sensing_radius
-        self.points = generate_points(boundary, n_sensors, self.sensing_radius)
+        self.points = generate_points(boundary, n_sensors)
         self.n_sensors = n_sensors + len(boundary)
 
         self.alpha_shape = list(range(len(boundary)))
@@ -130,7 +130,6 @@ class EvasionPathSimulation:
             while any(self.cell_label.values()):
                 self.time += self.dt
                 self.do_timestep()
-                print("{0:5.2f}: {1}".format(self.time, self.evasion_paths))
             return self.time
 
     def do_timestep(self, new_points=(), level=0):
@@ -212,7 +211,7 @@ class EvasionPathSimulation:
             pass
         # Add Edge
         elif case == (1, 0, 0, 0, 2, 1):
-            self.evasion_paths += "One edge added, "
+            self.evasion_paths += "1-Simplex added, "
 
             old_cycle = cycles_removed.pop()
 
@@ -225,7 +224,7 @@ class EvasionPathSimulation:
 
         # Remove Edge
         elif case == (0, 1, 0, 0, 1, 2):
-            self.evasion_paths += "One edge removed, "
+            self.evasion_paths += "1-Simplex removed, "
 
             new_cycle = cycles_added.pop()
 
@@ -238,9 +237,10 @@ class EvasionPathSimulation:
 
         # Add Simplex
         elif case == (0, 0, 1, 0, 0, 0):
-            self.evasion_paths += "One simplex added, "
+            self.evasion_paths += "2-Simplex added, "
 
             new_simplex = simplices_added.pop()
+
             # Find relevant boundary cycle
             cycle = self.cmap.nodes2cycle(new_simplex)
 
@@ -249,7 +249,7 @@ class EvasionPathSimulation:
 
         # Remove Simplex
         elif case == (0, 0, 0, 1, 0, 0):
-            self.evasion_paths += "One simplex removed, "
+            self.evasion_paths += "2-Simplex removed, "
             # No label change needed
 
         # Edge and Simplex Added
@@ -263,7 +263,7 @@ class EvasionPathSimulation:
                                          simplices_removed,
                                          cycle_change)
 
-            self.evasion_paths += "Edge and Simplex added, "
+            self.evasion_paths += "1-Simplex and 2-Simplex added, "
 
             old_cycle = cycles_removed.pop()
             added_simplex = self.cmap.nodes2cycle(simplex)
@@ -288,7 +288,7 @@ class EvasionPathSimulation:
                                          simplices_removed,
                                          cycle_change)
 
-            self.evasion_paths += "Edge and simplex removed, "
+            self.evasion_paths += "1-Simplex and 2-Simplex removed, "
             new_cycle = cycles_added.pop()
 
             # Add new boundary cycles to dictionary, they retain the same label as the old cycle
@@ -318,7 +318,7 @@ class EvasionPathSimulation:
                 raise InvalidStateChange(edges_added, edges_removed, simplices_added,
                                          simplices_removed, cycle_change)
 
-            self.evasion_paths += "Delunay Flip, "
+            self.evasion_paths += "Delaunay Flip, "
 
             # Add new boundary cycles
             for cycle in cycles_added:

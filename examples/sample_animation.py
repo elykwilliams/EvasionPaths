@@ -3,19 +3,19 @@ from evasion_path import *
 import matplotlib.pyplot as plt
 from matplotlib.animation import FuncAnimation
 
-num_sensors = 10
-sensing_radius = 0.2
+num_sensors = 12
+sensing_radius = 0.3
 timestep_size = 0.01
 
 run_number = 5
 output_dir = './'
-filename_base = 'N10_R02_' + str(run_number)
+filename_base = "N" + str(num_sensors) + "R" + "".join(str(sensing_radius).split("."))\
+                + "dt" + "".join(str(timestep_size).split(".")) + "-" + str(run_number)
 
 unit_square = Boundary(spacing=sensing_radius)
 
 brownian_motion = BrownianMotion(dt=timestep_size,
                                  sigma=0.01,
-                                 sensing_radius=sensing_radius,
                                  boundary=unit_square)
 
 simulation = EvasionPathSimulation(boundary=unit_square,
@@ -79,28 +79,31 @@ def update(timestep):
     fig = plt.figure(1)
     ax = plt.gca()
     ax.cla()
-    ax.axis("off")
+    ax.axis("on")
     ax.axis("equal")
-    ax.set_title("T = " + "{:5.2f}".format(simulation.time), loc="left")
+    title_str = "T = " + "{:5.2f}:\n".format(simulation.time)
+    ax.set_title(title_str, loc="left")
     fig.add_axes(ax)
 
     plot_no_intruder(simulation)
     plot_balls(simulation)
     plot_alpha_complex(simulation)
 
+    with open(filename_base+".log", "a+") as file:
+        file.write("{0:5.2f}: {1}\n".format(simulation.time, simulation.evasion_paths))
+
 
 def animate():
-    n_steps = 500
-    ms_per_frame = 100*timestep_size
+    n_steps = 100
+    ms_per_frame = 1000*timestep_size
     fig = plt.figure(1)
     try:
         ani = FuncAnimation(fig, update, interval=ms_per_frame, frames=n_steps)
     except SimulationOver as s:
         pass
     finally:
-        # ani.save(filename_base+'.mp4')
         plt.show()
-        print("done")
+        #ani.save(filename_base+'.mp4')
 
 
 if __name__ == "__main__":
