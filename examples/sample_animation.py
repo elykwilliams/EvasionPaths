@@ -12,7 +12,7 @@ output_dir = './'
 filename_base = "N" + str(num_sensors) + "R" + "".join(str(sensing_radius).split("."))\
                 + "dt" + "".join(str(timestep_size).split(".")) + "-" + str(run_number)
 
-unit_square = Boundary(spacing=sensing_radius)
+unit_square = RectangularDomain(spacing=sensing_radius)
 
 brownian_motion = BrownianMotion(dt=timestep_size,
                                  sigma=0.01,

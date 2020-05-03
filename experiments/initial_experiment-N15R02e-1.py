@@ -33,7 +33,7 @@ n_runs = 10000
 
 def simulate(jobid):
 
-    unit_square = Boundary(spacing=sensing_radius)
+    unit_square = RectangularDomain(spacing=sensing_radius)
 
     brownian_motion = BrownianMotion(dt=dt,
                                      sigma=0.01,

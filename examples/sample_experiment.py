@@ -50,14 +50,13 @@ n_runs: int = 1
 
 
 def simulate() -> float:
-    unit_square = Boundary(spacing=sensing_radius)
+    boundary = RectangularDomain(spacing=sensing_radius)
 
     brownian_motion = BrownianMotion(dt=timestep_size,
                                      sigma=0.01,
-                                     sensing_radius=sensing_radius,
-                                     boundary=unit_square)
+                                     boundary=boundary)
 
-    simulation = EvasionPathSimulation(boundary=unit_square,
+    simulation = EvasionPathSimulation(boundary=boundary,
                                        motion_model=brownian_motion,
                                        n_sensors=num_sensors,
                                        sensing_radius=sensing_radius,

@@ -3,7 +3,7 @@
 import numpy as np
 
 
-class Boundary:
+class RectangularDomain:
     """This class defines the boundary and stores data related to the boundary geometry. It does not store the boundary
         points, simply generates and returns them """
 
@@ -28,10 +28,7 @@ class Boundary:
 
     def in_domain(self, point: tuple) -> bool:
         """This function determines if a point is in the interior of the domain or not """
-        return point[0] > self.x_min \
-            or point[1] > self.y_min \
-            or point[0] < self.x_max \
-            or point[1] < self.y_max
+        return self.x_min < point[0] < self.x_max and self.y_min < point[1] < self.y_max
 
     def generate(self, spacing: float) -> list:
         """ Generate a list of points (represent by tuples)
@@ -44,15 +41,15 @@ class Boundary:
 
         self.points = corners
 
-        self.points.extend([(x, self.y_min-dx) for x in np.arange(spacing, self.x_max, spacing)])  # bottom
-        self.points.extend([(self.x_min-dx, y) for y in np.arange(spacing, self.y_max, spacing)])  # left
-        self.points.extend([(x, self.y_max+dx) for x in np.arange(spacing, self.x_max, spacing)])  # top
-        self.points.extend([(self.x_max+dx, y) for y in np.arange(spacing, self.y_max, spacing)])  # right
+        self.points.extend([(x, self.y_min-dx) for x in np.arange(self.x_min - dx, self.x_max+dx, spacing)])  # bottom
+        self.points.extend([(self.x_min-dx, y) for y in np.arange(self.y_min - dx, self.y_max+dx, spacing)])  # left
+        self.points.extend([(self.x_max - x, self.y_max+dx) for x in np.arange(self.x_min - dx, self.x_max+dx, spacing)])  # top
+        self.points.extend([(self.x_max+dx, self.y_max - y) for y in np.arange(self.y_min - dx, self.y_max+dx, spacing)])  # right
 
         return self.points
 
 
-class CircleBoundary:
+class CircularDomain:
     """This class defines the boundary and stores data related to the boundary geometry. It does not store the boundary
         points, simply generates and returns them """
 
@@ -83,3 +80,22 @@ class CircleBoundary:
                        for theta in np.arange(0, 2 * np.pi, dtheta)]
 
         return self.points
+
+
+if __name__=="__main__":
+    import matplotlib.pyplot as plt
+
+    unit_square = RectangularDomain(0.15)
+    x_pts = [x for x, _ in unit_square.points]
+    y_pts = [y for _, y in unit_square.points]
+    plt.plot(x_pts, y_pts, "*")
+
+    # Draw unit square
+    x_us = [0, 0, 1, 1, 0]
+    y_us = [0, 1, 1, 0, 0]
+    plt.plot(x_us, y_us)
+
+    ax = plt.gca()
+    ax.axis("equal")
+
+    plt.show()
