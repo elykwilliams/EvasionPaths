@@ -4,15 +4,6 @@ from boundary_geometry import *
 from numpy import sqrt, random, sin, pi
 
 
-def generate_points(boundary, n_sensors):
-    interior_pts = []
-    for _ in range(n_sensors):
-        rand_x = np.random.uniform(boundary.x_min, boundary.x_max)
-        rand_y = np.random.uniform(boundary.y_min, boundary.y_max)
-        interior_pts.append((rand_x, rand_y))
-    return boundary.points + interior_pts
-
-
 class BrownianMotion:
     def __init__(self, dt, sigma, boundary):
         self.boundary = boundary

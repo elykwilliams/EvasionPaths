@@ -4,7 +4,8 @@ import numpy as np
 
 
 class RectangularDomain:
-    """This class defines the boundary and stores data related to the boundary geometry."""
+    """This class defines the boundary and stores data related to the boundary geometry.
+        Does not store interior points but can generate them"""
 
     def __init__(self, spacing: float = 0.2,  # default of 0.2, with unit square
                  x_min: float = 0, x_max: float = 1,
@@ -13,11 +14,12 @@ class RectangularDomain:
         self.x_min, self.y_min = x_min, y_min
         self.points = []
 
+        # Initialize virtual boundary
         self.dx = spacing * np.sin(np.pi / 6)  # virtual boundary width
         self.vx_min, self.vx_max = self.x_min - self.dx, self.x_max + self.dx
         self.vy_min, self.vy_max = self.y_min - self.dx, self.y_max + self.dx
 
-        self.generate(spacing)
+        self.generate_boundary_points(spacing)
 
     def __len__(self):
         return len(self.points)
@@ -33,7 +35,7 @@ class RectangularDomain:
         """This function determines if a point is in the interior of the domain or not """
         return self.x_min < point[0] < self.x_max and self.y_min < point[1] < self.y_max
 
-    def generate(self, spacing: float) -> list:
+    def generate_boundary_points(self, spacing: float) -> list:
         """ Generate a list of points (represent by tuples)
             Spacing should be *at most* 2*sensing_radius when used.
             Points should be added in cyclic order.
@@ -46,6 +48,11 @@ class RectangularDomain:
 
         return self.points
 
+    def generate_interior_points(self, n_sensors):
+        rand_x = np.random.uniform(self.x_min, self.x_max, size=n_sensors)
+        rand_y = np.random.uniform(self.y_min, self.y_max, size=n_sensors)
+        interior_pts = list(zip(rand_x, rand_y))
+        return self.points + interior_pts
 
 class CircularDomain:
     """This class defines the boundary and stores data related to the boundary geometry. It does not store the boundary
@@ -67,7 +74,7 @@ class CircularDomain:
         """This function determines if a point is in the interior of the domain or not """
         return point[0] ** 2 + point[1] ** 2 < self.radius ** 2
 
-    def generate(self, spacing: float) -> list:
+    def generate_boundary_points(self, spacing: float) -> list:
         """ Generate a list of points (represent by tuples)
             Add corners explicitly in case boundary width is not divisible by radius
             Spacing should be *at most* 2*sensing_radius when used.
@@ -78,6 +85,8 @@ class CircularDomain:
                        for theta in np.arange(0, 2 * np.pi, dtheta)]
 
         return self.points
+
+
 
 
 if __name__=="__main__":

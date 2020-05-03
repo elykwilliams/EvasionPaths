@@ -71,7 +71,7 @@ class EvasionPathSimulation:
 
         # Point data
         self.sensing_radius = sensing_radius
-        self.points = generate_points(boundary, n_sensors)
+        self.points = boundary.generate_interior_points(n_sensors)
         self.n_sensors = n_sensors + len(boundary)
 
         self.alpha_shape = list(range(len(boundary)))
@@ -207,7 +207,7 @@ class EvasionPathSimulation:
 
         # No Change
         if case == (0, 0, 0, 0, 0, 0):
-           # self.evasion_paths += "No Change, "
+            # self.evasion_paths += "No Change, "
             pass
         # Add Edge
         elif case == (1, 0, 0, 0, 2, 1):
