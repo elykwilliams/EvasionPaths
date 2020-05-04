@@ -1,8 +1,6 @@
 # Features:
- - Billiard Motion
- - Run and Tumble Motion
- - Compress long animations
- - Work towards allowing disconnected graph
+ - Collective Motion Model
+ - Allow for diconnected graph using power-down model
  
 # Bugs:
  - Fix Environment files to be portable
@@ -12,6 +10,7 @@
    Error may no longer exist
 
 # Development:
+ - Allow for fully disconnected graph
  - Compute alpha complex fully in parallel
  - AlphaComplex with variable radii
  - Work towards fully distributed algorithm
@@ -27,10 +26,11 @@
  - DOxygen?
  
 # Structural:
- - Incorporate virtual boundary into Boundary not MotionModel
  - move reflection into boundary class??
- - Move point generation inside boundary class??
  - Simplify example scripts
+ - add more example scripts
+ - Clean up n_sensors interface
+ - add experiments to .gitignore
  
  # Experiments
  - N - slice

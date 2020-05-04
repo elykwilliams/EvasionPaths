@@ -25,7 +25,7 @@ class MotionModel(ABC):
         interior_pts = [self.update_point(pt, len(self.boundary)+n) for (n, pt) in enumerate(interior_pts)]
 
         for n, pt in enumerate(interior_pts):
-            if not self.boundary.in_domain(pt):
+            while not self.boundary.in_domain(interior_pts[n]):
                 interior_pts[n] = self.reflect(pt, len(self.boundary)+n)
 
         return self.boundary.points + interior_pts
@@ -45,13 +45,14 @@ class BrownianMotion(MotionModel):
     def reflect(self, pt: tuple, index) -> tuple:
         x, y = pt
         if x >= self.boundary.x_max:
-            return self.boundary.x_max - abs(self.epsilon()), y
+            pt = (self.boundary.x_max - abs(self.epsilon()), y)
         elif x <= self.boundary.x_min:
-            return self.boundary.x_min + abs(self.epsilon()), y
+            pt = (self.boundary.x_min + abs(self.epsilon()), y)
         if y >= self.boundary.y_max:
-            return x, self.boundary.y_max - abs(self.epsilon())
+            pt = (x, self.boundary.y_max - abs(self.epsilon()))
         elif y <= self.boundary.y_min:
-            return x, self.boundary.y_min + abs(self.epsilon())
+            pt = (x, self.boundary.y_min + abs(self.epsilon()))
+        return pt
 
 
 class BilliardMotion(MotionModel):
@@ -75,19 +76,19 @@ class BilliardMotion(MotionModel):
         return self.update_point(pt, index)
 
 
-class RunAndTumble:
+class RunAndTumble(BilliardMotion):
 
-    def __init__(self, dt, boundary):
-        pass
-
-    def epsilon(self):
-        pass
+    def update_point(self, pt, index):
+        theta = self.vel_angle[index]
+        return pt[0] + self.dt * self.vel * cos(theta), pt[1] + self.dt * self.vel * sin(theta)
 
     def update_points(self, old_points):
-        pass
 
-    def reflect(self, point):
-        pass
+        for n in range(len(self.vel_angle)):
+            if random.randint(0, 10) == 9:
+                self.vel_angle[n] = random.uniform(0, 2 * pi)
+
+        return super().update_points(old_points)
 
 
 if __name__ == "__main__":
@@ -99,8 +100,7 @@ if __name__ == "__main__":
     unit_square = RectangularDomain(sensing_radius)
     points = unit_square.generate_points(25)
     n_sensors = 25 + len(unit_square)
-    mm = BilliardMotion(0.1, 0.5, unit_square, n_sensors)
-
+    mm = BilliardMotion(0.1, 0.2, unit_square, n_sensors)
 
 
     def plot_boundary(boundary):
