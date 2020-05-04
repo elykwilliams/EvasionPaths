@@ -48,11 +48,12 @@ class RectangularDomain:
 
         return self.points
 
-    def generate_interior_points(self, n_sensors):
+    def generate_points(self, n_sensors):
         rand_x = np.random.uniform(self.x_min, self.x_max, size=n_sensors)
         rand_y = np.random.uniform(self.y_min, self.y_max, size=n_sensors)
         interior_pts = list(zip(rand_x, rand_y))
         return self.points + interior_pts
+
 
 class CircularDomain:
     """This class defines the boundary and stores data related to the boundary geometry. It does not store the boundary
@@ -61,7 +62,7 @@ class CircularDomain:
     def __init__(self, spacing: float = 0.2, radius: float = 1):
         self.radius = radius
         self.points = []
-        self.generate(spacing)
+        self.generate_boundary_points(spacing)
 
     def __len__(self):
         return len(self.points)

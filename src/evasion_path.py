@@ -71,7 +71,7 @@ class EvasionPathSimulation:
 
         # Point data
         self.sensing_radius = sensing_radius
-        self.points = boundary.generate_interior_points(n_sensors)
+        self.points = boundary.generate_points(n_sensors)
         self.n_sensors = n_sensors + len(boundary)
 
         self.alpha_shape = list(range(len(boundary)))
