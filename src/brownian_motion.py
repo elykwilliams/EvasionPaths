@@ -1,101 +1,153 @@
 # Kyle Williams 2/25/20
 
 from boundary_geometry import *
-from numpy import sqrt, random, sin, pi
+from numpy import sqrt, random, sin, cos, pi
+from abc import ABC, abstractmethod
 
 
-class BrownianMotion:
-    def __init__(self, dt, sigma, boundary):
-        self.boundary = boundary
-        self.sigma = sigma
+class MotionModel(ABC):
+    def __init__(self, dt, boundary):
         self.dt = dt
+        self.boundary = boundary
 
-    def epsilon(self):  # Model selected by Deepjoyti
+    @abstractmethod
+    def update_point(self, pt, index):
+        return point
+
+    @abstractmethod
+    def reflect(self, pt, index):
+        return point
+
+    def update_points(self, old_points):
+
+        interior_pts = old_points[len(self.boundary):]
+
+        interior_pts = [self.update_point(pt, len(self.boundary)+n) for (n, pt) in enumerate(interior_pts)]
+
+        for n, pt in enumerate(interior_pts):
+            if not self.boundary.in_domain(pt):
+                interior_pts[n] = self.reflect(pt, len(self.boundary)+n)
+
+        return self.boundary.points + interior_pts
+
+
+class BrownianMotion(MotionModel):
+    def __init__(self, dt, sigma, boundary) -> None:
+        super().__init__(dt, boundary)
+        self.sigma = sigma
+
+    def epsilon(self) -> float:  # Model selected by Deepjoyti
         return self.sigma*sqrt(self.dt)*random.normal(0, 1)
 
-    def update_points(self, old_points):
+    def update_point(self, pt: tuple, index=0) -> tuple:
+        return pt[0] + self.epsilon(), pt[1] + self.epsilon()
 
-        interior_pts = old_points[len(self.boundary):]
-
-        interior_pts = [(x + self.epsilon(), y + self.epsilon()) for (x, y) in interior_pts]
-
-        for n, (x, y) in enumerate(interior_pts):
-            if x >= self.boundary.x_max:
-                interior_pts[n] = (self.boundary.x_max - abs(self.epsilon()), y)
-            if x <= self.boundary.x_min:
-                interior_pts[n] = (self.boundary.x_min + abs(self.epsilon()), y)
-            if y >= self.boundary.y_max:
-                interior_pts[n] = (x, self.boundary.y_max - abs(self.epsilon()))
-            if y <= self.boundary.y_min:
-                interior_pts[n] = (x, self.boundary.y_min + abs(self.epsilon()))
-
-        return self.boundary.points + interior_pts
+    def reflect(self, pt: tuple, index) -> tuple:
+        x, y = pt
+        if x >= self.boundary.x_max:
+            return self.boundary.x_max - abs(self.epsilon()), y
+        elif x <= self.boundary.x_min:
+            return self.boundary.x_min + abs(self.epsilon()), y
+        if y >= self.boundary.y_max:
+            return x, self.boundary.y_max - abs(self.epsilon())
+        elif y <= self.boundary.y_min:
+            return x, self.boundary.y_min + abs(self.epsilon())
 
 
-from numpy import multiply, cos
+class BilliardMotion(MotionModel):
+    """ Defines motion with constant velocity and sensors reflected
+        at the boundary with angle in = angle out"""
+    def __init__(self, dt: float, vel: float, boundary: RectangularDomain, n_sensors: int):
+        super().__init__(dt, boundary)
+        self.vel = vel
+        self.vel_angle = random.uniform(0, 2*pi, n_sensors)
+
+    def update_point(self, pt, index):
+        theta = self.vel_angle[index]
+        return pt[0] + self.dt*self.vel*cos(theta), pt[1] + self.dt*self.vel*sin(theta)
+
+    def reflect(self, pt, index):
+        if pt[0] <= self.boundary.x_min or pt[0] >= self.boundary.x_max:
+            self.vel_angle[index] = pi - self.vel_angle[index]
+        if pt[1] <= self.boundary.y_min or pt[1] >= self.boundary.y_max:
+            self.vel_angle[index] = - self.vel_angle[index]
+        self.vel_angle[index] %= 2 * pi
+        return self.update_point(pt, index)
 
 
-class BilliardMotion:
+class RunAndTumble:
 
-    def __init__(self, dt, sensing_radius, boundary):
+    def __init__(self, dt, boundary):
+        pass
 
-        theta = random.uniform(0, 360, 15)
-
-        vel = random.uniform(0, 0.1, 15)
-        self.radius = sensing_radius
-        self.boundary = boundary
-        self.dt = dt
-        self.velx = multiply(vel, cos(theta)) * dt
-        self.vely = multiply(vel, sin(theta)) * dt
-
-    #    def epsilon(self):  # Model selected by Deepjoyti
-
-    #        return self.vel*sqrt(self.dt)*random.normal(0, 1)
-
-    #    def epsilon(self):
-
-    #        theta = random.uniform(0,360)
-
-    #        x_position = self.vel*cos(theta)
-
-    #        y_position = self.vel*sin(theta)
-
-    #        position = (x_position*self.dt, y_position*self.dt)
-
-    #        return self.position
+    def epsilon(self):
+        pass
 
     def update_points(self, old_points):
+        pass
 
-        dx = self.radius * sin(pi / 6)  # virtual boundary width
+    def reflect(self, point):
+        pass
 
-        interior_pts = old_points[len(self.boundary):]
 
-        interior_pts = [(x + self.velx, y + self.vely) for (x, y) in interior_pts]
+if __name__ == "__main__":
+    import matplotlib.pyplot as plt
+    from matplotlib.animation import FuncAnimation
 
-        for n, (x, y) in enumerate(interior_pts):
+    sensing_radius = 0.15
 
-            if x >= self.boundary.x_max - dx:
-                interior_pts[n] = (self.boundary.x_max - dx - abs(self.velx), y)
+    unit_square = RectangularDomain(sensing_radius)
+    points = unit_square.generate_points(25)
+    n_sensors = 25 + len(unit_square)
+    mm = BilliardMotion(0.1, 0.5, unit_square, n_sensors)
 
-                theta[n] = 180 - theta
 
-            if x <= self.boundary.x_min + dx:
-                interior_pts[n] = (self.boundary.x_min + dx + abs(self.velx), y)
 
-                theta[n] = 180 - theta
+    def plot_boundary(boundary):
+        x_pts = [x for x, _ in boundary.points]
+        y_pts = [y for _, y in boundary.points]
+        plt.plot(x_pts, y_pts, "*")
 
-            if y >= self.boundary.y_max - dx:
-                interior_pts[n] = (x, self.boundary.y_max - dx - abs(self.vely))
+        x_us = [0, 0, 1, 1, 0]
+        y_us = [0, 1, 1, 0, 0]
+        plt.plot(x_us, y_us)
 
-                theta[n] = 360 - theta
+        ax = plt.gca()
 
-            if y <= self.boundary.y_min + dx:
-                interior_pts[n] = (x, self.boundary.y_min + dx + abs(self.vely))
+        for point in unit_square.points:
+            ax.add_artist(plt.Circle(point, sensing_radius, color='b', alpha=0.1))
 
-                theta[n] = 360 - theta
+    def plot_points(points):
+        x_pts = [x for x, _ in points]
+        y_pts = [y for _, y in points]
+        plt.plot(x_pts, y_pts, "k*")
 
-        self.velx = multiply(vel, cos(theta)) * dt
+    def update(index):
+        global points
+        fig = plt.gcf()
+        ax = plt.gca()
 
-        self.vely = multiply(vel, sin(theta)) * dt
+        ax.cla()
+        ax.axis('equal')
+        ax.set(xlim=(unit_square.vx_min - 1.1 * sensing_radius, unit_square.vx_max + 1.1 * sensing_radius),
+               ylim=(unit_square.vy_min - 1.1 * sensing_radius, unit_square.vy_max + 1.1 * sensing_radius))
+        ax.set_aspect('equal', 'box')
+        points = mm.update_points(points)
 
-        return self.boundary.points + interior_pts
+        plot_boundary(unit_square)
+        plot_points(points)
+
+    def animate():
+        n_steps = 100
+        dt = 0.1
+        ms_per_frame = 1000 * dt
+
+        fig = plt.figure(1)
+
+        ani = FuncAnimation(fig, update, interval=ms_per_frame, frames=n_steps)
+        plt.show()
+
+    for _ in range(10):
+        points = mm.update_points(points)
+    animate()
+

@@ -3,9 +3,9 @@ from evasion_path import *
 import matplotlib.pyplot as plt
 from matplotlib.animation import FuncAnimation
 
-num_sensors = 12
-sensing_radius = 0.3
-timestep_size = 0.01
+num_sensors = 10
+sensing_radius = 0.25
+timestep_size = 0.05
 
 run_number = 5
 output_dir = './'
@@ -14,9 +14,16 @@ filename_base = "N" + str(num_sensors) + "R" + "".join(str(sensing_radius).split
 
 unit_square = RectangularDomain(spacing=sensing_radius)
 
+# brownian_motion = BilliardMotion(dt=timestep_size,
+#                                  vel=0.1,
+#                                  boundary=unit_square,
+#                                  n_sensors=num_sensors+len(unit_square))
+
+
 brownian_motion = BrownianMotion(dt=timestep_size,
                                  sigma=0.01,
                                  boundary=unit_square)
+
 
 simulation = EvasionPathSimulation(boundary=unit_square,
                                    motion_model=brownian_motion,
@@ -79,7 +86,7 @@ def update(timestep):
     fig = plt.figure(1)
     ax = plt.gca()
     ax.cla()
-    ax.axis("on")
+    ax.axis("off")
     ax.axis("equal")
     title_str = "T = " + "{:5.2f}:\n".format(simulation.time)
     ax.set_title(title_str, loc="left")
@@ -95,7 +102,7 @@ def update(timestep):
 
 def animate():
     n_steps = 100
-    ms_per_frame = 1000*timestep_size
+    ms_per_frame = 10*timestep_size
     fig = plt.figure(1)
     try:
         ani = FuncAnimation(fig, update, interval=ms_per_frame, frames=n_steps)
