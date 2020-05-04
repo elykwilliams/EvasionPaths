@@ -1,5 +1,5 @@
 # Kyle Williams 3/8/20
-from brownian_motion import *
+from motion_model import *
 from combinatorial_map import *
 from gudhi import AlphaComplex
 import networkx as nx

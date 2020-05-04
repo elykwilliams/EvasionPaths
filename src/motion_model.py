@@ -21,11 +21,9 @@ class MotionModel(ABC):
     def update_points(self, old_points):
 
         interior_pts = old_points[len(self.boundary):]
-
-        interior_pts = [self.update_point(pt, len(self.boundary)+n) for (n, pt) in enumerate(interior_pts)]
-
-        for n, pt in enumerate(interior_pts):
-            while not self.boundary.in_domain(interior_pts[n]):
+        for (n, pt) in enumerate(interior_pts):
+            interior_pts[n] = self.update_point(pt, len(self.boundary)+n)
+            if not self.boundary.in_domain(interior_pts[n]):
                 interior_pts[n] = self.reflect(pt, len(self.boundary)+n)
 
         return self.boundary.points + interior_pts
@@ -44,14 +42,15 @@ class BrownianMotion(MotionModel):
 
     def reflect(self, pt: tuple, index) -> tuple:
         x, y = pt
-        if x >= self.boundary.x_max:
-            pt = (self.boundary.x_max - abs(self.epsilon()), y)
-        elif x <= self.boundary.x_min:
-            pt = (self.boundary.x_min + abs(self.epsilon()), y)
-        if y >= self.boundary.y_max:
-            pt = (x, self.boundary.y_max - abs(self.epsilon()))
-        elif y <= self.boundary.y_min:
-            pt = (x, self.boundary.y_min + abs(self.epsilon()))
+        while not self.boundary.in_domain(pt):
+            if x >= self.boundary.x_max:
+                pt = (self.boundary.x_max - abs(self.epsilon()), y)
+            elif x <= self.boundary.x_min:
+                pt = (self.boundary.x_min + abs(self.epsilon()), y)
+            if y >= self.boundary.y_max:
+                pt = (x, self.boundary.y_max - abs(self.epsilon()))
+            elif y <= self.boundary.y_min:
+                pt = (x, self.boundary.y_min + abs(self.epsilon()))
         return pt
 
 
@@ -73,7 +72,9 @@ class BilliardMotion(MotionModel):
         if pt[1] <= self.boundary.y_min or pt[1] >= self.boundary.y_max:
             self.vel_angle[index] = - self.vel_angle[index]
         self.vel_angle[index] %= 2 * pi
-        return self.update_point(pt, index)
+        while not self.boundary.in_domain(pt):
+            pt = self.update_point(pt, index)
+        return pt
 
 
 class RunAndTumble(BilliardMotion):
@@ -124,7 +125,6 @@ if __name__ == "__main__":
 
     def update(index):
         global points
-        fig = plt.gcf()
         ax = plt.gca()
 
         ax.cla()
@@ -132,22 +132,12 @@ if __name__ == "__main__":
         ax.set(xlim=(unit_square.vx_min - 1.1 * sensing_radius, unit_square.vx_max + 1.1 * sensing_radius),
                ylim=(unit_square.vy_min - 1.1 * sensing_radius, unit_square.vy_max + 1.1 * sensing_radius))
         ax.set_aspect('equal', 'box')
+
         points = mm.update_points(points)
 
         plot_boundary(unit_square)
         plot_points(points)
 
-    def animate():
-        n_steps = 100
-        dt = 0.1
-        ms_per_frame = 1000 * dt
-
-        fig = plt.figure(1)
-
-        ani = FuncAnimation(fig, update, interval=ms_per_frame, frames=n_steps)
-        plt.show()
-
-    for _ in range(10):
-        points = mm.update_points(points)
-    animate()
+    ani = FuncAnimation(plt.figure(1), update)
+    plt.show()
 
