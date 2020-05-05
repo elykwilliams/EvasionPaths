@@ -1,5 +1,6 @@
 # Kyle Williams 3/8/20
 from motion_model import *
+from cycle_labelling import *
 from combinatorial_map import *
 from gudhi import AlphaComplex
 import networkx as nx
@@ -11,20 +12,32 @@ def interpolate_points(old_points, new_points, t):
             for n in range(len(old_points))]
 
 
+def is_connected(G, cycle):
+    """A cycle is connected if its vertices are a subset of those connected to node 0"""
+    connected_nodes = nx.node_connected_component(G, 0)
+    return set(cycle2nodes(cycle)).issubset(connected_nodes)
+
+
+def set_difference(list1, list2):
+    return set(list1).difference(set(list2))
+
+
 class InvalidStateChange(Exception):
-    def __init__(self, new_e, old_e, new_s, old_s, delta_bcycle):
+    def __init__(self, new_e, old_e, new_s, old_s, new_c, old_c):
         self.new_edges = new_e
         self.new_simplices = new_s
+        self.new_bcycles = new_c
         self.removed_edges = old_e
         self.removed_simplices = old_s
-        self.boundary_cycle_change = delta_bcycle
+        self.removed_bcycles = old_c
 
     def __str__(self):
         case = (len(self.new_edges)
                 , len(self.removed_edges)
                 , len(self.new_simplices)
                 , len(self.removed_simplices)
-                , self.boundary_cycle_change
+                , len(self.new_bcycles)
+                , len(self.removed_bcycles)
                 )
 
         return "Invalid State Change:" + str(case) + "\n" \
@@ -32,7 +45,8 @@ class InvalidStateChange(Exception):
                + "Removed edges:" + str(self.removed_edges) + "\n" \
                + "New Simplices:" + str(self.new_simplices) + "\n" \
                + "Removed Simplices:" + str(self.removed_simplices) + "\n" \
-               + "Change in Number Boundary Cycles:" + str(self.boundary_cycle_change)
+               + "New cycles" + str(self.new_bcycles) + "\n" \
+               + "Removed Cycles" + str(self.removed_bcycles)
 
 
 class MaxRecursionDepth(Exception):
@@ -52,12 +66,12 @@ class EvasionPathSimulation:
 
         # Initialize Fields
         self.evasion_paths = ""
-        self.cell_label = dict()
         self.boundary_cycles = []
         self.old_points = []
         self.old_cycles = []
         self.old_edges = []
         self.old_simplices = []
+        self.old_graph = None
 
         self.motion_model = motion_model
 
@@ -78,28 +92,29 @@ class EvasionPathSimulation:
 
         # Generate Combinatorial Map
         alpha_complex = AlphaComplex(self.points)
-        simplex_tree = alpha_complex.create_simplex_tree(max_alpha_square=self.sensing_radius ** 2)
+        simplex_tree \
+            = alpha_complex.create_simplex_tree(max_alpha_square=self.sensing_radius ** 2)
 
-        self.edges = [tuple(simplex) for simplex, _ in simplex_tree.get_skeleton(1) if len(simplex) == 2]
-        self.simplices = [tuple(simplex) for simplex, _ in simplex_tree.get_skeleton(2) if len(simplex) == 3]
+        self.edges \
+            = [tuple(simplex) for simplex, _ in simplex_tree.get_skeleton(1) if len(simplex) == 2]
+        self.simplices \
+            = [tuple(simplex) for simplex, _ in simplex_tree.get_skeleton(2) if len(simplex) == 3]
 
-        graph = nx.Graph()
-        graph.add_nodes_from(range(self.n_sensors))
-        graph.add_edges_from(self.edges)
+        self.graph = nx.Graph()
+        self.graph.add_nodes_from(range(self.n_sensors))
+        self.graph.add_edges_from(self.edges)
 
         # Check if graph is connected
-        if not nx.is_connected(graph):
+        if not nx.is_connected(self.graph):
             raise GraphNotConnected()
 
-        self.cmap = CMap(graph, self.points)
+        self.cmap = CMap(self.graph, self.points)
 
         # Set initial labeling
         self.boundary_cycles = self.get_boundary_cycles()
 
-        for cycle in self.boundary_cycles:
-            self.cell_label[cycle] = True
-        for simplex in self.simplices:
-            self.cell_label[self.cmap.nodes2cycle(simplex)] = False
+        simplex_cycles = [self.cmap.nodes2cycle(simplex) for simplex in self.simplices]
+        self.cell_label = CycleLabelling(self.boundary_cycles, simplex_cycles)
 
         # Update old data
         self.update_old_data()
@@ -113,12 +128,14 @@ class EvasionPathSimulation:
         self.old_cycles = self.boundary_cycles.copy()
         self.old_edges = self.edges.copy()
         self.old_simplices = self.simplices.copy()
+        self.old_graph = self.graph.copy()
 
     def reset_current_data(self):
         self.points = self.old_points.copy()
         self.edges = self.old_edges.copy()
         self.simplices = self.old_simplices.copy()
         self.boundary_cycles = self.old_cycles.copy()
+        self.graph = self.old_graph.copy()
 
     def run(self):
         if self.Tend != 0:
@@ -127,7 +144,7 @@ class EvasionPathSimulation:
                 self.do_timestep()
             return self.time
         else:
-            while any(self.cell_label.values()):
+            while self.cell_label.has_intruder():
                 self.time += self.dt
                 self.do_timestep()
             return self.time
@@ -156,22 +173,22 @@ class EvasionPathSimulation:
             self.edges = [tuple(simplex) for simplex, _ in simplex_tree.get_skeleton(1) if len(simplex) == 2]
             self.simplices = [tuple(simplex) for simplex, _ in simplex_tree.get_skeleton(2) if len(simplex) == 3]
 
-            graph = nx.Graph()
-            graph.add_nodes_from(range(self.n_sensors))
-            graph.add_edges_from(self.edges)
+            self.graph = nx.Graph()
+            self.graph.add_nodes_from(range(self.n_sensors))
+            self.graph.add_edges_from(self.edges)
 
             # Check if graph is connected
-            if not nx.is_connected(graph):
-                raise GraphNotConnected()
+            if not nx.is_connected(self.graph):
+                print("Graph dissconnected")
 
-            self.cmap = CMap(graph, self.points)
+            self.cmap = CMap(self.graph, self.points)
 
             # Update Holes
             self.boundary_cycles = self.get_boundary_cycles()
 
             # Find Evasion Path
             try:
-                self.find_evasion_paths()
+                self.update_labelling()
                 self.n_steps += 1
 
             except InvalidStateChange as exception:
@@ -185,10 +202,7 @@ class EvasionPathSimulation:
             # Update old data
             self.update_old_data()
 
-    def find_evasion_paths(self):
-
-        def set_difference(list1, list2):
-            return set(list1).difference(set(list2))
+    def update_labelling(self):
 
         edges_added = set_difference(self.edges, self.old_edges)
         edges_removed = set_difference(self.old_edges, self.edges)
@@ -199,53 +213,46 @@ class EvasionPathSimulation:
         cycles_added = set_difference(self.boundary_cycles, self.old_cycles)
         cycles_removed = set_difference(self.old_cycles, self.boundary_cycles)
 
-        cycle_change = len(self.boundary_cycles) - len(self.old_cycles)
-
         case = (len(edges_added), len(edges_removed),
                 len(simplices_added), len(simplices_removed),
                 len(cycles_added), len(cycles_removed))
 
+        current_state = InvalidStateChange(edges_added, edges_removed,
+                                           simplices_added, simplices_removed,
+                                           cycles_added, cycles_removed)
         # No Change
         if case == (0, 0, 0, 0, 0, 0):
             # self.evasion_paths += "No Change, "
             pass
         # Add Edge
         elif case == (1, 0, 0, 0, 2, 1):
-            self.evasion_paths += "1-Simplex added, "
 
             old_cycle = cycles_removed.pop()
 
-            # Add new boundary cycles to dictionary, they retain the same label as the old cycle
-            for cycle in cycles_added:
-                self.cell_label[cycle] = self.cell_label[old_cycle]
+            self.evasion_paths += "1-Simplex added, "
 
-            # Remove old boundary cycle from dictionary
-            del self.cell_label[old_cycle]
+            self.cell_label.add_onesimplex(old_cycle, cycles_added)
 
         # Remove Edge
         elif case == (0, 1, 0, 0, 1, 2):
-            self.evasion_paths += "1-Simplex removed, "
 
             new_cycle = cycles_added.pop()
 
-            # Add new boundary cycles to dictionary, they retain the same label as the old cycle
-            self.cell_label[new_cycle] = any([self.cell_label[s] for s in cycles_removed])
+            self.evasion_paths += "1-Simplex removed, "
 
-            # Remove old boundary cycle from dictionary
-            for cycle in cycles_removed:
-                del self.cell_label[cycle]
+            self.cell_label.remove_onesimplex(cycles_removed, new_cycle)
 
         # Add Simplex
         elif case == (0, 0, 1, 0, 0, 0):
-            self.evasion_paths += "2-Simplex added, "
 
             new_simplex = simplices_added.pop()
 
             # Find relevant boundary cycle
-            cycle = self.cmap.nodes2cycle(new_simplex)
+            new_cycle = self.cmap.nodes2cycle(new_simplex)
 
-            # Update existing boundary cycle
-            self.cell_label[cycle] = False
+            self.evasion_paths += "2-Simplex added, "
+
+            self.cell_label.add_twosimplex(new_cycle)
 
         # Remove Simplex
         elif case == (0, 0, 0, 1, 0, 0):
@@ -254,83 +261,60 @@ class EvasionPathSimulation:
 
         # Edge and Simplex Added
         elif case == (1, 0, 1, 0, 2, 1):
-            edge = edges_added.pop()
+
+            old_cycle = cycles_removed.pop()
             simplex = simplices_added.pop()
-            if not set(edge).issubset(set(simplex)):
-                raise InvalidStateChange(edges_added,
-                                         edges_removed,
-                                         simplices_added,
-                                         simplices_removed,
-                                         cycle_change)
+            added_simplex = self.cmap.nodes2cycle(simplex)
+
+            if not set(edges_added.pop()).issubset(set(simplex)):
+                raise current_state
 
             self.evasion_paths += "1-Simplex and 2-Simplex added, "
 
-            old_cycle = cycles_removed.pop()
-            added_simplex = self.cmap.nodes2cycle(simplex)
-
-            # Add new boundary cycles to dictionary, they retain the same label as the old cycle
-            for cycle in cycles_added:
-                self.cell_label[cycle] = self.cell_label[old_cycle]
-
-            self.cell_label[added_simplex] = False
-
-            # Remove old boundary cycle from dictionary
-            del self.cell_label[old_cycle]
+            self.cell_label.add_one_two_simplex(old_cycle, cycles_added, added_simplex)
 
         # Edge and Simplex Removed
         elif case == (0, 1, 0, 1, 1, 2):
-            edge = edges_removed.pop()
-            simplex = simplices_removed.pop()
-            if not set(edge).issubset(set(simplex)):
-                raise InvalidStateChange(edges_added,
-                                         edges_removed,
-                                         simplices_added,
-                                         simplices_removed,
-                                         cycle_change)
 
-            self.evasion_paths += "1-Simplex and 2-Simplex removed, "
+            simplex = simplices_removed.pop()
             new_cycle = cycles_added.pop()
 
-            # Add new boundary cycles to dictionary, they retain the same label as the old cycle
-            self.cell_label[new_cycle] = any([self.cell_label[s] for s in cycles_removed])
+            if not set(edges_removed.pop()).issubset(set(simplex)):
+                raise current_state
 
-            # Remove old boundary cycle from dictionary
-            for cycle in cycles_removed:
-                del self.cell_label[cycle]
+            self.evasion_paths += "1-Simplex and 2-Simplex removed, "
+
+            self.cell_label.remove_one_two_simplex(cycles_removed, new_cycle)
 
         # Delunay Flip
         elif case == (1, 1, 2, 2, 2, 2):
             # Check that edges correspond to correct boundary cycles
             oldedge = edges_removed.pop()
-            if not all([set(oldedge).issubset(set(s)) for s in simplices_removed]):
-                raise InvalidStateChange(edges_added, edges_removed, simplices_added,
-                                         simplices_removed, cycle_change)
             newedge = edges_added.pop()
-            if not all([set(newedge).issubset(set(s)) for s in simplices_added]):
-                raise InvalidStateChange(edges_added, edges_removed, simplices_added,
-                                         simplices_removed, cycle_change)
 
-            if not all([set(s).issubset(set(oldedge).union(set(newedge))) for s in simplices_removed]):
-                raise InvalidStateChange(edges_added, edges_removed, simplices_added,
-                                         simplices_removed, cycle_change)
-
-            if not all([set(s).issubset(set(oldedge).union(set(newedge))) for s in simplices_added]):
-                raise InvalidStateChange(edges_added, edges_removed, simplices_added,
-                                         simplices_removed, cycle_change)
+            if not all([set(oldedge).issubset(set(s)) for s in simplices_removed]):
+                raise current_state
+            elif not all([set(newedge).issubset(set(s)) for s in simplices_added]):
+                raise current_state
+            elif not all([set(s).issubset(set(oldedge).union(set(newedge))) for s in simplices_removed]):
+                raise current_state
+            elif not all([set(s).issubset(set(oldedge).union(set(newedge))) for s in simplices_added]):
+                raise current_state
 
             self.evasion_paths += "Delaunay Flip, "
 
-            # Add new boundary cycles
-            for cycle in cycles_added:
-                self.cell_label[cycle] = False
+            self.cell_label.delaunay_flip(cycles_removed, cycles_added)
 
-            # Remove old boundary cycles
-            for cycle in cycles_removed:
-                del self.cell_label[cycle]
+        # Disconnect
+        elif case == (0, 1, 0, 0, 2, 1) or case == (0, 1, 0, 0, 1, 1):
+            pass
+
+        # Reconnect
+        elif case == (1, 0, 0, 0, 2, 1) or case == (1, 0, 0, 0, 1, 1):
+            raise
 
         else:
-            raise InvalidStateChange(edges_added, edges_removed, simplices_added,
-                                     simplices_removed, cycle_change)
+            raise current_state
 
 
 if __name__ == "__main__":

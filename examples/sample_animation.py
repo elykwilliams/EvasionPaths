@@ -4,7 +4,7 @@ import matplotlib.pyplot as plt
 from matplotlib.animation import FuncAnimation
 
 num_sensors = 10
-sensing_radius = 0.25
+sensing_radius = 0.15
 timestep_size = 0.05
 
 run_number = 5
@@ -14,15 +14,15 @@ filename_base = "N" + str(num_sensors) + "R" + "".join(str(sensing_radius).split
 
 unit_square = RectangularDomain(spacing=sensing_radius)
 
-# brownian_motion = BilliardMotion(dt=timestep_size,
-#                                  vel=0.1,
-#                                  boundary=unit_square,
-#                                  n_sensors=num_sensors+len(unit_square))
+brownian_motion = BilliardMotion(dt=timestep_size,
+                                 vel=0.1,
+                                 boundary=unit_square,
+                                 n_sensors=num_sensors+len(unit_square))
 
-
-brownian_motion = BrownianMotion(dt=timestep_size,
-                                 sigma=0.01,
-                                 boundary=unit_square)
+#
+# brownian_motion = BrownianMotion(dt=timestep_size,
+#                                  sigma=0.01,
+#                                  boundary=unit_square)
 
 
 simulation = EvasionPathSimulation(boundary=unit_square,
@@ -71,7 +71,7 @@ def plot_no_intruder(sim):
         y_pts = [sim.points[n][1] for n in cycle]
         if set(cycle) == set(sim.alpha_shape):
             continue
-        if sim.cell_label[sim.cmap.nodes2cycle(cycle)]:
+        if sim.cell_label.cell_label[sim.cmap.nodes2cycle(cycle)]:
             ax.fill(x_pts, y_pts, color='k', alpha=0.2)
         else:
             pass
@@ -79,7 +79,7 @@ def plot_no_intruder(sim):
 
 def update(timestep):
     global simulation
-    if not any(simulation.cell_label.values()):
+    if not simulation.cell_label.has_intruder():
         raise SimulationOver
     simulation.do_timestep()
     simulation.time += simulation.dt
