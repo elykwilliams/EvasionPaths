@@ -71,7 +71,7 @@ def plot_no_intruder(sim):
         y_pts = [sim.points[n][1] for n in cycle]
         if set(cycle) == set(sim.alpha_shape):
             continue
-        if sim.cell_label.cell_label[sim.cmap.nodes2cycle(cycle)]:
+        if sim.cell_label[sim.cmap.nodes2cycle(cycle)]:
             ax.fill(x_pts, y_pts, color='k', alpha=0.2)
         else:
             pass

@@ -9,6 +9,9 @@ class CycleLabelling:
         for simplex in simplex_cycles:
             self.cell_label[simplex] = False
 
+    def __getitem__(self, item):
+        return self.cell_label[item]
+
     def has_intruder(self):
         return any(self.cell_label.values())
 
