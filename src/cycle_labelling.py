@@ -1,4 +1,19 @@
 
+case_name = {
+    (0, 0, 0, 0, 0, 0): "",
+    (1, 0, 0, 0, 2, 1): "Add 1-Simplex",
+    (0, 1, 0, 0, 1, 2): "Remove 1-Simplex",
+    (0, 0, 1, 0, 0, 0): "Add 2-Simplex",
+    (0, 0, 0, 1, 0, 0): "Remove 2-Simplex",
+    (1, 0, 1, 0, 2, 1): "Add 1-Simplex and 2-Simplex",
+    (0, 1, 0, 1, 1, 2): "Remove 1-Simplex and 2-Simplex",
+    (1, 1, 2, 2, 2, 2): "Delauney Flip",
+    (0, 1, 0, 0, 2, 1): "Disconnect",
+    (0, 1, 0, 0, 1, 1): "Disconnect",
+    (1, 0, 0, 0, 1, 2): "Reconnect",
+    (1, 0, 0, 0, 1, 1): "Reconnect"
+}
+
 class CycleLabelling:
     # True = possible intruder
     # False = no intruder

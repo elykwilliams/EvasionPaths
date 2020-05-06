@@ -208,7 +208,6 @@ class EvasionPathSimulation:
             old_cycle = cycles_removed.pop()
             if old_cycle not in self.cell_label:
                 return
-            self.evasion_paths += "1-Simplex added, "
             self.cell_label.add_onesimplex(old_cycle, cycles_added)
 
         # Remove Edge
@@ -217,7 +216,6 @@ class EvasionPathSimulation:
             if any([cell not in self.cell_label for cell in cycles_removed]):
                 return
 
-            self.evasion_paths += "1-Simplex removed, "
             self.cell_label.remove_onesimplex(cycles_removed, new_cycle)
 
         # Add Simplex
@@ -226,13 +224,11 @@ class EvasionPathSimulation:
             if new_cycle not in self.cell_label:
                 return
 
-            self.evasion_paths += "2-Simplex added, "
             self.cell_label.add_twosimplex(new_cycle)
 
         # Remove Simplex
         elif case == (0, 0, 0, 1, 0, 0):
             # No label change needed
-            self.evasion_paths += "2-Simplex removed, "
             pass
 
         # Edge and Simplex Added
@@ -247,7 +243,6 @@ class EvasionPathSimulation:
             if old_cycle not in self.cell_label:
                 return
 
-            self.evasion_paths += "1-Simplex and 2-Simplex added, "
             self.cell_label.add_one_two_simplex(old_cycle, cycles_added, added_simplex)
 
         # Edge and Simplex Removed
@@ -261,7 +256,6 @@ class EvasionPathSimulation:
             if any([cell not in self.cell_label for cell in cycles_removed]):
                 return
 
-            self.evasion_paths += "1-Simplex and 2-Simplex removed, "
             self.cell_label.remove_one_two_simplex(cycles_removed, new_cycle)
 
         # Delunay Flip
@@ -282,7 +276,7 @@ class EvasionPathSimulation:
             elif not all([set(s).issubset(set(oldedge).union(set(newedge))) for s in simplices_added]):
                 raise InvalidStateChange(self.state)
 
-            self.evasion_paths += "Delaunay Flip, "
+
             self.cell_label.delaunay_flip(cycles_removed, cycles_added)
 
         # Disconnect
@@ -348,6 +342,8 @@ class EvasionPathSimulation:
 
         else:
             raise InvalidStateChange(self.state)
+
+        self.evasion_paths += case_name[case] + ", "
 
 
 if __name__ == "__main__":
