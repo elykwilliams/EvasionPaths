@@ -41,18 +41,20 @@ class RectangularDomain:
             Points should be added in cyclic order.
         """
 
-        self.points.extend([(x, self.vy_min) for x in np.arange(self.vx_min, self.vx_max, spacing)])  # bottom
-        self.points.extend([(self.vx_max, y) for y in np.arange(self.vy_min, self.vx_max, spacing)])  # right
-        self.points.extend([(self.x_max - x, self.vy_max) for x in np.arange(self.vx_min, self.vx_max, spacing)])  # top
-        self.points.extend([(self.vx_min, self.y_max - y) for y in np.arange(self.vy_min, self.vy_max, spacing)])  # left
+        self.points.extend([(x, self.vy_min) for x in np.arange(self.vx_min, 0.999*self.vx_max, spacing)])  # bottom
+        self.points.extend([(self.vx_max, y) for y in np.arange(self.vy_min, 0.999*self.vx_max, spacing)])  # right
+        self.points.extend([(self.x_max - x, self.vy_max) for x in np.arange(self.vx_min, 0.999*self.vx_max, spacing)])  # top
+        self.points.extend([(self.vx_min, self.y_max - y) for y in np.arange(self.vy_min, 0.999*self.vy_max, spacing)])  # left
 
         return self.points
 
+    def generate_interior(self, n_int_sensors):
+        rand_x = np.random.uniform(self.x_min, self.x_max, size=n_int_sensors)
+        rand_y = np.random.uniform(self.y_min, self.y_max, size=n_int_sensors)
+        return list(zip(rand_x, rand_y))
+
     def generate_points(self, n_sensors):
-        rand_x = np.random.uniform(self.x_min, self.x_max, size=n_sensors)
-        rand_y = np.random.uniform(self.y_min, self.y_max, size=n_sensors)
-        interior_pts = list(zip(rand_x, rand_y))
-        return self.points + interior_pts
+        return self.points + self.generate_interior(n_sensors)
 
 
 class CircularDomain:
