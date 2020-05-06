@@ -72,9 +72,8 @@ class BilliardMotion(MotionModel):
         if pt[1] <= self.boundary.y_min or pt[1] >= self.boundary.y_max:
             self.vel_angle[index] = - self.vel_angle[index]
         self.vel_angle[index] %= 2 * pi
-        while not self.boundary.in_domain(pt):
-            pt = self.update_point(pt, index)
-        return pt
+
+        return self.update_point(pt, index)
 
 
 class RunAndTumble(BilliardMotion):
@@ -86,7 +85,7 @@ class RunAndTumble(BilliardMotion):
     def update_points(self, old_points):
 
         for n in range(len(self.vel_angle)):
-            if random.randint(0, 10) == 9:
+            if random.randint(0, 5) == 4:
                 self.vel_angle[n] = random.uniform(0, 2 * pi)
 
         return super().update_points(old_points)
