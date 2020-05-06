@@ -1,6 +1,5 @@
 # Features:
  - Collective Motion Model
- - Allow for diconnected graph using power-down model
  
 # Bugs:
  - Fix Environment files to be portable
@@ -26,11 +25,14 @@
  - DOxygen?
  
 # Structural:
- - move reflection into boundary class??
  - Simplify example scripts
  - add more example scripts
  - Clean up n_sensors interface
- - add experiments to .gitignore
+ - Clean up cycle labelling interface
+ - refactor update_labeling()??
+ - Simplify Delauney flip check logic 
+ - bounday should have alpha-cycle
+ - Add unit tests
  
  # Experiments
  - N - slice

@@ -1,6 +1,6 @@
 *.gif
-initial_data.csv
 *.png
+*.mp4
 output
 doc
 experiments
