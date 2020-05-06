@@ -1,3 +1,4 @@
+from combinatorial_map import simplex2cycle
 
 case_name = {
     (0, 0, 0, 0, 0, 0): "",
@@ -17,11 +18,11 @@ case_name = {
 class CycleLabelling:
     # True = possible intruder
     # False = no intruder
-    def __init__(self, boundary_cycles, simplex_cycles):
+    def __init__(self, boundary_cycles, simplices):
         self.cell_label = dict()
         for cycle in boundary_cycles:
             self.cell_label[cycle] = True
-        for simplex in simplex_cycles:
+        for simplex in [simplex2cycle(simplex, boundary_cycles) for simplex in simplices]:
             self.cell_label[simplex] = False
 
     def __getitem__(self, item):

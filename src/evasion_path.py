@@ -86,21 +86,20 @@ class EvasionPathSimulation:
         if not nx.is_connected(self.graph):
             raise GraphNotConnected()
 
-        self.cmap = CMap(self.graph, self.points)
-
         # Set initial labeling
-        self.boundary_cycles = self.cmap.get_boundary_cycles()
+        self.boundary_cycles = CMap(self.graph, self.points).get_boundary_cycles()
         self.alpha_cycle = simplex2cycle(self.alpha_shape, self.boundary_cycles)
         self.boundary_cycles.remove(self.alpha_cycle)
 
-        simplex_cycles = [simplex2cycle(simplex, self.boundary_cycles) for simplex in self.simplices]
-        self.cell_label = CycleLabelling(self.boundary_cycles, simplex_cycles)
+        self.cell_label = CycleLabelling(self.boundary_cycles, self.simplices)
 
         # Update old data
         self.update_old_data()
 
     def get_boundary_cycles(self):
-        return [bc for bc in self.cmap.get_boundary_cycles()
+
+        cmap = CMap(self.graph, self.points)
+        return [bc for bc in cmap.get_boundary_cycles()
                 if bc != self.alpha_cycle]
 
     def update_old_data(self):
@@ -149,7 +148,6 @@ class EvasionPathSimulation:
             # Update Alpha Complex
             self.graph = self.build_graph()
 
-            self.cmap = CMap(self.graph, self.points)
             self.boundary_cycles = self.get_boundary_cycles()
 
             # Find Evasion Path
@@ -286,9 +284,6 @@ class EvasionPathSimulation:
             enclosing_cycle = cycles_added.pop()
             if not is_connected(self.graph, enclosing_cycle):
                 enclosing_cycle = cycles_added.pop()
-
-
-            # Find removed boundary cycle (will only be one, the old "enclosing" boundary cycle)
 
             # Find labelled cycles that have become disconnected,
             # this works because all other disconnected cycles have been forgotten
