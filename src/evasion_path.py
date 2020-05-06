@@ -89,9 +89,11 @@ class EvasionPathSimulation:
         self.cmap = CMap(self.graph, self.points)
 
         # Set initial labeling
-        self.boundary_cycles = self.get_boundary_cycles()
+        self.boundary_cycles = self.cmap.get_boundary_cycles()
+        self.alpha_cycle = simplex2cycle(self.alpha_shape, self.boundary_cycles)
+        self.boundary_cycles.remove(self.alpha_cycle)
 
-        simplex_cycles = [self.cmap.nodes2cycle(simplex) for simplex in self.simplices]
+        simplex_cycles = [simplex2cycle(simplex, self.boundary_cycles) for simplex in self.simplices]
         self.cell_label = CycleLabelling(self.boundary_cycles, simplex_cycles)
 
         # Update old data
@@ -99,7 +101,7 @@ class EvasionPathSimulation:
 
     def get_boundary_cycles(self):
         return [bc for bc in self.cmap.get_boundary_cycles()
-                if bc != self.cmap.nodes2cycle(self.alpha_shape)]
+                if bc != self.alpha_cycle]
 
     def update_old_data(self):
         self.old_points = self.points.copy()

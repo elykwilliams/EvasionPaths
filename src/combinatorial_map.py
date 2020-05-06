@@ -36,14 +36,9 @@ def simplex2cycle(simplex, boudnary_cycles):
 
 class CMap:
 
-    def nodes2cycle(self, nodes):
-        index = self._boundary_cycle_nodes_unique.index(set(nodes))
-        return tuple(sorted(self._boundary_cycles[index]))
-
     def __init__(self, graph, points=(), rotation_data=()):
         self._sorted_darts = dict()
         self._boundary_cycles = []
-        self._boundary_cycle_nodes_unique = []
 
         # Get rotational information
         if rotation_data:
@@ -126,9 +121,6 @@ class CMap:
             output.append(cycle)
 
         self._boundary_cycles = output
-
-        self._boundary_cycle_nodes_unique \
-            = [set([dart2edge(dart)[0] for dart in cycle]) for cycle in output]
 
     def boundary_cycle_nodes_ordered(self):
         return [tuple([dart2edge(dart)[0] for dart in cycle]) for cycle in self._boundary_cycles]
