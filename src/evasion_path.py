@@ -162,11 +162,7 @@ class EvasionPathSimulation:
 
                 # Reset current level to previous step
                 self.do_timestep(self.points, level=level + 1)
-            except KeyError as e:
-                print(self.evasion_paths)
-                print(self.cell_label)
-                print(self.state)
-                raise e
+
 
             # Update old data
             self.update_old_data()
@@ -220,7 +216,8 @@ class EvasionPathSimulation:
 
         # Add Simplex
         elif case == (0, 0, 1, 0, 0, 0):
-            new_cycle = self.cmap.nodes2cycle(simplices_added.pop())
+            simplex = simplices_added.pop()
+            new_cycle = simplex2cycle(simplex, self.boundary_cycles)
             if new_cycle not in self.cell_label:
                 return
 
@@ -235,7 +232,7 @@ class EvasionPathSimulation:
         elif case == (1, 0, 1, 0, 2, 1):
             old_cycle = cycles_removed.pop()
             simplex = simplices_added.pop()
-            added_simplex = self.cmap.nodes2cycle(simplex)
+            added_simplex = simplex2cycle(simplex, self.boundary_cycles)
 
             if not set(edges_added.pop()).issubset(set(simplex)):
                 raise InvalidStateChange(self.state)
@@ -275,7 +272,6 @@ class EvasionPathSimulation:
                 raise InvalidStateChange(self.state)
             elif not all([set(s).issubset(set(oldedge).union(set(newedge))) for s in simplices_added]):
                 raise InvalidStateChange(self.state)
-
 
             self.cell_label.delaunay_flip(cycles_removed, cycles_added)
 
@@ -333,13 +329,17 @@ class EvasionPathSimulation:
 
             # Reset all connected 2-simplices to have no intruder
             for simplex in self.simplices:
-                cycle = self.cmap.nodes2cycle(simplex)
-                if cycle in self.cell_label:
-                    self.cell_label.add_twosimplex(cycle)
+                cycle = simplex2cycle(simplex, self.boundary_cycles)
+                if cycle not in self.cell_label:
+                    continue
+                self.cell_label.add_twosimplex(cycle)
 
             # Delete old boundary cycle
             self.cell_label.delete_cycle(enclosing_cycle)
 
+        # two isolated points connecting
+        elif case == (1, 0, 0, 0, 1, 0):
+            return
         else:
             raise InvalidStateChange(self.state)
 
