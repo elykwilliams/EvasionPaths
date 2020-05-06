@@ -3,6 +3,7 @@ initial_data.csv
 *.png
 output
 doc
+experiments
 
 
 ## Core latex/pdflatex auxiliary files:
