@@ -24,6 +24,10 @@ def dart2edge(dart: str):
     return tuple(map(int, dart.split(",")))
 
 
+def cycle2nodes(cycle: tuple):
+    return [int(dart2edge(dart)[0]) for dart in cycle]
+
+
 class CMap:
 
     def nodes2cycle(self, nodes):
@@ -117,8 +121,8 @@ class CMap:
 
         self._boundary_cycles = output
 
-        self._boundary_cycle_nodes_unique = [set([dart2edge(dart)[0] for dart in cycle])
-                                             for cycle in output]
+        self._boundary_cycle_nodes_unique \
+            = [set([dart2edge(dart)[0] for dart in cycle]) for cycle in output]
 
     def boundary_cycle_nodes_ordered(self):
         return [tuple([dart2edge(dart)[0] for dart in cycle]) for cycle in self._boundary_cycles]
@@ -149,32 +153,51 @@ def get_rotational_data(graph, points):
 
 
 if __name__ == "__main__":
-    G = nx.house_x_graph()
-    G.remove_edge(0, 1)
-    G.remove_edge(2, 4)
-    G.remove_edge(1, 3)
-    G.add_edge(1, 0)
-    G.add_edge(4, 0)
+    # G = nx.house_x_graph()
+    # G.remove_edge(0, 1)
+    # G.remove_edge(2, 4)
+    # G.remove_edge(1, 3)
+    # G.add_edge(1, 0)
+    # G.add_edge(4, 0)
 
-    print(len(G[0]))
+    old_G = nx.Graph()
+    old_G.add_nodes_from(range(8))
+    old_G.add_edge(0, 1)
+    old_G.add_edge(1, 2)
+    old_G.add_edge(2, 3)
+    old_G.add_edge(3, 0)
+    old_G.add_edge(4, 5)
+    old_G.add_edge(5, 6)
+    old_G.add_edge(6, 7)
+    old_G.add_edge(7, 4)
+    #G.add_edge(0, 4)
+
+    #print(len(G[0]))
     # G = nx.gnm_random_graph(10, 15)
-    mypoints = [(cos(theta), sin(theta)) for theta in [2*pi*n/G.order() for n in range(G.order())]]
+    mypoints = [(cos(theta), sin(theta)) for theta in [2*pi*n/4 for n in range(4)]]
+    mypoints += [(0.5*cos(theta), 0.5*sin(theta)) for theta in [2*pi*n/4 for n in range(4)]]
 
-    nx.draw(G, mypoints)
-    nx.draw_networkx_labels(G, dict(enumerate(mypoints)))
+
+
+    nx.draw(old_G, mypoints)
+    nx.draw_networkx_labels(old_G, dict(enumerate(mypoints)))
     plt.show()
 
-    c_map = CMap(G, mypoints)
+    c_map = CMap(old_G, mypoints)
 
     c_map.plot()
     plt.show()
 
-    print(c_map._boundary_cycles)
-    print(c_map.boundary_cycle_nodes_ordered())
 
-    print(c_map.nodes2cycle([0, 2, 1, 3, 4]))
-    # simplices = boundary_cycle_graphs(c_map)
-    #
+    print("Cmap internal boudnary cycle")
+    print(c_map._boundary_cycles)
+    print("\nEvasion Path sorted boundary cycles")
+    print(c_map.get_boundary_cycles())
+    print("\nget boundary cycle nodes")
+    print(c_map.boundary_cycle_nodes_ordered())
+    print("\nget boundary cycles from nodes")
+    print(c_map.nodes2cycle([0, 2, 1, 3]))
+
     # boundary = [1, 2, 3, 4, 0]
     #
     # print([set(boundary) == set(G.nodes()) for G in simplices])
