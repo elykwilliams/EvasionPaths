@@ -12,6 +12,21 @@ class CycleLabelling:
     def __getitem__(self, item):
         return self.cell_label[item]
 
+    def __setitem__(self, key, value):
+        self.cell_label[key] = value
+
+    def __str__(self):
+        res = ""
+        for key in self.cell_label.keys():
+            res += str(key)+": " + str(self.cell_label[key]) + "\n"
+        return res
+
+    def __contains__(self, item):
+        return item in self.cell_label.keys()
+
+    def delete_cycle(self, cycle):
+        del self.cell_label[cycle]
+
     def has_intruder(self):
         return any(self.cell_label.values())
 
