@@ -57,41 +57,6 @@ class RectangularDomain:
         return self.points + self.generate_interior(n_sensors)
 
 
-class CircularDomain:
-    """This class defines the boundary and stores data related to the boundary geometry. It does not store the boundary
-        points, simply generates and returns them """
-
-    def __init__(self, spacing: float = 0.2, radius: float = 1):
-        self.radius = radius
-        self.points = []
-        self.generate_boundary_points(spacing)
-
-    def __len__(self):
-        return len(self.points)
-
-    def at_boundary(self, point: tuple) -> bool:
-        """This function defines the boundary by determining if a point is at the boundary or not. """
-        return point[0] ** 2 + point[1] ** 2 == self.radius ** 2
-
-    def in_domain(self, point: tuple) -> bool:
-        """This function determines if a point is in the interior of the domain or not """
-        return point[0] ** 2 + point[1] ** 2 < self.radius ** 2
-
-    def generate_boundary_points(self, spacing: float) -> list:
-        """ Generate a list of points (represent by tuples)
-            Add corners explicitly in case boundary width is not divisible by radius
-            Spacing should be *at most* 2*sensing_radius when used.
-        """
-        dtheta = spacing / self.radius
-
-        self.points = [(self.radius * np.cos(theta), self.radius * np.sin(theta))
-                       for theta in np.arange(0, 2 * np.pi, dtheta)]
-
-        return self.points
-
-
-
-
 if __name__=="__main__":
     import matplotlib.pyplot as plt
 
