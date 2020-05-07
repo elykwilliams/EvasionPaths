@@ -282,7 +282,7 @@ class EvasionPathSimulation:
                 return
 
             enclosing_cycle = cycles_added.pop()
-            if not is_connected(self.graph, enclosing_cycle):
+            if not is_connected(self.graph, enclosing_cycle) and len(cycles_added) != 0:
                 enclosing_cycle = cycles_added.pop()
 
             # Find labelled cycles that have become disconnected,
@@ -306,7 +306,7 @@ class EvasionPathSimulation:
         # Reconnect
         elif case == (1, 0, 0, 0, 1, 2) or case == (1, 0, 0, 0, 1, 1):
             enclosing_cycle = cycles_removed.pop()
-            if enclosing_cycle not in self.cell_label:
+            if enclosing_cycle not in self.cell_label and len(cycles_removed) != 0:
                 enclosing_cycle = cycles_removed.pop()
 
             if enclosing_cycle not in self.cell_label:
@@ -336,6 +336,9 @@ class EvasionPathSimulation:
 
         # two isolated points connecting
         elif case == (1, 0, 0, 0, 1, 0):
+            return
+        # two points becomming isolated
+        elif case == (0, 1, 0, 0, 0, 1):
             return
         else:
             raise InvalidStateChange(self.state)
