@@ -24,7 +24,6 @@ brownian_motion = BilliardMotion(dt=timestep_size,
                                  boundary=unit_square,
                                  n_sensors=num_sensors+len(unit_square))
 
-global simulation
 simulation = EvasionPathSimulation(boundary=unit_square,
                                    motion_model=brownian_motion,
                                    n_int_sensors=num_sensors,
@@ -39,6 +38,7 @@ class SimulationOver(Exception):
 def update(_):
     if not simulation.cycle_label.has_intruder():
         raise SimulationOver
+
     simulation.do_timestep()
     simulation.time += simulation.dt
 
@@ -59,6 +59,7 @@ def animate():
     n_steps = 250
     ms_per_frame = 1000*timestep_size
     fig = plt.figure(1)
+
     ani = None
     try:
         ani = FuncAnimation(fig, update, interval=ms_per_frame, frames=n_steps)

@@ -68,29 +68,19 @@ class RectangularDomain:
         return self.points + self.generate_interior(n_int_sensors)
 
 
-if __name__=="__main__":
-    import matplotlib.pyplot as plt
+if __name__ == "__main__":
+    from plotting_tools import *
 
-    sensing_radius = 0.15
+    class Simulation:
+        sensing_radius = 0.15
+        boundary = RectangularDomain(sensing_radius)
+        points = boundary.points
 
-    # Draw vi
-    unit_square = RectangularDomain(sensing_radius)
-    x_pts = [x for x, _ in unit_square.points]
-    y_pts = [y for _, y in unit_square.points]
-    plt.plot(x_pts, y_pts, "*")
-
-    # Draw unit square
-    x_us = [0, 0, 1, 1, 0]
-    y_us = [0, 1, 1, 0, 0]
-    plt.plot(x_us, y_us)
+    show_boundary_points(Simulation)
+    show_virtual_boundary(Simulation)
+    show_sensor_radius(Simulation)
 
     ax = plt.gca()
-
-    for point in unit_square.points:
-        ax.add_artist(plt.Circle(point, sensing_radius, color='b', alpha=0.1))
-
     ax.axis('equal')
-    ax.set(xlim=(unit_square.vx_min - 1.1*sensing_radius, unit_square.vx_max + 1.1*sensing_radius),
-           ylim=(unit_square.vy_min - 1.1*sensing_radius, unit_square.vy_max + 1.1*sensing_radius))
-    ax.set_aspect('equal', 'box')
+    ax.axis("off")
     plt.show()
