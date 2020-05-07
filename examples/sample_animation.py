@@ -1,12 +1,12 @@
 # Kyle Williams 3/4/20
 from motion_model import *
-from evasion_path import *
+from time_stepping import *
 import matplotlib.pyplot as plt
 from matplotlib.animation import FuncAnimation
 from gudhi import AlphaComplex
 
 num_sensors = 10
-sensing_radius = 0.1
+sensing_radius = 0.15
 timestep_size = 0.1
 
 run_number = 5
@@ -72,7 +72,7 @@ def plot_alpha_complex(sim):
     for simplex in sim.state.simplices2:
         xpts = [sim.points[n][0] for n in simplex]
         ypts = [sim.points[n][1] for n in simplex]
-        if simplex2cycle(simplex, sim.state.boundary_cycles) in sim.cell_label:
+        if simplex2cycle(simplex, sim.state.boundary_cycles) in sim.cycle_label:
             ax.fill(xpts, ypts, color='r', alpha=0.1)
 
     for edge in sim.state.simplices1:
@@ -92,10 +92,10 @@ def plot_no_intruder(sim):
             continue
 
         cycle = simplex2cycle(cycle_nodes, sim.state.boundary_cycles)
-        if cycle not in sim.cell_label:
+        if cycle not in sim.cycle_label:
             continue
 
-        if sim.cell_label[simplex2cycle(cycle_nodes, sim.state.boundary_cycles)]:
+        if sim.cycle_label[simplex2cycle(cycle_nodes, sim.state.boundary_cycles)]:
             ax.fill(x_pts, y_pts, color='k', alpha=0.2)
         else:
             pass
@@ -103,12 +103,10 @@ def plot_no_intruder(sim):
 
 def update(timestep):
     global simulation
-    if not simulation.cell_label.has_intruder():
+    if not simulation.cycle_label.has_intruder():
         raise SimulationOver
-    simulation.evasion_paths = ""
     simulation.do_timestep()
     simulation.time += simulation.dt
-    print(simulation.evasion_paths)
     fig = plt.figure(1)
     ax = plt.gca()
     ax.cla()

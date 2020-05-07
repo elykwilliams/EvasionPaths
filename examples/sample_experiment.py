@@ -5,7 +5,7 @@ from sys import path
 
 path.insert(1, '../src')
 
-from evasion_path import *
+from time_stepping import *
 from joblib import Parallel, delayed
 
 # Setup
