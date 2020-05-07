@@ -58,8 +58,8 @@ class RectangularDomain:
         rand_y = np.random.uniform(self.y_min, self.y_max, size=n_int_sensors)
         return list(zip(rand_x, rand_y))
 
-    def generate_points(self, n_sensors):
-        return self.points + self.generate_interior(n_sensors)
+    def generate_points(self, n_int_sensors):
+        return self.points + self.generate_interior(n_int_sensors)
 
 
 if __name__=="__main__":

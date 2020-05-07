@@ -23,6 +23,8 @@ class EvasionPathSimulation:
 
         self.motion_model = motion_model
         self.boundary = boundary
+        self.sensing_radius = sensing_radius
+        self.n_total_sensors = n_int_sensors + len(boundary)
 
         # Parameters
         self.dt = dt
