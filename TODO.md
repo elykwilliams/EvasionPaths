@@ -1,41 +1,32 @@
 # Features:
  - Collective Motion Model
+ - Plotting Tools
  
 # Bugs:
  - Fix Environment files to be portable
- - Unknown Error somewhere in evasion_path.run(): 
+ - Points are not reflected during interpolation
  
-        "list assignment index out of range"
-   Error may no longer exist
-
-# Development:
- - Allow for fully disconnected graph
- - Compute alpha complex fully in parallel
- - AlphaComplex with variable radii
- - Work towards fully distributed algorithm
- - 3D?
- - Smart Motion Model?
- - decaying radii?
- 
-# Documentation:
+ # Documentation:
  - Finish writing documentation
  - Go through and comment files
- - Add Licence.txt
- - Measure Complexity and benchmark algorithm
  - DOxygen?
+ - Measure Complexity and benchmark algorithm
  
 # Structural:
- - Simplify example scripts
- - add more example scripts
- - Clean up n_sensors interface
- - Clean up cycle labelling interface
- - refactor update_labeling()??
- - Simplify Delauney flip check logic 
- - bounday should have alpha-cycle
+ - Simplify/update/add example scripts
+ - Remove experiments from git tracking
  - Add unit tests
  
  # Experiments
  - N - slice
  - R - slice
  - N-R sample
+ 
+ # Development:
+ - Allow for fully disconnected graph ("power on")
+ - Compute alpha complex fully in parallel
+ - AlphaComplex with variable radii
+ - Work towards fully distributed algorithm
+ - 3D?
+ - "Smart" Motion Model
  
