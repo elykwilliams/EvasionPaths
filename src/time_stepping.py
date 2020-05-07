@@ -44,18 +44,13 @@ class EvasionPathSimulation:
         self.old_state = deepcopy(self.state)
 
     def run(self):
-        if self.Tend != 0:
-            while self.time < self.Tend:
-                self.time += self.dt
-                self.evasion_paths = ""
-                self.evasion_paths += self.do_timestep()
-            return self.time
-        else:
-            while self.cycle_label.has_intruder():
-                self.time += self.dt
-                self.evasion_paths = ""
-                self.evasion_paths += self.do_timestep()
-            return self.time
+        while self.cycle_label.has_intruder():
+            self.time += self.dt
+            self.evasion_paths = ""
+            self.evasion_paths += self.do_timestep()
+            if 0 < self.Tend < self.time:
+                break
+        return self.time
 
     def do_timestep(self, new_points=(), level=0):
 
@@ -79,12 +74,11 @@ class EvasionPathSimulation:
             except InvalidStateChange:
                 self.do_timestep(self.points, level=level + 1)
 
-            finally:
-                self.n_steps += 1
-                self.update_old_data()
+            self.n_steps += 1
+            self.update_old_data()
 
-                if level == 0:
-                    return
+            if level == 0:
+                return
 
 
 if __name__ == "__main__":
