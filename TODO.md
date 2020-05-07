@@ -1,9 +1,8 @@
 # Features:
  - Collective Motion Model
- - Plotting Tools
  
 # Bugs:
- - Fix Environment files to be portable
+ - Fix environment.yml to be portable
  - Points are not reflected during interpolation
  
  # Documentation:
@@ -13,7 +12,7 @@
  - Measure Complexity and benchmark algorithm
  
 # Structural:
- - Simplify/update/add example scripts
+ - Simplify/Update/Add example scripts
  - Remove experiments from git tracking
  - Add unit tests
  
@@ -22,7 +21,7 @@
  - R - slice
  - N-R sample
  
- # Development:
+ # Future Development:
  - Allow for fully disconnected graph ("power on")
  - Compute alpha complex fully in parallel
  - AlphaComplex with variable radii

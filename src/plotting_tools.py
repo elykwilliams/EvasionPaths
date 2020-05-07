@@ -6,10 +6,6 @@
 # If not, visit: https://opensource.org/licenses/BSD-3-Clause
 # ************************************************************
 
-from cycle_labelling import *
-from combinatorial_map import *
-from states import *
-from boundary_geometry import *
 from time_stepping import *
 from motion_model import *
 import matplotlib.pyplot as plt
@@ -32,18 +28,18 @@ def get_graph(sim):
 
 
 def show_boundary_points(sim):
-    ax = plt.gca()
-    x_pts = [x for x, _ in sim.boundary.points]
-    y_pts = [y for _, y in sim.boundary.points]
-    ax.plot(x_pts, y_pts, "k*")
+    axis = plt.gca()
+    xpts = [x for x, _ in sim.boundary.points]
+    ypts = [y for _, y in sim.boundary.points]
+    axis.plot(xpts, ypts, "k*")
 
 
 def show_virtual_boundary(sim):
-    ax = plt.gca()
+    axis = plt.gca()
     b = sim.boundary
-    x_pts = [b.x_min, b.x_min, b.x_max, b.x_max, b.x_min]
-    y_pts = [b.y_min, b.y_max, b.y_max, b.y_min, b.y_min]
-    ax.plot(x_pts, y_pts)
+    xpts = [b.x_min, b.x_min, b.x_max, b.x_max, b.x_min]
+    ypts = [b.y_min, b.y_max, b.y_max, b.y_min, b.y_min]
+    axis.plot(xpts, ypts)
 
 
 def show_labelled_graph(sim):
@@ -53,27 +49,27 @@ def show_labelled_graph(sim):
 
 
 def show_sensor_points(sim):
-    ax = plt.gca()
-    x_pts = [x for x, _ in sim.points]
-    y_pts = [y for _, y in sim.points]
-    ax.plot(x_pts, y_pts, "k*")
+    axis = plt.gca()
+    xpts = [x for x, _ in sim.points]
+    ypts = [y for _, y in sim.points]
+    axis.plot(xpts, ypts, "k*")
     return
 
 
 def show_sensor_radius(sim):
-    ax = plt.gca()
-    for point in sim.points:
-        ax.add_artist(plt.Circle(point, sim.sensing_radius, color='b', alpha=0.1, clip_on=False))
+    axis = plt.gca()
+    for pt in sim.points:
+        axis.add_artist(plt.Circle(pt, sim.sensing_radius, color='b', alpha=0.1, clip_on=False))
 
 
 def show_possible_intruder(sim):
-    ax = plt.gca()
+    axis = plt.gca()
     graph = get_graph(sim)
     cmap = CMap(graph, sim.points)
 
     for cycle_nodes in cmap.boundary_cycle_nodes_ordered():
-        x_pts = [sim.points[n][0] for n in cycle_nodes]
-        y_pts = [sim.points[n][1] for n in cycle_nodes]
+        xpts = [sim.points[n][0] for n in cycle_nodes]
+        ypts = [sim.points[n][1] for n in cycle_nodes]
         if set(cycle_nodes) == set(cycle2nodes(sim.boundary.alpha_cycle)):
             continue
 
@@ -82,7 +78,7 @@ def show_possible_intruder(sim):
             continue
 
         if sim.cycle_label[simplex2cycle(cycle_nodes, sim.state.boundary_cycles)]:
-            ax.fill(x_pts, y_pts, color='k', alpha=0.2)
+            axis.fill(xpts, ypts, color='k', alpha=0.2)
         else:
             pass
     show_sensor_points(sim)
@@ -90,18 +86,18 @@ def show_possible_intruder(sim):
 
 def show_alpha_complex(sim):
 
-    ax = plt.gca()
+    axis = plt.gca()
 
     for simplex in sim.state.simplices2:
         xpts = [sim.points[n][0] for n in simplex]
         ypts = [sim.points[n][1] for n in simplex]
         if simplex2cycle(simplex, sim.state.boundary_cycles) in sim.cycle_label:
-            ax.fill(xpts, ypts, color='r', alpha=0.1)
+            axis.fill(xpts, ypts, color='r', alpha=0.1)
 
     for edge in sim.state.simplices1:
         xpts = [sim.points[n][0] for n in edge]
         ypts = [sim.points[n][1] for n in edge]
-        ax.plot(xpts, ypts, color='r', alpha=0.15)
+        axis.plot(xpts, ypts, color='r', alpha=0.15)
 
     show_sensor_points(sim)
 
@@ -114,7 +110,6 @@ def show_state(sim):
 
 def show_combinatorial_map(sim):
     graph = get_graph(sim)
-    cmap = CMap(graph, sim.points)
     temp_dict = {edge: edge2dart(edge) for edge in graph.edges}
     temp_dict.update({reversed(edge): edge2dart(tuple(reversed(edge))) for edge in graph.edges})
     nx.draw(graph, sim.points)
@@ -163,7 +158,5 @@ if __name__ == "__main__":
 
     plt.figure(7)
     show_combinatorial_map(simulation)
-
-
 
     plt.show()

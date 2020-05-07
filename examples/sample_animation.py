@@ -1,19 +1,21 @@
-# Kyle Williams 3/4/20
-from motion_model import *
-from time_stepping import *
-import matplotlib.pyplot as plt
+# ************************************************************
+# Copyright (c) 2020, Kyle Williams - All Rights Reserved.
+# You may use, distribute and modify this code under the
+# terms of the BSD-3 license. You should have received a copy
+# of the BSD-3 license with this file.
+# If not, visit: https://opensource.org/licenses/BSD-3-Clause
+# ************************************************************
+
 from matplotlib.animation import FuncAnimation
 from plotting_tools import *
+from motion_model import *
+from time_stepping import *
 
 num_sensors = 20
 sensing_radius = 0.095
 timestep_size = 0.1
 
-run_number = 5
-output_dir = './'
-filename_base = "N" + str(num_sensors) + "R" + "".join(str(sensing_radius).split("."))\
-                + "dt" + "".join(str(timestep_size).split(".")) + "-" + str(run_number)
-filename_base = "Sample3"
+filename_base = "SampleAnimation"
 
 unit_square = RectangularDomain(spacing=sensing_radius)
 
@@ -22,6 +24,7 @@ brownian_motion = BilliardMotion(dt=timestep_size,
                                  boundary=unit_square,
                                  n_sensors=num_sensors+len(unit_square))
 
+global simulation
 simulation = EvasionPathSimulation(boundary=unit_square,
                                    motion_model=brownian_motion,
                                    n_int_sensors=num_sensors,
@@ -33,20 +36,18 @@ class SimulationOver(Exception):
     pass
 
 
-def update(timestep):
-    global simulation
-
+def update(_):
     if not simulation.cycle_label.has_intruder():
         raise SimulationOver
     simulation.do_timestep()
     simulation.time += simulation.dt
 
-    ax = plt.gca()
-    ax.cla()
-    ax.axis("off")
-    ax.axis("equal")
+    axis = plt.gca()
+    axis.cla()
+    axis.axis("off")
+    axis.axis("equal")
     title_str = "T = " + "{:5.2f}:\n".format(simulation.time)
-    ax.set_title(title_str, loc="left")
+    axis.set_title(title_str, loc="left")
 
     show_state(simulation)
 
@@ -58,13 +59,14 @@ def animate():
     n_steps = 250
     ms_per_frame = 1000*timestep_size
     fig = plt.figure(1)
+    ani = None
     try:
         ani = FuncAnimation(fig, update, interval=ms_per_frame, frames=n_steps)
-    except SimulationOver as s:
-        pass
+    except SimulationOver:
+        print("Simulation Complete")
     finally:
         plt.show()
-        #ani.save(filename_base+'.mp4')
+        ani.save(filename_base+'.mp4')
 
 
 if __name__ == "__main__":
