@@ -5,8 +5,8 @@ import matplotlib.pyplot as plt
 from matplotlib.animation import FuncAnimation
 from gudhi import AlphaComplex
 
-num_sensors = 10
-sensing_radius = 0.15
+num_sensors = 20
+sensing_radius = 0.095
 timestep_size = 0.1
 
 run_number = 5
@@ -48,7 +48,7 @@ def get_cmap(sim):
     simplices1 = [tuple(simplex) for simplex, _ in simplex_tree.get_skeleton(1) if len(simplex) == 2]
 
     graph = nx.Graph()
-    graph.add_nodes_from(range(sim.n_total_sensors))
+    graph.add_nodes_from(range(len(sim.points)))
     graph.add_edges_from(simplices1)
 
     return CMap(graph, sim.points)
