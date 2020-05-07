@@ -6,12 +6,9 @@ from states import *
 
 def interpolate_points(old_points, new_points, t):
     assert (len(old_points) == len(new_points))
-    return [(old_points[n][0] * (1 - t) + new_points[n][0] * t, old_points[n][1] * (1 - t) + new_points[n][1] * t)
+    return [(old_points[n][0] * (1 - t) + new_points[n][0] * t,
+             old_points[n][1] * (1 - t) + new_points[n][1] * t)
             for n in range(len(old_points))]
-
-
-class GraphNotConnected(Exception):
-    def __str__(self): return "Graph not connected"
 
 
 class EvasionPathSimulation:
@@ -35,16 +32,13 @@ class EvasionPathSimulation:
         self.n_steps = 0
 
         # Point data
-        self.sensing_radius = sensing_radius
-        self.n_total_sensors = n_int_sensors + len(boundary)
         self.points = boundary.generate_points(n_int_sensors)
         self.old_points = self.points
 
         self.state = State(self.points, self.sensing_radius, self.boundary)
         self.old_state = self.state
         self.state_change = StateChange(self.old_state, self.state)
-
-        self.cell_label = CycleLabelling(self.state)
+        self.cycle_label = CycleLabelling(self.state)
 
     def update_old_data(self):
         self.old_points = self.points.copy()
@@ -58,7 +52,7 @@ class EvasionPathSimulation:
                 self.evasion_paths += self.do_timestep()
             return self.time
         else:
-            while self.cell_label.has_intruder():
+            while self.cycle_label.has_intruder():
                 self.time += self.dt
                 self.evasion_paths = ""
                 self.evasion_paths += self.do_timestep()
@@ -81,7 +75,7 @@ class EvasionPathSimulation:
             self.state_change = StateChange(self.old_state, self.state)
 
             try:
-                self.cell_label.update_labelling(self.state_change)
+                self.cycle_label.update(self.state_change)
 
             except InvalidStateChange:
                 self.do_timestep(self.points, level=level + 1)
