@@ -3,7 +3,9 @@ from combinatorial_map import simplex2cycle
 case_name = {
     (0, 0, 0, 0, 0, 0): "",
     (1, 0, 0, 0, 2, 1): "Add 1-Simplex",
+    (1, 0, 0, 0, 1, 0): "Add 1-Simplex",
     (0, 1, 0, 0, 1, 2): "Remove 1-Simplex",
+    (0, 1, 0, 0, 0, 1): "Remove 1-Simplex",
     (0, 0, 1, 0, 0, 0): "Add 2-Simplex",
     (0, 0, 0, 1, 0, 0): "Remove 2-Simplex",
     (1, 0, 1, 0, 2, 1): "Add 1-Simplex and 2-Simplex",
@@ -18,12 +20,17 @@ case_name = {
 class CycleLabelling:
     # True = possible intruder
     # False = no intruder
-    def __init__(self, boundary_cycles, simplices):
+    def __init__(self, state):
         self.cell_label = dict()
-        for cycle in boundary_cycles:
+        for cycle in state.boundary_cycles:
             self.cell_label[cycle] = True
-        for simplex in [simplex2cycle(simplex, boundary_cycles) for simplex in simplices]:
-            self.cell_label[simplex] = False
+
+        simplex_cycles = [simplex2cycle(simplex, state.boundary_cycles) for simplex in state.simplices2]
+        for simplex in simplex_cycles:
+            if state.is_connected(simplex):
+                self.cell_label[simplex] = False
+            else:
+                del self.cell_label[simplex]
 
     def __getitem__(self, item):
         return self.cell_label[item]
