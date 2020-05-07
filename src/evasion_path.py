@@ -157,7 +157,7 @@ class EvasionPathSimulation:
 
             # Find Evasion Path
             try:
-                self.update_labelling(self.old_state)
+                self.update_labelling(self.old_state, self.state)
                 self.n_steps += 1
 
             except InvalidStateChange as exception:
@@ -172,22 +172,22 @@ class EvasionPathSimulation:
             # Update old data
             self.update_old_data()
 
-    def update_labelling(self, old_state):
+    def update_labelling(self, old_state, new_state):
 
-        edges_added = set_difference(self.edges, old_state.simplices1)
-        edges_removed = set_difference(old_state.simplices1, self.edges)
+        edges_added = set_difference(new_state.simplices1, old_state.simplices1)
+        edges_removed = set_difference(old_state.simplices1, new_state.simplices1)
 
-        simplices_added = set_difference(self.simplices, old_state.simplices2)
-        simplices_removed = set_difference(old_state.simplices2, self.simplices)
+        simplices_added = set_difference(new_state.simplices2, old_state.simplices2)
+        simplices_removed = set_difference(old_state.simplices2, new_state.simplices2)
 
-        cycles_added = set_difference(self.boundary_cycles, old_state.boundary_cycles)
-        cycles_removed = set_difference(old_state.boundary_cycles, self.boundary_cycles)
+        cycles_added = set_difference(new_state.boundary_cycles, old_state.boundary_cycles)
+        cycles_removed = set_difference(old_state.boundary_cycles, new_state.boundary_cycles)
 
-        self.state_changes = (edges_added.copy(), edges_removed.copy(),
-                              simplices_added.copy(), simplices_removed.copy(),
-                              cycles_added.copy(), cycles_removed.copy())
+        state_changes = (edges_added.copy(), edges_removed.copy(),
+                         simplices_added.copy(), simplices_removed.copy(),
+                         cycles_added.copy(), cycles_removed.copy())
 
-        case = tuple(len(s) for s in self.state_changes)
+        case = tuple(len(s) for s in state_changes)
 
         # No Change
         if case == (0, 0, 0, 0, 0, 0):
@@ -211,7 +211,7 @@ class EvasionPathSimulation:
         # Add Simplex
         elif case == (0, 0, 1, 0, 0, 0):
             simplex = simplices_added.pop()
-            new_cycle = simplex2cycle(simplex, self.boundary_cycles)
+            new_cycle = simplex2cycle(simplex, new_state.boundary_cycles)
             if new_cycle not in self.cell_label:
                 return
 
@@ -226,10 +226,10 @@ class EvasionPathSimulation:
         elif case == (1, 0, 1, 0, 2, 1):
             old_cycle = cycles_removed.pop()
             simplex = simplices_added.pop()
-            added_simplex = simplex2cycle(simplex, self.boundary_cycles)
+            added_simplex = simplex2cycle(simplex, new_state.boundary_cycles)
 
             if not set(edges_added.pop()).issubset(set(simplex)):
-                raise InvalidStateChange(self.state_changes)
+                raise InvalidStateChange(state_changes)
 
             if old_cycle not in self.cell_label:
                 return
@@ -242,7 +242,7 @@ class EvasionPathSimulation:
             new_cycle = cycles_added.pop()
 
             if not set(edges_removed.pop()).issubset(set(simplex)):
-                raise InvalidStateChange(self.state_changes)
+                raise InvalidStateChange(state_changes)
 
             if any([cell not in self.cell_label for cell in cycles_removed]):
                 return
@@ -259,13 +259,13 @@ class EvasionPathSimulation:
 
             # Check that edges correspond to correct boundary cycles
             if not all([set(oldedge).issubset(set(s)) for s in simplices_removed]):
-                raise InvalidStateChange(self.state_changes)
+                raise InvalidStateChange(state_changes)
             elif not all([set(newedge).issubset(set(s)) for s in simplices_added]):
-                raise InvalidStateChange(self.state_changes)
+                raise InvalidStateChange(state_changes)
             elif not all([set(s).issubset(set(oldedge).union(set(newedge))) for s in simplices_removed]):
-                raise InvalidStateChange(self.state_changes)
+                raise InvalidStateChange(state_changes)
             elif not all([set(s).issubset(set(oldedge).union(set(newedge))) for s in simplices_added]):
-                raise InvalidStateChange(self.state_changes)
+                raise InvalidStateChange(state_changes)
 
             self.cell_label.delaunay_flip(cycles_removed, cycles_added)
 
@@ -282,7 +282,7 @@ class EvasionPathSimulation:
             # Find labelled cycles that have become disconnected,
             # this works because all other disconnected cycles have been forgotten
             disconnected_cycles = []
-            for cycle in self.boundary_cycles:
+            for cycle in new_state.boundary_cycles:
                 if not is_connected(self.graph, cycle) and cycle in self.cell_label:
                     disconnected_cycles.append(cycle)
 
@@ -314,13 +314,13 @@ class EvasionPathSimulation:
             self.cell_label[new_cycle] = self.cell_label[enclosing_cycle]
 
             # Add back any forgotten cycle
-            for cycle in self.get_boundary_cycles():
+            for cycle in new_state.boundary_cycles:
                 if is_connected(self.graph, cycle) and cycle not in self.cell_label:
                     self.cell_label[cycle] = self.cell_label[enclosing_cycle]
 
             # Reset all connected 2-simplices to have no intruder
-            for simplex in self.simplices:
-                cycle = simplex2cycle(simplex, self.boundary_cycles)
+            for simplex in new_state.simplices2:
+                cycle = simplex2cycle(simplex, new_state.boundary_cycles)
                 if cycle not in self.cell_label:
                     continue
                 self.cell_label.add_twosimplex(cycle)
@@ -331,11 +331,11 @@ class EvasionPathSimulation:
         # two isolated points connecting
         elif case == (1, 0, 0, 0, 1, 0):
             return
-        # two points becomming isolated
+        # two points becoming isolated
         elif case == (0, 1, 0, 0, 0, 1):
             return
         else:
-            raise InvalidStateChange(self.state_changes)
+            raise InvalidStateChange(state_changes)
 
         self.evasion_paths += case_name[case] + ", "
 
