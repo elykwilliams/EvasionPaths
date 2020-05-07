@@ -58,7 +58,7 @@ def simulate() -> float:
 
     simulation = EvasionPathSimulation(boundary=boundary,
                                        motion_model=brownian_motion,
-                                       n_sensors=num_sensors,
+                                       n_int_sensors=num_sensors,
                                        sensing_radius=sensing_radius,
                                        dt=timestep_size)
 

@@ -1,16 +1,18 @@
 # Kyle Williams 3/4/20
+from motion_model import *
 from evasion_path import *
 import matplotlib.pyplot as plt
 from matplotlib.animation import FuncAnimation
 
 num_sensors = 10
-sensing_radius = 0.15
-timestep_size = 0.05
+sensing_radius = 0.2
+timestep_size = 0.1
 
 run_number = 5
 output_dir = './'
 filename_base = "N" + str(num_sensors) + "R" + "".join(str(sensing_radius).split("."))\
                 + "dt" + "".join(str(timestep_size).split(".")) + "-" + str(run_number)
+filename_base = "Sample3"
 
 unit_square = RectangularDomain(spacing=sensing_radius)
 
@@ -27,7 +29,7 @@ brownian_motion = BilliardMotion(dt=timestep_size,
 
 simulation = EvasionPathSimulation(boundary=unit_square,
                                    motion_model=brownian_motion,
-                                   n_sensors=num_sensors,
+                                   n_int_sensors=num_sensors,
                                    sensing_radius=sensing_radius,
                                    dt=timestep_size)
 
@@ -54,7 +56,8 @@ def plot_alpha_complex(sim):
     for simplex in sim.simplices:
         xpts = [sim.points[n][0] for n in simplex]
         ypts = [sim.points[n][1] for n in simplex]
-        ax.fill(xpts, ypts, color='r', alpha=0.1)
+        if simplex2cycle(simplex, sim.boundary_cycles) in sim.cell_label:
+            ax.fill(xpts, ypts, color='r', alpha=0.1)
 
     for edge in sim.edges:
         xpts = [sim.points[n][0] for n in edge]
@@ -66,12 +69,17 @@ def plot_no_intruder(sim):
     fig = plt.gcf()
     ax = fig.gca()
 
-    for cycle in sim.cmap.boundary_cycle_nodes_ordered():
-        x_pts = [sim.points[n][0] for n in cycle]
-        y_pts = [sim.points[n][1] for n in cycle]
-        if set(cycle) == set(sim.alpha_shape):
+    for cycle_nodes in CMap(sim.graph, sim.points).boundary_cycle_nodes_ordered():
+        x_pts = [sim.points[n][0] for n in cycle_nodes]
+        y_pts = [sim.points[n][1] for n in cycle_nodes]
+        if set(cycle_nodes) == set(cycle2nodes(sim.alpha_cycle)):
             continue
-        if sim.cell_label[sim.cmap.nodes2cycle(cycle)]:
+
+        cycle = simplex2cycle(cycle_nodes, sim.boundary_cycles)
+        if cycle not in sim.cell_label:
+            continue
+
+        if sim.cell_label[simplex2cycle(cycle_nodes, sim.boundary_cycles)]:
             ax.fill(x_pts, y_pts, color='k', alpha=0.2)
         else:
             pass
@@ -101,8 +109,8 @@ def update(timestep):
 
 
 def animate():
-    n_steps = 100
-    ms_per_frame = 10*timestep_size
+    n_steps = 250
+    ms_per_frame = 1000*timestep_size
     fig = plt.figure(1)
     try:
         ani = FuncAnimation(fig, update, interval=ms_per_frame, frames=n_steps)
