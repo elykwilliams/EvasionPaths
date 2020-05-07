@@ -68,16 +68,13 @@ class EvasionPathSimulation:
 
         # Initialize Fields
         self.evasion_paths = ""
-        self.boundary_cycles = []
         self.old_points = []
-        self.old_cycles = []
-        self.old_edges = []
-        self.old_simplices = []
+        self.boundary_cycles = []
         self.edges = []
         self.simplices = []
+        self.graph = nx.Graph()
         self.state_changes = None
         self.old_state = None
-        self.graph = nx.Graph()
 
         self.motion_model = motion_model
 
@@ -122,9 +119,6 @@ class EvasionPathSimulation:
 
     def update_old_data(self):
         self.old_points = self.points.copy()
-        self.old_cycles = self.boundary_cycles.copy()
-        self.old_edges = self.edges.copy()
-        self.old_simplices = self.simplices.copy()
         self.old_state = deepcopy(self.state)
 
     def reset_current_data(self):
@@ -163,7 +157,7 @@ class EvasionPathSimulation:
 
             # Find Evasion Path
             try:
-                self.update_labelling()
+                self.update_labelling(self.old_state)
                 self.n_steps += 1
 
             except InvalidStateChange as exception:
@@ -178,16 +172,16 @@ class EvasionPathSimulation:
             # Update old data
             self.update_old_data()
 
-    def update_labelling(self):
+    def update_labelling(self, old_state):
 
-        edges_added = set_difference(self.edges, self.old_edges)
-        edges_removed = set_difference(self.old_edges, self.edges)
+        edges_added = set_difference(self.edges, old_state.simplices1)
+        edges_removed = set_difference(old_state.simplices1, self.edges)
 
-        simplices_added = set_difference(self.simplices, self.old_simplices)
-        simplices_removed = set_difference(self.old_simplices, self.simplices)
+        simplices_added = set_difference(self.simplices, old_state.simplices2)
+        simplices_removed = set_difference(old_state.simplices2, self.simplices)
 
-        cycles_added = set_difference(self.boundary_cycles, self.old_cycles)
-        cycles_removed = set_difference(self.old_cycles, self.boundary_cycles)
+        cycles_added = set_difference(self.boundary_cycles, old_state.boundary_cycles)
+        cycles_removed = set_difference(old_state.boundary_cycles, self.boundary_cycles)
 
         self.state_changes = (edges_added.copy(), edges_removed.copy(),
                               simplices_added.copy(), simplices_removed.copy(),
