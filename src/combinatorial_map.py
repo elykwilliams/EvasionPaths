@@ -1,16 +1,17 @@
-# Kyle Williams 2/25/20
-
-# Note that networkx does support planar-graph
-# https://networkx.github.io/documentation/stable/reference/algorithms/planarity.html
-# However, it appears that construction is more manual,and that rotation information is
-# stored as nodes/edges are added to the graph.
+# ************************************************************
+# Copyright (c) 2020, Kyle Williams - All Rights Reserved.
+# You may use, distribute and modify this code under the
+# terms of the BSD-3 license. You should have received a copy
+# of the BSD-3 license with this file.
+# If not, visit: https://opensource.org/licenses/BSD-3-Clause
+# ************************************************************
 
 import networkx as nx
 from matplotlib import pyplot as plt
 from math import *
 
 
-# Sort counter-clockwise w.r.t center (Thanks to Nick Closuit for idea)
+# Sort counter-clockwise w.r.t center
 def theta(a, center):
     oa = (a[0] - center[0], a[1] - center[1])
     return atan2(oa[1], oa[0])
