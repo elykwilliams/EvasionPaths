@@ -48,7 +48,7 @@ class State(object):
         self._connected_nodes = nx.node_connected_component(graph, 0)
 
     def is_connected(self, cycle):
-        return set(cycle2nodes(cycle)).intersection(self._connected_nodes) != set()
+        return not set(cycle2nodes(cycle)).isdisjoint(set(self._connected_nodes))
 
 
 class StateChange(object):
@@ -101,8 +101,7 @@ class StateChange(object):
             return "Invalid Case"
 
     def __str__(self):
-        return "State Change:\n" \
-            + str(self.case) + "\n" \
+        return "State Change:" + str(self.case) + "\n" \
             + "New edges:" + str(self.edges_added) + "\n" \
             + "Removed edges:" + str(self.edges_removed) + "\n" \
             + "New Simplices:" + str(self.simplices_added) + "\n" \
@@ -128,11 +127,3 @@ class InvalidStateChange(Exception):
         return "Invalid State Change \n\n" \
                + str(self.state_change)
 
-
-class BadStateChange(Exception):
-    def __init__(self, state_change):
-        self.state_change = state_change
-
-    def __str__(self):
-        return "Invalid State Change not caught in is_valid \n\n" \
-               + str(self.state_change)
