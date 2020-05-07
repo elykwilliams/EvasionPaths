@@ -53,9 +53,6 @@ class CMap:
         self.darts = [edge2dart((e1, e2)) for e1, e2 in graph.edges]
         self.darts.extend([edge2dart((e2, e1)) for e1, e2 in graph.edges])
 
-        self.G = graph          # only used for plotting
-        self.points = points    # only used for plotting
-
         self.set_boundary_cycles()
 
     def sigma(self, dart):
@@ -80,14 +77,6 @@ class CMap:
 
     def phi(self, dart):
         return self.sigma(self.alpha(dart))
-
-    def plot(self):
-        temp_dict = {edge: edge2dart(edge) for edge in self.G.edges}
-        temp_dict.update({reversed(edge): edge2dart(reversed(edge)) for edge in self.G.edges})
-        nx.draw_networkx_labels(self.G, dict(enumerate(self.points)))
-        nx.draw_networkx_edge_labels(self.G, dict(enumerate(self.points)), temp_dict, label_pos=0.15)
-        nx.draw(self.G, self.points)
-        plt.show()
 
     def set_boundary_cycles(self):
         """
