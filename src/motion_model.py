@@ -19,12 +19,12 @@ class MotionModel(ABC):
         return point
 
     def update_points(self, old_points):
-
-        interior_pts = old_points[len(self.boundary):]
+        offset = len(self.boundary)
+        interior_pts = old_points[offset:]
         for (n, pt) in enumerate(interior_pts):
-            interior_pts[n] = self.update_point(pt, len(self.boundary)+n)
+            interior_pts[n] = self.update_point(pt, offset+n)
             if not self.boundary.in_domain(interior_pts[n]):
-                interior_pts[n] = self.reflect(pt, len(self.boundary)+n)
+                interior_pts[n] = self.reflect(pt, offset+n)
 
         return self.boundary.points + interior_pts
 
