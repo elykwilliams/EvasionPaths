@@ -105,7 +105,7 @@ class CycleLabelling:
                 return True
         elif state_change.case == (1, 0, 0, 0, 1, 2) or state_change.case == (1, 0, 0, 0, 1, 1):
             enclosing_cycle = state_change.cycles_removed[0]
-            if enclosing_cycle not in self.cycle_label and len(state_change.cycles_removed) != 0:
+            if enclosing_cycle not in self.cycle_label and len(state_change.cycles_removed) != 1:
                 enclosing_cycle = state_change.cycles_removed[1]
             if enclosing_cycle not in self.cycle_label:
                 return True
@@ -175,7 +175,7 @@ class CycleLabelling:
         # Reconnect
         elif state_change.case == (1, 0, 0, 0, 1, 2) or state_change.case == (1, 0, 0, 0, 1, 1):
             enclosing_cycle = state_change.cycles_removed[0]
-            if enclosing_cycle not in self.cycle_label and len(state_change.cycles_removed) != 0:
+            if enclosing_cycle not in self.cycle_label and len(state_change.cycles_removed) != 1:
                 enclosing_cycle = state_change.cycles_removed[1]
 
             reconnected_cycles = []
