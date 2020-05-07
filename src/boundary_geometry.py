@@ -20,6 +20,7 @@ class RectangularDomain:
         self.vy_min, self.vy_max = self.y_min - self.dx, self.y_max + self.dx
 
         self.generate_boundary_points(spacing)
+        self.alpha_cycle = self.get_alpha_cycle()
 
     def __len__(self):
         return len(self.points)
@@ -47,6 +48,10 @@ class RectangularDomain:
         self.points.extend([(self.vx_min, self.y_max - y) for y in np.arange(self.vy_min, 0.999*self.vy_max, spacing)])  # left
 
         return self.points
+
+    def get_alpha_cycle(self):
+        a = [str(n+1)+","+str(n) for n in range(len(self.points)-1)] + ["0,"+str(len(self.points)-1)]
+        return tuple(sorted(a))
 
     def generate_interior(self, n_int_sensors):
         rand_x = np.random.uniform(self.x_min, self.x_max, size=n_int_sensors)
