@@ -3,6 +3,7 @@ from cycle_labelling import *
 from combinatorial_map import *
 from gudhi import AlphaComplex
 import networkx as nx
+from copy import deepcopy
 
 
 def interpolate_points(old_points, new_points, t):
@@ -47,8 +48,23 @@ class GraphNotConnected(Exception):
     def __str__(self): return "Graph not connected"
 
 
+class State(object):
+    def __init__(self, simplices, edges, boundary_cycles, n_total_sensors):
+        self.simplices2 = simplices
+        self.simplices1 = edges
+        self.boundary_cycles = boundary_cycles
+
+        graph = nx.Graph()
+        graph.add_nodes_from(range(n_total_sensors))
+        graph.add_edges_from(self.simplices1)
+        self.connected_nodes = nx.node_connected_component(graph, 0)
+
+    def is_connected(self, cycle):
+        return set(cycle2nodes(cycle)).intersection(self.connected_nodes) != set()
+
+
 class EvasionPathSimulation:
-    def __init__(self, boundary, motion_model, n_sensors, sensing_radius, dt, end_time=0):
+    def __init__(self, boundary, motion_model, n_int_sensors, sensing_radius, dt, end_time=0):
 
         # Initialize Fields
         self.evasion_paths = ""
@@ -57,10 +73,11 @@ class EvasionPathSimulation:
         self.old_cycles = []
         self.old_edges = []
         self.old_simplices = []
-        self.old_graph = None
         self.edges = []
         self.simplices = []
-        self.state = None
+        self.state_changes = None
+        self.old_state = None
+        self.graph = nx.Graph()
 
         self.motion_model = motion_model
 
@@ -74,30 +91,31 @@ class EvasionPathSimulation:
 
         # Point data
         self.sensing_radius = sensing_radius
-        self.points = boundary.generate_points(n_sensors)
-        self.n_sensors = n_sensors + len(boundary)
+        self.points = boundary.generate_points(n_int_sensors)
+        self.n_total_sensors = n_int_sensors + len(boundary)
 
-        self.alpha_shape = list(range(len(boundary)))
+        self.alpha_cycle = boundary.alpha_cycle
 
-        # Generate Combinatorial Map
-        self.graph = self.build_graph()
+        self.state = self.get_state()
 
-        # Check if graph is connected
-        if not nx.is_connected(self.graph):
-            raise GraphNotConnected()
-
-        # Set initial labeling
-        self.boundary_cycles = CMap(self.graph, self.points).get_boundary_cycles()
-        self.alpha_cycle = simplex2cycle(self.alpha_shape, self.boundary_cycles)
-        self.boundary_cycles.remove(self.alpha_cycle)
-
-        self.cell_label = CycleLabelling(self.boundary_cycles, self.simplices)
+        self.cell_label = CycleLabelling(self.state)
 
         # Update old data
         self.update_old_data()
 
-    def get_boundary_cycles(self):
+    def get_state(self):
+        alpha_complex = AlphaComplex(self.points)
+        simplex_tree = alpha_complex.create_simplex_tree(max_alpha_square=self.sensing_radius ** 2)
+        self.edges = [tuple(simplex) for simplex, _ in simplex_tree.get_skeleton(1) if len(simplex) == 2]
+        self.simplices = [tuple(simplex) for simplex, _ in simplex_tree.get_skeleton(2) if len(simplex) == 3]
+        self.graph = nx.Graph()
+        self.graph.add_nodes_from(range(self.n_total_sensors))
+        self.graph.add_edges_from(self.edges)
+        cmap = CMap(self.graph, self.points)
+        self.boundary_cycles = [bc for bc in cmap.get_boundary_cycles() if bc != self.alpha_cycle]
+        return State(self.simplices, self.edges, self.boundary_cycles, self.n_total_sensors)
 
+    def get_boundary_cycles(self):
         cmap = CMap(self.graph, self.points)
         return [bc for bc in cmap.get_boundary_cycles()
                 if bc != self.alpha_cycle]
@@ -107,14 +125,10 @@ class EvasionPathSimulation:
         self.old_cycles = self.boundary_cycles.copy()
         self.old_edges = self.edges.copy()
         self.old_simplices = self.simplices.copy()
-        self.old_graph = self.graph.copy()
+        self.old_state = deepcopy(self.state)
 
     def reset_current_data(self):
         self.points = self.old_points.copy()
-        self.edges = self.old_edges.copy()
-        self.simplices = self.old_simplices.copy()
-        self.boundary_cycles = self.old_cycles.copy()
-        self.graph = self.old_graph.copy()
 
     def run(self):
         if self.Tend != 0:
@@ -145,10 +159,7 @@ class EvasionPathSimulation:
             else:
                 self.points = interpolate_points(self.old_points, new_points, t)
 
-            # Update Alpha Complex
-            self.graph = self.build_graph()
-
-            self.boundary_cycles = self.get_boundary_cycles()
+            self.state = self.get_state()
 
             # Find Evasion Path
             try:
@@ -167,16 +178,6 @@ class EvasionPathSimulation:
             # Update old data
             self.update_old_data()
 
-    def build_graph(self):
-        alpha_complex = AlphaComplex(self.points)
-        simplex_tree = alpha_complex.create_simplex_tree(max_alpha_square=self.sensing_radius ** 2)
-        self.edges = [tuple(simplex) for simplex, _ in simplex_tree.get_skeleton(1) if len(simplex) == 2]
-        self.simplices = [tuple(simplex) for simplex, _ in simplex_tree.get_skeleton(2) if len(simplex) == 3]
-        graph = nx.Graph()
-        graph.add_nodes_from(range(self.n_sensors))
-        graph.add_edges_from(self.edges)
-        return graph
-
     def update_labelling(self):
 
         edges_added = set_difference(self.edges, self.old_edges)
@@ -188,16 +189,15 @@ class EvasionPathSimulation:
         cycles_added = set_difference(self.boundary_cycles, self.old_cycles)
         cycles_removed = set_difference(self.old_cycles, self.boundary_cycles)
 
-        self.state = (edges_added.copy(), edges_removed.copy(),
-                      simplices_added.copy(), simplices_removed.copy(),
-                      cycles_added.copy(), cycles_removed.copy())
+        self.state_changes = (edges_added.copy(), edges_removed.copy(),
+                              simplices_added.copy(), simplices_removed.copy(),
+                              cycles_added.copy(), cycles_removed.copy())
 
-        case = tuple(len(s) for s in self.state)
+        case = tuple(len(s) for s in self.state_changes)
 
         # No Change
         if case == (0, 0, 0, 0, 0, 0):
-            # self.evasion_paths += "No Change, "
-            pass
+            return
 
         # Add Edge
         elif case == (1, 0, 0, 0, 2, 1):
@@ -235,7 +235,7 @@ class EvasionPathSimulation:
             added_simplex = simplex2cycle(simplex, self.boundary_cycles)
 
             if not set(edges_added.pop()).issubset(set(simplex)):
-                raise InvalidStateChange(self.state)
+                raise InvalidStateChange(self.state_changes)
 
             if old_cycle not in self.cell_label:
                 return
@@ -248,7 +248,7 @@ class EvasionPathSimulation:
             new_cycle = cycles_added.pop()
 
             if not set(edges_removed.pop()).issubset(set(simplex)):
-                raise InvalidStateChange(self.state)
+                raise InvalidStateChange(self.state_changes)
 
             if any([cell not in self.cell_label for cell in cycles_removed]):
                 return
@@ -265,13 +265,13 @@ class EvasionPathSimulation:
 
             # Check that edges correspond to correct boundary cycles
             if not all([set(oldedge).issubset(set(s)) for s in simplices_removed]):
-                raise InvalidStateChange(self.state)
+                raise InvalidStateChange(self.state_changes)
             elif not all([set(newedge).issubset(set(s)) for s in simplices_added]):
-                raise InvalidStateChange(self.state)
+                raise InvalidStateChange(self.state_changes)
             elif not all([set(s).issubset(set(oldedge).union(set(newedge))) for s in simplices_removed]):
-                raise InvalidStateChange(self.state)
+                raise InvalidStateChange(self.state_changes)
             elif not all([set(s).issubset(set(oldedge).union(set(newedge))) for s in simplices_added]):
-                raise InvalidStateChange(self.state)
+                raise InvalidStateChange(self.state_changes)
 
             self.cell_label.delaunay_flip(cycles_removed, cycles_added)
 
@@ -341,7 +341,7 @@ class EvasionPathSimulation:
         elif case == (0, 1, 0, 0, 0, 1):
             return
         else:
-            raise InvalidStateChange(self.state)
+            raise InvalidStateChange(self.state_changes)
 
         self.evasion_paths += case_name[case] + ", "
 
