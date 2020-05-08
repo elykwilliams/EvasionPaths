@@ -1,8 +1,6 @@
-name: gudhi
+name: EvasionPaths-env
 channels:
   - conda-forge
-  - anaconda
-  - defaults
 dependencies:
   - _libgcc_mutex=0.1=main
   - blas=1.0=mkl
@@ -47,7 +45,6 @@ dependencies:
   - networkx=2.4=py_0
   - numpy=1.17.4=py36hc1035e2_0
   - numpy-base=1.17.4=py36hde5b4d6_0
-  - openssl=1.1.1=h7b6447c_0
   - pcre=8.43=he6710b0_0
   - pip=19.3.1=py36_0
   - pyparsing=2.4.5=py_0
@@ -66,5 +63,4 @@ dependencies:
   - wheel=0.33.6=py36_0
   - xz=5.2.4=h14c3975_4
   - zlib=1.2.11=h7b6447c_3
-prefix: /home/kylew/.conda/envs/gudhi
 
