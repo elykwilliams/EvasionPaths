@@ -6,9 +6,7 @@
 # If not, visit: https://opensource.org/licenses/BSD-3-Clause
 # ************************************************************
 
-import networkx as nx
-from matplotlib import pyplot as plt
-from math import *
+from math import atan2
 
 
 # Sort counter-clockwise w.r.t center
@@ -17,7 +15,7 @@ def theta(a, center):
     return atan2(oa[1], oa[0])
 
 
-def edge2dart(edge: tuple):
+def edge2dart(edge):
     return ",".join(map(str, edge))
 
 
@@ -41,7 +39,6 @@ class CMap:
         self._sorted_darts = dict()
         self._boundary_cycles = []
 
-        # Get rotational information
         if rotation_data:
             sorted_edges = rotation_data
         else:
@@ -56,24 +53,15 @@ class CMap:
         self.set_boundary_cycles()
 
     def sigma(self, dart):
-        # Get node
         neighbor, node = dart2edge(dart)
-
-        # Get index of given dart
         index = self._sorted_darts[node].index(dart)
-
-        # Number of neighbors
-        size = len(self._sorted_darts[node])
+        n_neigh = len(self._sorted_darts[node])
 
         # Get next dart, wrap-around if out of range
-        return self._sorted_darts[node][(index + 1) % size]
+        return self._sorted_darts[node][(index + 1) % n_neigh]
 
     def alpha(self, dart):
-        # get corresponding edge nodes
-        e1, e2 = dart2edge(dart)
-
-        # swap edge nodes to get corresponding dart
-        return edge2dart((e2, e1))
+        return edge2dart(reversed(dart2edge(dart)))
 
     def phi(self, dart):
         return self.sigma(self.alpha(dart))
@@ -84,33 +72,20 @@ class CMap:
             by iterating on phi(x).
             The boundary cycles are given in terms of darts.
             Boundary Cycles form a partition of the darts.
-            Based on implementation by Deepjoyti Ghosh.
         """
-        output = []
+        self._boundary_cycles = []
         all_darts = self.darts.copy()
         
         while all_darts:
-            # set root
             cycle = [all_darts.pop()]
-
-            # get next in cycle
             next_dart = self.phi(cycle[0])
 
             while next_dart != cycle[0]:
-
-                # remove dart, since disjoint
                 all_darts.remove(next_dart)
-
-                # add to cycle
                 cycle.append(next_dart)
-
-                # get next dart
                 next_dart = self.phi(next_dart)
 
-            # cycle finished when next_dart is root
-            output.append(cycle)
-
-        self._boundary_cycles = output
+            self._boundary_cycles.append(cycle)
 
     def boundary_cycle_nodes_ordered(self):
         return [tuple([dart2edge(dart)[0] for dart in cycle]) for cycle in self._boundary_cycles]
@@ -141,6 +116,9 @@ def get_rotational_data(graph, points):
 
 
 if __name__ == "__main__":
+    import networkx as nx
+    from matplotlib import pyplot as plt
+    from math import cos, sin, pi
     # G = nx.house_x_graph()
     # G.remove_edge(0, 1)
     # G.remove_edge(2, 4)

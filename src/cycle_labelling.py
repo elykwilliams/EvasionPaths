@@ -16,17 +16,12 @@ class CycleLabelling:
     # False = no intruder
     def __init__(self, state):
         self._cycle_label = dict()
+
         for cycle in state.boundary_cycles:
             self._cycle_label[cycle] = True
-
-        simplex_cycles \
-            = [simplex2cycle(simplex, state.boundary_cycles) for simplex in state.simplices2]
-        for simplex in simplex_cycles:
-            self._cycle_label[simplex] = False
-
-        for cycle in list(self._cycle_label):
-            if not state.is_connected(cycle):
-                del self._cycle_label[cycle]
+        for cycle in [simplex2cycle(simplex, state.boundary_cycles) for simplex in state.simplices2]:
+            self.add_2simplex(cycle)
+        self.delete_all([cycle for cycle in list(self._cycle_label) if not state.is_connected(cycle)])
 
     def __str__(self):
         res = ""
@@ -84,7 +79,7 @@ class CycleLabelling:
         if state_change.case == (0, 0, 0, 0, 0, 0) \
                 or state_change.case == (1, 0, 0, 0, 1, 0) \
                 or state_change.case == (0, 1, 0, 0, 0, 1):
-            return
+            return True
         # one or both old-cycle is disconnected
         if state_change.case == (1, 0, 0, 0, 2, 1) \
                 or state_change.case == (1, 0, 1, 0, 2, 1) \
@@ -177,9 +172,9 @@ class CycleLabelling:
 
             reconnected_simplices = []
             for simplex in state_change.new_state.simplices2:
-                cycle = simplex2cycle(simplex, state_change.new_state.boundary_cycles)
-                if state_change.new_state.is_connected(cycle):
-                    reconnected_simplices.append(cycle)
+                simplex_cycle = simplex2cycle(simplex, state_change.new_state.boundary_cycles)
+                if state_change.new_state.is_connected(simplex_cycle):
+                    reconnected_simplices.append(simplex_cycle)
 
             self.reconnect(state_change.cycles_added + reconnected_cycles, enclosing_cycle,
                            reconnected_simplices)
