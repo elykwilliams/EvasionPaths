@@ -7,21 +7,26 @@
 # ************************************************************
 
 
-from states import InvalidStateChange
+from topological_state import *
 from combinatorial_map import simplex2cycle
 
 
 class CycleLabelling:
     # True = possible intruder
     # False = no intruder
-    def __init__(self, state):
+    def __init__(self, state: TopologicalState) -> None:
+        """
+
+        :param state:
+        :rtype: None
+        """
         self._cycle_label = dict()
 
         for cycle in state.boundary_cycles:
             self._cycle_label[cycle] = True
         for cycle in [simplex2cycle(simplex, state.boundary_cycles) for simplex in state.simplices2]:
-            self.add_2simplex(cycle)
-        self.delete_all([cycle for cycle in list(self._cycle_label) if not state.is_connected(cycle)])
+            self._add_2simplex(cycle)
+        self._delete_all([cycle for cycle in list(self._cycle_label) if not state.is_connected(cycle)])
 
     def __str__(self):
         res = ""
@@ -35,44 +40,44 @@ class CycleLabelling:
     def __getitem__(self, item):
         return self._cycle_label[item]
 
-    def delete_all(self, cycle_list):
-        for cycle in cycle_list:
-            del self._cycle_label[cycle]
-
     def has_intruder(self):
         return any(self._cycle_label.values())
 
-    def add_1simplex(self, removed_cycles, added_cycles):
+    def _delete_all(self, cycle_list):
+        for cycle in cycle_list:
+            del self._cycle_label[cycle]
+
+    def _add_1simplex(self, removed_cycles, added_cycles):
         for cycle in added_cycles:
             self._cycle_label[cycle] = self._cycle_label[removed_cycles[0]]
-        self.delete_all(removed_cycles)
+        self._delete_all(removed_cycles)
 
-    def remove_1simplex(self, removed_cycles, added_cycles):
+    def _remove_1simplex(self, removed_cycles, added_cycles):
         self._cycle_label[added_cycles[0]] = any([self._cycle_label[s] for s in removed_cycles])
-        self.delete_all(removed_cycles)
+        self._delete_all(removed_cycles)
 
-    def add_2simplex(self, added_simplex):
+    def _add_2simplex(self, added_simplex):
         self._cycle_label[added_simplex] = False
 
-    def add_simplex_pair(self, removed_cycles, added_cycles, added_simplex):
-        self.add_1simplex(removed_cycles, added_cycles)
-        self.add_2simplex(added_simplex)
+    def _add_simplex_pair(self, removed_cycles, added_cycles, added_simplex):
+        self._add_1simplex(removed_cycles, added_cycles)
+        self._add_2simplex(added_simplex)
 
-    def remove_simplex_pair(self, removed_cycles, added_cycles):
-        self.remove_1simplex(removed_cycles, added_cycles)
+    def _remove_simplex_pair(self, removed_cycles, added_cycles):
+        self._remove_1simplex(removed_cycles, added_cycles)
 
-    def delaunay_flip(self, removed_cycles, added_cycles):
+    def _delaunay_flip(self, removed_cycles, added_cycles):
         for cycle in added_cycles:
-            self.add_2simplex(cycle)
-        self.delete_all(removed_cycles)
+            self._add_2simplex(cycle)
+        self._delete_all(removed_cycles)
 
-    def disconnect(self, removed_cycles, enclosing_cycle):
-        self.remove_1simplex(removed_cycles, [enclosing_cycle])
+    def _disconnect(self, removed_cycles, enclosing_cycle):
+        self._remove_1simplex(removed_cycles, [enclosing_cycle])
 
-    def reconnect(self, added_cycles, enclosing_cycle, reconnected_simplices):
-        self.add_1simplex([enclosing_cycle], added_cycles)
+    def _reconnect(self, added_cycles, enclosing_cycle, reconnected_simplices):
+        self._add_1simplex([enclosing_cycle], added_cycles)
         for cycle in reconnected_simplices:
-            self.add_2simplex(cycle)
+            self._add_2simplex(cycle)
 
     def ignore_state_change(self, state_change):
         # No Change
@@ -99,10 +104,7 @@ class CycleLabelling:
         # enclosing-cycle is disconnected
         elif state_change.case == (1, 0, 0, 0, 1, 2) \
                 or state_change.case == (1, 0, 0, 0, 1, 1):
-            enclosing_cycle = state_change.cycles_removed[0]
-            if enclosing_cycle not in self._cycle_label and len(state_change.cycles_removed) != 1:
-                enclosing_cycle = state_change.cycles_removed[1]
-            if enclosing_cycle not in self._cycle_label:
+            if all([cycle not in self._cycle_label for cycle in state_change.cycles_removed]):
                 return True
         return False
 
@@ -115,17 +117,17 @@ class CycleLabelling:
 
         # Add 1-Simplex
         elif state_change.case == (1, 0, 0, 0, 2, 1):
-            self.add_1simplex(state_change.cycles_removed, state_change.cycles_added)
+            self._add_1simplex(state_change.cycles_removed, state_change.cycles_added)
 
         # Remove 1-Simplex
         elif state_change.case == (0, 1, 0, 0, 1, 2):
-            self.remove_1simplex(state_change.cycles_removed, state_change.cycles_added)
+            self._remove_1simplex(state_change.cycles_removed, state_change.cycles_added)
 
         # Add 2-Simplex
         elif state_change.case == (0, 0, 1, 0, 0, 0):
             simplex = state_change.simplices_added[0]
             added_simplex = simplex2cycle(simplex, state_change.new_state.boundary_cycles)
-            self.add_2simplex(added_simplex)
+            self._add_2simplex(added_simplex)
 
         # Remove 2-Simplex
         elif state_change.case == (0, 0, 0, 1, 0, 0):
@@ -135,15 +137,15 @@ class CycleLabelling:
         elif state_change.case == (1, 0, 1, 0, 2, 1):
             simplex = state_change.simplices_added[0]
             added_simplex = simplex2cycle(simplex, state_change.new_state.boundary_cycles)
-            self.add_simplex_pair(state_change.cycles_removed, state_change.cycles_added, added_simplex)
+            self._add_simplex_pair(state_change.cycles_removed, state_change.cycles_added, added_simplex)
 
         # 1-Simplex 2-Simplex Pair Removed
         elif state_change.case == (0, 1, 0, 1, 1, 2):
-            self.remove_1simplex(state_change.cycles_removed, state_change.cycles_added)
+            self._remove_1simplex(state_change.cycles_removed, state_change.cycles_added)
 
         # Delunay Flip
         elif state_change.case == (1, 1, 2, 2, 2, 2):
-            self.delaunay_flip(state_change.cycles_removed, state_change.cycles_added)
+            self._delaunay_flip(state_change.cycles_removed, state_change.cycles_added)
 
         # Disconnect
         elif state_change.case == (0, 1, 0, 0, 2, 1) or state_change.case == (0, 1, 0, 0, 1, 1):
@@ -157,7 +159,7 @@ class CycleLabelling:
                 if not state_change.new_state.is_connected(cycle) and cycle in self._cycle_label:
                     disconnected_cycles.append(cycle)
 
-            self.disconnect(state_change.cycles_removed + disconnected_cycles, enclosing_cycle)
+            self._disconnect(state_change.cycles_removed + disconnected_cycles, enclosing_cycle)
 
         # Reconnect
         elif state_change.case == (1, 0, 0, 0, 1, 2) or state_change.case == (1, 0, 0, 0, 1, 1):
@@ -176,5 +178,5 @@ class CycleLabelling:
                 if state_change.new_state.is_connected(simplex_cycle):
                     reconnected_simplices.append(simplex_cycle)
 
-            self.reconnect(state_change.cycles_added + reconnected_cycles, enclosing_cycle,
-                           reconnected_simplices)
+            self._reconnect(state_change.cycles_added + reconnected_cycles, enclosing_cycle,
+                            reconnected_simplices)
