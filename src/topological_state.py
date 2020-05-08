@@ -37,7 +37,7 @@ case2name = {
 }
 
 
-class State(object):
+class TopologicalState(object):
     def __init__(self, points, sensing_radius, boundary):
         alpha_complex = AlphaComplex(points)
         simplex_tree = alpha_complex.create_simplex_tree(max_alpha_square=sensing_radius ** 2)

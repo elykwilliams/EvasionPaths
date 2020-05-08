@@ -8,7 +8,7 @@
 
 from cycle_labelling import *
 from copy import deepcopy
-from states import *
+from topological_state import *
 
 
 def interpolate_points(old_points, new_points, t):
@@ -41,7 +41,7 @@ class EvasionPathSimulation:
         self.points = boundary.generate_points(n_int_sensors)
         self.old_points = self.points
 
-        self.state = State(self.points, self.sensing_radius, self.boundary)
+        self.state = TopologicalState(self.points, self.sensing_radius, self.boundary)
         self.old_state = self.state
         self.state_change = StateChange(self.old_state, self.state)
         self.cycle_label = CycleLabelling(self.state)
@@ -72,7 +72,7 @@ class EvasionPathSimulation:
             else:
                 self.points = interpolate_points(self.old_points, new_points, t)
 
-            self.state = State(self.points, self.sensing_radius, self.boundary)
+            self.state = TopologicalState(self.points, self.sensing_radius, self.boundary)
             self.state_change = StateChange(self.old_state, self.state)
 
             try:
