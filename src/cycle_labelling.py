@@ -12,12 +12,14 @@ from combinatorial_map import simplex2cycle
 
 
 class CycleLabelling:
-    # True = possible intruder
-    # False = no intruder
+    """ Cycle Labelling Logic
+     True = possible intruder
+     False = no intruder
+     """
     def __init__(self, state: TopologicalState) -> None:
         """
 
-        :param state:
+        @param state:
         :rtype: None
         """
         self._cycle_label = dict()
@@ -26,12 +28,12 @@ class CycleLabelling:
             self._cycle_label[cycle] = True
         for cycle in [simplex2cycle(simplex, state.boundary_cycles) for simplex in state.simplices2]:
             self._add_2simplex(cycle)
-        self._delete_all([cycle for cycle in list(self._cycle_label) if not state.is_connected(cycle)])
+        self._delete_all([cycle for cycle in self._cycle_label.keys() if not state.is_connected(cycle)])
 
     def __str__(self):
         res = ""
-        for key in self._cycle_label:
-            res += str(key) + ": " + str(self._cycle_label[key]) + "\n"
+        for key, val in self._cycle_label.items():
+            res += str(key) + ": " + str(val) + "\n"
         return res
 
     def __contains__(self, item):
