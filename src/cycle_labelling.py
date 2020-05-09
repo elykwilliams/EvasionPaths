@@ -8,7 +8,6 @@
 
 
 from topological_state import *
-from combinatorial_map import simplex2cycle
 
 
 class CycleLabelling:
@@ -24,9 +23,9 @@ class CycleLabelling:
         """
         self._cycle_label = dict()
 
-        for cycle in state.boundary_cycles:
+        for cycle in state.boundary_cycles():
             self._cycle_label[cycle] = True
-        for cycle in [simplex2cycle(simplex, state.boundary_cycles) for simplex in state.simplices2]:
+        for cycle in [state.simplex2cycle(simplex) for simplex in state.simplices(2)]:
             self._add_2simplex(cycle)
         self._delete_all([cycle for cycle in self._cycle_label.keys() if not state.is_connected(cycle)])
 
@@ -100,7 +99,7 @@ class CycleLabelling:
         # simplex-cycle is disconnected
         elif state_change.case == (0, 0, 1, 0, 0, 0):
             simplex = state_change.simplices_added[0]
-            new_cycle = simplex2cycle(simplex, state_change.new_state.boundary_cycles)
+            new_cycle = state_change.new_state.simplex2cycle(simplex)
             if new_cycle not in self._cycle_label:
                 return True
         # enclosing-cycle is disconnected
@@ -128,7 +127,7 @@ class CycleLabelling:
         # Add 2-Simplex
         elif state_change.case == (0, 0, 1, 0, 0, 0):
             simplex = state_change.simplices_added[0]
-            added_simplex = simplex2cycle(simplex, state_change.new_state.boundary_cycles)
+            added_simplex = state_change.new_state.simplex2cycle(simplex)
             self._add_2simplex(added_simplex)
 
         # Remove 2-Simplex
@@ -138,7 +137,7 @@ class CycleLabelling:
         # 1-Simplex 2-Simplex Pair Added
         elif state_change.case == (1, 0, 1, 0, 2, 1):
             simplex = state_change.simplices_added[0]
-            added_simplex = simplex2cycle(simplex, state_change.new_state.boundary_cycles)
+            added_simplex = state_change.new_state.simplex2cycle(simplex)
             self._add_simplex_pair(state_change.cycles_removed, state_change.cycles_added, added_simplex)
 
         # 1-Simplex 2-Simplex Pair Removed
@@ -157,7 +156,7 @@ class CycleLabelling:
                 enclosing_cycle = state_change.cycles_added[1]
 
             disconnected_cycles = []
-            for cycle in state_change.new_state.boundary_cycles:
+            for cycle in state_change.new_state.boundary_cycles():
                 if not state_change.new_state.is_connected(cycle) and cycle in self._cycle_label:
                     disconnected_cycles.append(cycle)
 
@@ -170,13 +169,13 @@ class CycleLabelling:
                 enclosing_cycle = state_change.cycles_removed[1]
 
             reconnected_cycles = []
-            for cycle in state_change.new_state.boundary_cycles:
+            for cycle in state_change.new_state.boundary_cycles():
                 if state_change.new_state.is_connected(cycle) and cycle not in self._cycle_label:
                     reconnected_cycles.append(cycle)
 
             reconnected_simplices = []
-            for simplex in state_change.new_state.simplices2:
-                simplex_cycle = simplex2cycle(simplex, state_change.new_state.boundary_cycles)
+            for simplex in state_change.new_state.simplices(2):
+                simplex_cycle = state_change.new_state.simplex2cycle(simplex)
                 if state_change.new_state.is_connected(simplex_cycle):
                     reconnected_simplices.append(simplex_cycle)
 

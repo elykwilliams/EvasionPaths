@@ -73,11 +73,11 @@ def show_possible_intruder(sim):
         if set(cycle_nodes) == set(cycle2nodes(sim.boundary.alpha_cycle)):
             continue
 
-        cycle = simplex2cycle(cycle_nodes, sim.state.boundary_cycles)
+        cycle = nodes2cycle(cycle_nodes, sim.state._boundary_cycles)
         if cycle not in sim.cycle_label:
             continue
 
-        if sim.cycle_label[simplex2cycle(cycle_nodes, sim.state.boundary_cycles)]:
+        if sim.cycle_label[nodes2cycle(cycle_nodes, sim.state._boundary_cycles)]:
             axis.fill(xpts, ypts, color='k', alpha=0.2)
         else:
             pass
@@ -88,13 +88,13 @@ def show_alpha_complex(sim):
 
     axis = plt.gca()
 
-    for simplex in sim.state.simplices2:
+    for simplex in sim.state.simplices(2):
         xpts = [sim.points[n][0] for n in simplex]
         ypts = [sim.points[n][1] for n in simplex]
-        if simplex2cycle(simplex, sim.state.boundary_cycles) in sim.cycle_label:
+        if nodes2cycle(simplex, sim.state.boundary_cycles()) in sim.cycle_label:
             axis.fill(xpts, ypts, color='r', alpha=0.1)
 
-    for edge in sim.state.simplices1:
+    for edge in sim.state.simplices(1):
         xpts = [sim.points[n][0] for n in edge]
         ypts = [sim.points[n][1] for n in edge]
         axis.plot(xpts, ypts, color='r', alpha=0.15)

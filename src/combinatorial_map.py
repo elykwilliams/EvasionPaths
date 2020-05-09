@@ -27,7 +27,7 @@ def cycle2nodes(cycle: tuple):
     return [int(dart2edge(dart)[0]) for dart in cycle]
 
 
-def simplex2cycle(simplex, boudnary_cycles):
+def nodes2cycle(simplex, boudnary_cycles):
     for cycle in boudnary_cycles:
         if set(simplex) == set(cycle2nodes(cycle)):
             return cycle

@@ -1,4 +1,4 @@
 var searchData=
 [
-  ['generate_5fboundary_5fpoints',['generate_boundary_points',['../classsrc_1_1boundary__geometry_1_1RectangularDomain.html#afaec5d18b3c91b82b2ef89c91d446fb0',1,'src::boundary_geometry::RectangularDomain']]]
+  ['boundary_5fcycles',['boundary_cycles',['../classsrc_1_1topological__state_1_1TopologicalState.html#a1b1db3918319957b4dd276703d32ca44',1,'src::topological_state::TopologicalState']]]
 ];

@@ -1,4 +1,5 @@
 var searchData=
 [
-  ['set_5fboundary_5fcycles',['set_boundary_cycles',['../classsrc_1_1combinatorial__map_1_1CMap.html#a67166f4cf870caad479a036ab98dbb23',1,'src::combinatorial_map::CMap']]]
+  ['in_5fdomain',['in_domain',['../classsrc_1_1boundary__geometry_1_1RectangularDomain.html#a4f8fa776164c359e57eea2284af7aeb5',1,'src::boundary_geometry::RectangularDomain']]],
+  ['is_5fconnected',['is_connected',['../classsrc_1_1topological__state_1_1TopologicalState.html#a7dbc8397472505bd52a33b9a2c436694',1,'src::topological_state::TopologicalState']]]
 ];
