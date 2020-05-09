@@ -19,7 +19,7 @@ def is_subset(list1, list2):
     return set(list1).issubset(set(list2))
 
 
-## The Topological State is the term used to encapsulate the alpha-complex, graph, and combinatorial
+## The Topological State is the class used to encapsulate the simplicial, and combinatorial
 # information. For a given set of points (and parameters), this class will provide access to the
 # simplices of the alpha complex and the boundary cycles of the combinatorial map, as well as some
 # minimal connectivity information about the underlying graph.
@@ -48,8 +48,14 @@ class TopologicalState(object):
     ## Check if a boundary cycle is connected to the fence. This is done by and
     # comparing nodes of the boundary cycle to the set of all nodes connected to
     # node #0 (which is guaranteed to be on the fence).
-    def is_connected(self, cycle):
+    def is_connected_cycle(self, cycle):
         return not set(cycle2nodes(cycle)).isdisjoint(set(self._connected_nodes))
+
+    ## Check if a simplex is connected to the fence. This is done by and
+    # comparing nodes of the boundary cycle to the set of all nodes connected to
+    # node #0 (which is guaranteed to be on the fence).
+    def is_connected_simplex(self, simplex):
+        return not set(simplex).isdisjoint(set(self._connected_nodes))
 
     ## Access the AlphaComplex's simplices of a given dimension. 0-Simplices will be a list of node numbers, the others
     # will be a list of tuples. The tuples will contain the node numbers of the simplex.
@@ -76,12 +82,38 @@ class TopologicalState(object):
     # no boundary cycles are changed, we have no other was of identifying which boundary
     # cycle label should be updated.
     def simplex2cycle(self, simplex):
-        if len(simplex) != 3 or not is_subset(simplex, self._connected_nodes):
+        if len(simplex) != 3 or not self.is_connected_simplex(simplex):
             raise ValueError("Invalid simplex, cannot guarantee unique cycle")
         return nodes2cycle(simplex, self._boundary_cycles)
 
 
+## This class is used to determine and represent the differences between two states.
+# This means determining which simplices have been added or removed as well as which
+# boundary cycles have been added or removed.
+#
+# A set of nodes is an added simplex when the nodes
+# formed a simplex of the new state but do not form a simplex of the old state Similarly,
+# a set of nodes is a removed simplex when the nodes formed a simplex of the old state but
+# do not form a simplex of the new state (And similarly for boundary cycles).
+#
+# This class also has the ability to determine when an atomic state change has occurred.
+# A a state change is one of the following
+#
+#       1. A 1-simplex is added or removed
+#       2. A 2-simplex is added or removed
+#       3. A free pair consisting of a 2-simplex and a 1-simplex is added
+#       4. A delaunay flip occurred
+#
+# Disconnections and re-connections are simply a special case of removing/adding a 1-Simplex.
+#
+# The state transitions are identified by simply counting the number of simplices and boundary
+# cycles that have been added or removed. With some minimal compatibility checking, this can
+# uniquely identify an atomic transition.
 class StateChange(object):
+    ## Identify Atomic States
+    #
+    # (#1-simplices added, #1-simpleices removed, #2-simplices added, #2-simplices removed, #boundary cycles added,
+    # #boundary cycles removed)
     case2name = {
         (0, 0, 0, 0, 0, 0): "",
         (1, 0, 0, 0, 2, 1): "Add 1-Simplex",
@@ -99,7 +131,7 @@ class StateChange(object):
         (1, 0, 0, 0, 1, 1): "Reconnect"
     }
 
-    def __init__(self, old_state, new_state):
+    def __init__(self, old_state: TopologicalState, new_state: TopologicalState) -> None:
         self.new_state = new_state
         self.edges_added = set_difference(new_state.simplices(1), old_state.simplices(1))
         self.edges_removed = set_difference(old_state.simplices(1), new_state.simplices(1))
@@ -113,7 +145,19 @@ class StateChange(object):
         self.case = (len(self.edges_added), len(self.edges_removed), len(self.simplices_added),
                      len(self.simplices_removed), len(self.cycles_added), len(self.cycles_removed))
 
-    def is_valid(self):
+    ## Determine if the current state transition is atomic.
+    # A transition is considered non-atomic if on of the following are true:
+    #
+    #       1. The case is not found in the list of possible transitions
+    #       2. If a 1-simplex and 2-simplex are added/removed simultaniously, the 1-simplex
+    #           should be an edge of the 2-simplex
+    #       3. If a delaunay flip appears to have occurred, the removed 1-simplex should be
+    #           an edge of both removed 2-simplices; similarly the added 1-simplex should be
+    #           an edge of the added 2-simplices.
+    #       4. The set of vertices of the 1-simplices should contain the vertices of each 2-simplex
+    #           that is added or removed.
+    #
+    def is_atomic(self) -> bool:
         if self.case not in self.case2name.keys():
             return False
         elif self.case == (1, 0, 1, 0, 2, 1):
@@ -141,13 +185,17 @@ class StateChange(object):
                 return False
         return True
 
-    def get_name(self):
-        if self.is_valid():
+    ## Get name of transition.
+    # If non-atomic, return "Invalid Case"
+    def get_name(self) -> str:
+        if self.is_atomic():
             return self.case2name[self.case]
         else:
             return "Invalid Case"
 
-    def __str__(self):
+    ## Allow class to be printable.
+    # Used mostly for debugging
+    def __str__(self) -> str:
         return "State Change:" + str(self.case) + "\n" \
             + "New edges:" + str(self.edges_added) + "\n" \
             + "Removed edges:" + str(self.edges_removed) + "\n" \
@@ -157,20 +205,14 @@ class StateChange(object):
             + "Removed Cycles" + str(self.cycles_removed)
 
 
-class MaxRecursionDepth(Exception):
-    def __init__(self, state_change):
-        self.state_change = state_change
-
-    def __str__(self):
-        return "Max Recursion depth exceeded! \n\n" \
-               + str(self.state_change)
-
-
+## Exception indicating non-atomic state change.
+# This exception should be raised when a function that requires an atomic change
+# is given a non-atomic change.
 class InvalidStateChange(Exception):
     def __init__(self, state_change):
         self.state_change = state_change
 
-    def __str__(self):
+    def __str__(self) -> str:
         return "Invalid State Change \n\n" \
                + str(self.state_change)
 

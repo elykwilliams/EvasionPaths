@@ -73,11 +73,11 @@ def show_possible_intruder(sim):
         if set(cycle_nodes) == set(cycle2nodes(sim.boundary.alpha_cycle)):
             continue
 
-        cycle = nodes2cycle(cycle_nodes, sim.state._boundary_cycles)
+        cycle = nodes2cycle(cycle_nodes, sim.state.boundary_cycles())
         if cycle not in sim.cycle_label:
             continue
 
-        if sim.cycle_label[nodes2cycle(cycle_nodes, sim.state._boundary_cycles)]:
+        if sim.cycle_label[nodes2cycle(cycle_nodes, sim.state.boundary_cycles())]:
             axis.fill(xpts, ypts, color='k', alpha=0.2)
         else:
             pass

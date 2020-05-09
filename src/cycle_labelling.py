@@ -25,9 +25,9 @@ class CycleLabelling:
 
         for cycle in state.boundary_cycles():
             self._cycle_label[cycle] = True
-        for cycle in [state.simplex2cycle(simplex) for simplex in state.simplices(2)]:
+        for cycle in [state.simplex2cycle(s) for s in state.simplices(2) if state.is_connected_simplex(s)]:
             self._add_2simplex(cycle)
-        self._delete_all([cycle for cycle in self._cycle_label.keys() if not state.is_connected(cycle)])
+        self._delete_all([cycle for cycle in self._cycle_label.keys() if not state.is_connected_cycle(cycle)])
 
     def __str__(self):
         res = ""
@@ -75,9 +75,9 @@ class CycleLabelling:
     def _disconnect(self, removed_cycles, enclosing_cycle):
         self._remove_1simplex(removed_cycles, [enclosing_cycle])
 
-    def _reconnect(self, added_cycles, enclosing_cycle, reconnected_simplices):
+    def _reconnect(self, added_cycles, enclosing_cycle, connected_simplices):
         self._add_1simplex([enclosing_cycle], added_cycles)
-        for cycle in reconnected_simplices:
+        for cycle in connected_simplices:
             self._add_2simplex(cycle)
 
     def ignore_state_change(self, state_change):
@@ -99,8 +99,10 @@ class CycleLabelling:
         # simplex-cycle is disconnected
         elif state_change.case == (0, 0, 1, 0, 0, 0):
             simplex = state_change.simplices_added[0]
-            new_cycle = state_change.new_state.simplex2cycle(simplex)
-            if new_cycle not in self._cycle_label:
+            try:
+                # raises value error is not connected
+                state_change.new_state.simplex2cycle(simplex)
+            except ValueError:
                 return True
         # enclosing-cycle is disconnected
         elif state_change.case == (1, 0, 0, 0, 1, 2) \
@@ -110,7 +112,7 @@ class CycleLabelling:
         return False
 
     def update(self, state_change):
-        if not state_change.is_valid():
+        if not state_change.is_atomic():
             raise InvalidStateChange(state_change)
 
         if self.ignore_state_change(state_change):
@@ -151,13 +153,13 @@ class CycleLabelling:
         # Disconnect
         elif state_change.case == (0, 1, 0, 0, 2, 1) or state_change.case == (0, 1, 0, 0, 1, 1):
             enclosing_cycle = state_change.cycles_added[0]
-            if not state_change.new_state.is_connected(enclosing_cycle) \
+            if not state_change.new_state.is_connected_cycle(enclosing_cycle) \
                     and len(state_change.cycles_added) != 1:
                 enclosing_cycle = state_change.cycles_added[1]
 
             disconnected_cycles = []
             for cycle in state_change.new_state.boundary_cycles():
-                if not state_change.new_state.is_connected(cycle) and cycle in self._cycle_label:
+                if not state_change.new_state.is_connected_cycle(cycle) and cycle in self._cycle_label:
                     disconnected_cycles.append(cycle)
 
             self._disconnect(state_change.cycles_removed + disconnected_cycles, enclosing_cycle)
@@ -170,14 +172,14 @@ class CycleLabelling:
 
             reconnected_cycles = []
             for cycle in state_change.new_state.boundary_cycles():
-                if state_change.new_state.is_connected(cycle) and cycle not in self._cycle_label:
+                if state_change.new_state.is_connected_cycle(cycle) and cycle not in self._cycle_label:
                     reconnected_cycles.append(cycle)
 
-            reconnected_simplices = []
+            connected_simplices = []
             for simplex in state_change.new_state.simplices(2):
-                simplex_cycle = state_change.new_state.simplex2cycle(simplex)
-                if state_change.new_state.is_connected(simplex_cycle):
-                    reconnected_simplices.append(simplex_cycle)
+                if state_change.new_state.is_connected_simplex(simplex):
+                    simplex_cycle = state_change.new_state.simplex2cycle(simplex)
+                    connected_simplices.append(simplex_cycle)
 
             self._reconnect(state_change.cycles_added + reconnected_cycles, enclosing_cycle,
-                            reconnected_simplices)
+                            connected_simplices)

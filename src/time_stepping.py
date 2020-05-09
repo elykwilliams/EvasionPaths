@@ -11,11 +11,13 @@ from copy import deepcopy
 from topological_state import *
 
 
-def interpolate_points(old_points, new_points, t):
-    assert (len(old_points) == len(new_points))
-    return [(old_points[n][0] * (1 - t) + new_points[n][0] * t,
-             old_points[n][1] * (1 - t) + new_points[n][1] * t)
-            for n in range(len(old_points))]
+class MaxRecursionDepth(Exception):
+    def __init__(self, state_change):
+        self.state_change = state_change
+
+    def __str__(self):
+        return "Max Recursion depth exceeded! \n\n" \
+               + str(self.state_change)
 
 
 class EvasionPathSimulation:
@@ -70,7 +72,7 @@ class EvasionPathSimulation:
             if level == 0:
                 self.points = self.motion_model.update_points(self.points)
             else:
-                self.points = interpolate_points(self.old_points, new_points, t)
+                self.points = self.interpolate_points(self.old_points, new_points, t)
 
             self.state = TopologicalState(self.points, self.sensing_radius, self.boundary)
             self.state_change = StateChange(self.old_state, self.state)
@@ -86,6 +88,12 @@ class EvasionPathSimulation:
 
             if level == 0:
                 return
+
+    @staticmethod
+    def interpolate_points(old_points, new_points, t):
+        return [(old_points[n][0] * (1 - t) + new_points[n][0] * t,
+                 old_points[n][1] * (1 - t) + new_points[n][1] * t)
+                for n in range(len(old_points))]
 
 
 if __name__ == "__main__":
