@@ -22,7 +22,7 @@ def is_subset(list1, list2):
 ## The Topological State is the term used to encapsulate the alpha-complex, graph, and combinatorial
 # information. For a given set of points (and parameters), this class will provide access to the
 # simplices of the alpha complex and the boundary cycles of the combinatorial map, as well as some
-# minimal connectivity information.
+# minimal connectivity information about the underlying graph.
 class TopologicalState(object):
 
     ## Compute Alpha-complex and combinatorial map and extract simplices and boundary cycles. Also
@@ -45,8 +45,8 @@ class TopologicalState(object):
 
         self._connected_nodes = nx.node_connected_component(graph, 0)
 
-    ## Check if a boundary cycle is connected to the fence. This is done by checking if
-    # the nodes of the boundary cycle and comparing them to all the nodes connected to
+    ## Check if a boundary cycle is connected to the fence. This is done by and
+    # comparing nodes of the boundary cycle to the set of all nodes connected to
     # node #0 (which is guaranteed to be on the fence).
     def is_connected(self, cycle):
         return not set(cycle2nodes(cycle)).isdisjoint(set(self._connected_nodes))

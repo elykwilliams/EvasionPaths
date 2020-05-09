@@ -115,7 +115,7 @@ Private Attributes</h2></td></tr>
 </table>
 <a name="details" id="details"></a><h2 class="groupheader">Detailed Description</h2>
 <div class="textblock"><p>The Topological State is the term used to encapsulate the alpha-complex, graph, and combinatorial information. </p>
-<p>For a given set of points (and parameters), this class will provide access to the simplices of the alpha complex and the boundary cycles of the combinatorial map, as well as some minimal connectivity information. </p>
+<p>For a given set of points (and parameters), this class will provide access to the simplices of the alpha complex and the boundary cycles of the combinatorial map, as well as some minimal connectivity information about the underlying graph. </p>
 </div><h2 class="groupheader">Constructor &amp; Destructor Documentation</h2>
 <a id="aabd9ffd0ff4a70eaabdd4e35d9b04ff3"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#aabd9ffd0ff4a70eaabdd4e35d9b04ff3">&#9670;&nbsp;</a></span>__init__()</h2>
@@ -209,7 +209,7 @@ Private Attributes</h2></td></tr>
 </div><div class="memdoc">
 
 <p>Check if a boundary cycle is connected to the fence. </p>
-<p>This is done by checking if the nodes of the boundary cycle and comparing them to all the nodes connected to node #0 (which is guaranteed to be on the fence). </p>
+<p>This is done by and comparing nodes of the boundary cycle to the set of all nodes connected to node #0 (which is guaranteed to be on the fence). </p>
 
 </div>
 </div>
