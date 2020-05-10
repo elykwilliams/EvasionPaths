@@ -1,6 +1,8 @@
 var searchData=
 [
-  ['set_5fboundary_5fcycles',['set_boundary_cycles',['../classsrc_1_1combinatorial__map_1_1CMap.html#a35ebeb20aba993065961414fe4d52fd3',1,'src::combinatorial_map::CMap']]],
-  ['simplex2cycle',['simplex2cycle',['../classsrc_1_1topological__state_1_1TopologicalState.html#a1aa96f613add5a07a46b1c7d6fc50af3',1,'src::topological_state::TopologicalState']]],
-  ['simplices',['simplices',['../classsrc_1_1topological__state_1_1TopologicalState.html#ad2b0520ffeb61dc7bd1b4c14f4abc33a',1,'src::topological_state::TopologicalState']]]
+  ['ignore_5fstate_5fchange',['ignore_state_change',['../classsrc_1_1cycle__labelling_1_1CycleLabelling.html#aea90902265d4b69b80e4864eb7f7ac99',1,'src::cycle_labelling::CycleLabelling']]],
+  ['in_5fdomain',['in_domain',['../classsrc_1_1boundary__geometry_1_1RectangularDomain.html#a4f8fa776164c359e57eea2284af7aeb5',1,'src::boundary_geometry::RectangularDomain']]],
+  ['is_5fatomic',['is_atomic',['../classsrc_1_1topological__state_1_1StateChange.html#a4a5fe96d4b2fe8e1eee848a4ff4c606f',1,'src::topological_state::StateChange']]],
+  ['is_5fconnected_5fcycle',['is_connected_cycle',['../classsrc_1_1topological__state_1_1TopologicalState.html#abbffde6bde94bb764d9994f34ade732e',1,'src::topological_state::TopologicalState']]],
+  ['is_5fconnected_5fsimplex',['is_connected_simplex',['../classsrc_1_1topological__state_1_1TopologicalState.html#a62fd3f5f2cbee4bfb524f0fcde65af55',1,'src::topological_state::TopologicalState']]]
 ];
