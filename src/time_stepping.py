@@ -11,6 +11,12 @@ from copy import deepcopy
 from topological_state import *
 
 
+## Exception indicating that atomic transition not found.
+# This can happen when two or more atomic transitions
+# happen simultaniously. This is sometimes a problem for manufactured
+# simulations. It can also indicate that a sensor has broken free of the
+# virtual boundary and is interfering with the fence boundary cycle.
+# There is a very rare change that a new atomic transition is discovered.
 class MaxRecursionDepth(Exception):
     def __init__(self, state_change):
         self.state_change = state_change
