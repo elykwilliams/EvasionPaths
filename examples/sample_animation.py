@@ -22,7 +22,7 @@ unit_square = RectangularDomain(spacing=sensing_radius)
 brownian_motion = BilliardMotion(dt=timestep_size,
                                  vel=0.1,
                                  boundary=unit_square,
-                                 n_sensors=num_sensors+len(unit_square))
+                                 n_total_sensors=num_sensors+len(unit_square))
 
 simulation = EvasionPathSimulation(boundary=unit_square,
                                    motion_model=brownian_motion,

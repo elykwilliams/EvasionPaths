@@ -63,10 +63,10 @@ class BrownianMotion(MotionModel):
 class BilliardMotion(MotionModel):
     """ Defines motion with constant velocity and sensors reflected
         at the boundary with angle in = angle out"""
-    def __init__(self, dt: float, vel: float, boundary: RectangularDomain, n_sensors: int):
+    def __init__(self, dt: float, vel: float, boundary: RectangularDomain, n_total_sensors: int):
         super().__init__(dt, boundary)
         self.vel = vel
-        self.vel_angle = random.uniform(0, 2*pi, n_sensors)
+        self.vel_angle = random.uniform(0, 2*pi, n_total_sensors)
 
     def update_point(self, pt, index):
         theta = self.vel_angle[index]
