@@ -18,11 +18,11 @@ class MotionModel(ABC):
 
     @abstractmethod
     def update_point(self, pt, index):
-        return point
+        return pt
 
     @abstractmethod
     def reflect(self, pt, index):
-        return point
+        return pt
 
     def update_points(self, old_points):
         offset = len(self.boundary)
