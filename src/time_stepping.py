@@ -62,7 +62,7 @@ class EvasionPathSimulation:
         while self.cycle_label.has_intruder():
             self.time += self.dt
             self.evasion_paths = ""
-            self.evasion_paths += self.do_timestep()
+            self.do_timestep()
             if 0 < self.Tend < self.time:
                 break
         return self.time
