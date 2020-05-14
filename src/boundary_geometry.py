@@ -66,21 +66,3 @@ class RectangularDomain:
 
     def generate_points(self, n_int_sensors):
         return self.points + self.generate_interior(n_int_sensors)
-
-
-if __name__ == "__main__":
-    from plotting_tools import *
-
-    class Simulation:
-        sensing_radius = 0.15
-        boundary = RectangularDomain(sensing_radius)
-        points = boundary.points
-
-    show_boundary_points(Simulation)
-    show_virtual_boundary(Simulation)
-    show_sensor_radius(Simulation)
-
-    ax = plt.gca()
-    ax.axis('equal')
-    ax.axis("off")
-    plt.show()

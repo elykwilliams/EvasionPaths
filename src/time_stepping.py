@@ -100,7 +100,3 @@ class EvasionPathSimulation:
         return [(old_points[n][0] * (1 - t) + new_points[n][0] * t,
                  old_points[n][1] * (1 - t) + new_points[n][1] * t)
                 for n in range(len(old_points))]
-
-
-if __name__ == "__main__":
-    pass
