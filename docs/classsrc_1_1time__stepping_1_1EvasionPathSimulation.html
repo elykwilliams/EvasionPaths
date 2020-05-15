@@ -74,22 +74,30 @@ $(function() {
 <div class="title">EvasionPathSimulation Class Reference</div>  </div>
 </div><!--header-->
 <div class="contents">
+
+<p>This class provides the main interface for running a simulation.  
+ <a href="classsrc_1_1time__stepping_1_1EvasionPathSimulation.html#details">More...</a></p>
 <table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-methods"></a>
 Public Member Functions</h2></td></tr>
-<tr class="memitem:a646f6d2f8422236438f4e8e82f0a352f"><td class="memItemLeft" align="right" valign="top">def&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classsrc_1_1time__stepping_1_1EvasionPathSimulation.html#a646f6d2f8422236438f4e8e82f0a352f">__init__</a> (self, <a class="el" href="classsrc_1_1time__stepping_1_1EvasionPathSimulation.html#a23d35531b04e26bcae25360217ac8229">boundary</a>, <a class="el" href="classsrc_1_1time__stepping_1_1EvasionPathSimulation.html#ac05124be53355bf8ec090df5446fc1ed">motion_model</a>, n_int_sensors, <a class="el" href="classsrc_1_1time__stepping_1_1EvasionPathSimulation.html#a6090c18e0bd06813c63efbd900eb9551">sensing_radius</a>, <a class="el" href="classsrc_1_1time__stepping_1_1EvasionPathSimulation.html#a770f288d3048ff6cbee9faa0969fd6b0">dt</a>, end_time=0)</td></tr>
-<tr class="separator:a646f6d2f8422236438f4e8e82f0a352f"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:aae238b3b7d7f737b458fb3ca94fff852"><td class="memItemLeft" align="right" valign="top">def&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classsrc_1_1time__stepping_1_1EvasionPathSimulation.html#aae238b3b7d7f737b458fb3ca94fff852">update_old_data</a> (self)</td></tr>
-<tr class="separator:aae238b3b7d7f737b458fb3ca94fff852"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ad22709b2e67308af35f55680d5a026e0"><td class="memItemLeft" align="right" valign="top">def&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classsrc_1_1time__stepping_1_1EvasionPathSimulation.html#ad22709b2e67308af35f55680d5a026e0">run</a> (self)</td></tr>
-<tr class="separator:ad22709b2e67308af35f55680d5a026e0"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ae032c96cdb91a59943fb821263339a16"><td class="memItemLeft" align="right" valign="top">def&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classsrc_1_1time__stepping_1_1EvasionPathSimulation.html#ae032c96cdb91a59943fb821263339a16">do_timestep</a> (self, new_points=(), level=0)</td></tr>
-<tr class="separator:ae032c96cdb91a59943fb821263339a16"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a83eb7176a8b8c1cf15be1489db2f333e"><td class="memItemLeft" align="right" valign="top">None&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classsrc_1_1time__stepping_1_1EvasionPathSimulation.html#a83eb7176a8b8c1cf15be1489db2f333e">__init__</a> (self, <a class="el" href="classsrc_1_1boundary__geometry_1_1Boundary.html">Boundary</a> <a class="el" href="classsrc_1_1time__stepping_1_1EvasionPathSimulation.html#a23d35531b04e26bcae25360217ac8229">boundary</a>, <a class="el" href="classsrc_1_1motion__model_1_1MotionModel.html">MotionModel</a> <a class="el" href="classsrc_1_1time__stepping_1_1EvasionPathSimulation.html#ac05124be53355bf8ec090df5446fc1ed">motion_model</a>, int n_int_sensors, float <a class="el" href="classsrc_1_1time__stepping_1_1EvasionPathSimulation.html#a6090c18e0bd06813c63efbd900eb9551">sensing_radius</a>, float <a class="el" href="classsrc_1_1time__stepping_1_1EvasionPathSimulation.html#a770f288d3048ff6cbee9faa0969fd6b0">dt</a>, int end_time=0)</td></tr>
+<tr class="memdesc:a83eb7176a8b8c1cf15be1489db2f333e"><td class="mdescLeft">&#160;</td><td class="mdescRight">Initialize If end_time is set to a non-zero value, use sooner of max cutoff time or cleared domain.  <a href="#a83eb7176a8b8c1cf15be1489db2f333e">More...</a><br /></td></tr>
+<tr class="separator:a83eb7176a8b8c1cf15be1489db2f333e"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a20ff8ec052ea4db590e7a79a8948c1c7"><td class="memItemLeft" align="right" valign="top">None&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classsrc_1_1time__stepping_1_1EvasionPathSimulation.html#a20ff8ec052ea4db590e7a79a8948c1c7">update_old_data</a> (self)</td></tr>
+<tr class="memdesc:a20ff8ec052ea4db590e7a79a8948c1c7"><td class="mdescLeft">&#160;</td><td class="mdescRight">Move to next time-step.  <a href="#a20ff8ec052ea4db590e7a79a8948c1c7">More...</a><br /></td></tr>
+<tr class="separator:a20ff8ec052ea4db590e7a79a8948c1c7"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ae0e1f8d8061fc739cff1c3b9eee3f377"><td class="memItemLeft" align="right" valign="top">float&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classsrc_1_1time__stepping_1_1EvasionPathSimulation.html#ae0e1f8d8061fc739cff1c3b9eee3f377">run</a> (self)</td></tr>
+<tr class="memdesc:ae0e1f8d8061fc739cff1c3b9eee3f377"><td class="mdescLeft">&#160;</td><td class="mdescRight">Run until no more intruders.  <a href="#ae0e1f8d8061fc739cff1c3b9eee3f377">More...</a><br /></td></tr>
+<tr class="separator:ae0e1f8d8061fc739cff1c3b9eee3f377"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a45cda20eb12cb603134e424cd4c882bf"><td class="memItemLeft" align="right" valign="top">None&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classsrc_1_1time__stepping_1_1EvasionPathSimulation.html#a45cda20eb12cb603134e424cd4c882bf">do_timestep</a> (self, list new_points=(), int level=0)</td></tr>
+<tr class="memdesc:a45cda20eb12cb603134e424cd4c882bf"><td class="mdescLeft">&#160;</td><td class="mdescRight">To single timestep.  <a href="#a45cda20eb12cb603134e424cd4c882bf">More...</a><br /></td></tr>
+<tr class="separator:a45cda20eb12cb603134e424cd4c882bf"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-static-methods"></a>
 Static Public Member Functions</h2></td></tr>
-<tr class="memitem:a82a02d4322108b58d765dea971185462"><td class="memItemLeft" align="right" valign="top">def&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classsrc_1_1time__stepping_1_1EvasionPathSimulation.html#a82a02d4322108b58d765dea971185462">interpolate_points</a> (<a class="el" href="classsrc_1_1time__stepping_1_1EvasionPathSimulation.html#ad1f8eaa293e862c93bb5cd1553df5371">old_points</a>, new_points, t)</td></tr>
-<tr class="separator:a82a02d4322108b58d765dea971185462"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a601c89b7847ff92e7e3489386f2a1e82"><td class="memItemLeft" align="right" valign="top">list&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classsrc_1_1time__stepping_1_1EvasionPathSimulation.html#a601c89b7847ff92e7e3489386f2a1e82">interpolate_points</a> (list <a class="el" href="classsrc_1_1time__stepping_1_1EvasionPathSimulation.html#ad1f8eaa293e862c93bb5cd1553df5371">old_points</a>, list new_points, float t)</td></tr>
+<tr class="memdesc:a601c89b7847ff92e7e3489386f2a1e82"><td class="mdescLeft">&#160;</td><td class="mdescRight">Linearly interpolate points.  <a href="#a601c89b7847ff92e7e3489386f2a1e82">More...</a><br /></td></tr>
+<tr class="separator:a601c89b7847ff92e7e3489386f2a1e82"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-attribs"></a>
 Public Attributes</h2></td></tr>
@@ -124,15 +132,18 @@ Public Attributes</h2></td></tr>
 <tr class="memitem:a51cb6fcbfb630c0eaa6b5a617f0f4e2a"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classsrc_1_1time__stepping_1_1EvasionPathSimulation.html#a51cb6fcbfb630c0eaa6b5a617f0f4e2a">cycle_label</a></td></tr>
 <tr class="separator:a51cb6fcbfb630c0eaa6b5a617f0f4e2a"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
-<h2 class="groupheader">Constructor &amp; Destructor Documentation</h2>
-<a id="a646f6d2f8422236438f4e8e82f0a352f"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a646f6d2f8422236438f4e8e82f0a352f">&#9670;&nbsp;</a></span>__init__()</h2>
+<a name="details" id="details"></a><h2 class="groupheader">Detailed Description</h2>
+<div class="textblock"><p>This class provides the main interface for running a simulation. </p>
+<p>It provides the ability to preform a single timestep manually, run until there are no possible intruders, or until a max time is reached. </p>
+</div><h2 class="groupheader">Constructor &amp; Destructor Documentation</h2>
+<a id="a83eb7176a8b8c1cf15be1489db2f333e"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a83eb7176a8b8c1cf15be1489db2f333e">&#9670;&nbsp;</a></span>__init__()</h2>
 
 <div class="memitem">
 <div class="memproto">
       <table class="memname">
         <tr>
-          <td class="memname">def __init__ </td>
+          <td class="memname"> None __init__ </td>
           <td>(</td>
           <td class="paramtype">&#160;</td>
           <td class="paramname"><em>self</em>, </td>
@@ -140,37 +151,37 @@ Public Attributes</h2></td></tr>
         <tr>
           <td class="paramkey"></td>
           <td></td>
-          <td class="paramtype">&#160;</td>
+          <td class="paramtype"><a class="el" href="classsrc_1_1boundary__geometry_1_1Boundary.html">Boundary</a>&#160;</td>
           <td class="paramname"><em>boundary</em>, </td>
         </tr>
         <tr>
           <td class="paramkey"></td>
           <td></td>
-          <td class="paramtype">&#160;</td>
+          <td class="paramtype"><a class="el" href="classsrc_1_1motion__model_1_1MotionModel.html">MotionModel</a>&#160;</td>
           <td class="paramname"><em>motion_model</em>, </td>
         </tr>
         <tr>
           <td class="paramkey"></td>
           <td></td>
-          <td class="paramtype">&#160;</td>
+          <td class="paramtype">int&#160;</td>
           <td class="paramname"><em>n_int_sensors</em>, </td>
         </tr>
         <tr>
           <td class="paramkey"></td>
           <td></td>
-          <td class="paramtype">&#160;</td>
+          <td class="paramtype">float&#160;</td>
           <td class="paramname"><em>sensing_radius</em>, </td>
         </tr>
         <tr>
           <td class="paramkey"></td>
           <td></td>
-          <td class="paramtype">&#160;</td>
+          <td class="paramtype">float&#160;</td>
           <td class="paramname"><em>dt</em>, </td>
         </tr>
         <tr>
           <td class="paramkey"></td>
           <td></td>
-          <td class="paramtype">&#160;</td>
+          <td class="paramtype">int &#160;</td>
           <td class="paramname"><em>end_time</em> = <code>0</code>&#160;</td>
         </tr>
         <tr>
@@ -181,17 +192,20 @@ Public Attributes</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
+<p>Initialize If end_time is set to a non-zero value, use sooner of max cutoff time or cleared domain. </p>
+<p>Set to 0 to disable. </p>
+
 </div>
 </div>
 <h2 class="groupheader">Member Function Documentation</h2>
-<a id="ae032c96cdb91a59943fb821263339a16"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#ae032c96cdb91a59943fb821263339a16">&#9670;&nbsp;</a></span>do_timestep()</h2>
+<a id="a45cda20eb12cb603134e424cd4c882bf"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a45cda20eb12cb603134e424cd4c882bf">&#9670;&nbsp;</a></span>do_timestep()</h2>
 
 <div class="memitem">
 <div class="memproto">
       <table class="memname">
         <tr>
-          <td class="memname">def do_timestep </td>
+          <td class="memname"> None do_timestep </td>
           <td>(</td>
           <td class="paramtype">&#160;</td>
           <td class="paramname"><em>self</em>, </td>
@@ -199,13 +213,13 @@ Public Attributes</h2></td></tr>
         <tr>
           <td class="paramkey"></td>
           <td></td>
-          <td class="paramtype">&#160;</td>
+          <td class="paramtype">list &#160;</td>
           <td class="paramname"><em>new_points</em> = <code>()</code>, </td>
         </tr>
         <tr>
           <td class="paramkey"></td>
           <td></td>
-          <td class="paramtype">&#160;</td>
+          <td class="paramtype">int &#160;</td>
           <td class="paramname"><em>level</em> = <code>0</code>&#160;</td>
         </tr>
         <tr>
@@ -216,10 +230,13 @@ Public Attributes</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
+<p>To single timestep. </p>
+<p>Do recursive adaptive step if non-atomic transition is found. </p>
+
 </div>
 </div>
-<a id="a82a02d4322108b58d765dea971185462"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a82a02d4322108b58d765dea971185462">&#9670;&nbsp;</a></span>interpolate_points()</h2>
+<a id="a601c89b7847ff92e7e3489386f2a1e82"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a601c89b7847ff92e7e3489386f2a1e82">&#9670;&nbsp;</a></span>interpolate_points()</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -228,21 +245,21 @@ Public Attributes</h2></td></tr>
   <td class="mlabels-left">
       <table class="memname">
         <tr>
-          <td class="memname">def interpolate_points </td>
+          <td class="memname"> list interpolate_points </td>
           <td>(</td>
-          <td class="paramtype">&#160;</td>
+          <td class="paramtype">list&#160;</td>
           <td class="paramname"><em>old_points</em>, </td>
         </tr>
         <tr>
           <td class="paramkey"></td>
           <td></td>
-          <td class="paramtype">&#160;</td>
+          <td class="paramtype">list&#160;</td>
           <td class="paramname"><em>new_points</em>, </td>
         </tr>
         <tr>
           <td class="paramkey"></td>
           <td></td>
-          <td class="paramtype">&#160;</td>
+          <td class="paramtype">float&#160;</td>
           <td class="paramname"><em>t</em>&#160;</td>
         </tr>
         <tr>
@@ -258,16 +275,19 @@ Public Attributes</h2></td></tr>
 </table>
 </div><div class="memdoc">
 
+<p>Linearly interpolate points. </p>
+<p>Used when doing an adaptive step to interpolate between old an new points. </p>
+
 </div>
 </div>
-<a id="ad22709b2e67308af35f55680d5a026e0"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#ad22709b2e67308af35f55680d5a026e0">&#9670;&nbsp;</a></span>run()</h2>
+<a id="ae0e1f8d8061fc739cff1c3b9eee3f377"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ae0e1f8d8061fc739cff1c3b9eee3f377">&#9670;&nbsp;</a></span>run()</h2>
 
 <div class="memitem">
 <div class="memproto">
       <table class="memname">
         <tr>
-          <td class="memname">def run </td>
+          <td class="memname"> float run </td>
           <td>(</td>
           <td class="paramtype">&#160;</td>
           <td class="paramname"><em>self</em></td><td>)</td>
@@ -276,16 +296,19 @@ Public Attributes</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
+<p>Run until no more intruders. </p>
+<p>exit if max time is set. Returns simulation time. </p>
+
 </div>
 </div>
-<a id="aae238b3b7d7f737b458fb3ca94fff852"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#aae238b3b7d7f737b458fb3ca94fff852">&#9670;&nbsp;</a></span>update_old_data()</h2>
+<a id="a20ff8ec052ea4db590e7a79a8948c1c7"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a20ff8ec052ea4db590e7a79a8948c1c7">&#9670;&nbsp;</a></span>update_old_data()</h2>
 
 <div class="memitem">
 <div class="memproto">
       <table class="memname">
         <tr>
-          <td class="memname">def update_old_data </td>
+          <td class="memname"> None update_old_data </td>
           <td>(</td>
           <td class="paramtype">&#160;</td>
           <td class="paramname"><em>self</em></td><td>)</td>
@@ -293,6 +316,8 @@ Public Attributes</h2></td></tr>
         </tr>
       </table>
 </div><div class="memdoc">
+
+<p>Move to next time-step. </p>
 
 </div>
 </div>
