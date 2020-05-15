@@ -74,20 +74,27 @@ $(function() {
 </div><!--header-->
 <div class="contents">
 
+<p>This class provides the basic interface for a model of motion.  
+ <a href="classsrc_1_1motion__model_1_1MotionModel.html#details">More...</a></p>
+
 <p>Inherits ABC.</p>
 
 <p>Inherited by <a class="el" href="classsrc_1_1motion__model_1_1BilliardMotion.html">BilliardMotion</a>, and <a class="el" href="classsrc_1_1motion__model_1_1BrownianMotion.html">BrownianMotion</a>.</p>
 <table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-methods"></a>
 Public Member Functions</h2></td></tr>
-<tr class="memitem:a730c3d4f4d5ed00fbb99cdc524baae72"><td class="memItemLeft" align="right" valign="top">def&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classsrc_1_1motion__model_1_1MotionModel.html#a730c3d4f4d5ed00fbb99cdc524baae72">__init__</a> (self, <a class="el" href="classsrc_1_1motion__model_1_1MotionModel.html#a770f288d3048ff6cbee9faa0969fd6b0">dt</a>, <a class="el" href="classsrc_1_1motion__model_1_1MotionModel.html#a23d35531b04e26bcae25360217ac8229">boundary</a>)</td></tr>
-<tr class="separator:a730c3d4f4d5ed00fbb99cdc524baae72"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a7cb9168c51b06b4fe2d6253f2c6ee7fa"><td class="memItemLeft" align="right" valign="top">def&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classsrc_1_1motion__model_1_1MotionModel.html#a7cb9168c51b06b4fe2d6253f2c6ee7fa">update_point</a> (self, pt, index)</td></tr>
-<tr class="separator:a7cb9168c51b06b4fe2d6253f2c6ee7fa"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a7e225c6be40244247a7b955d1d369573"><td class="memItemLeft" align="right" valign="top">def&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classsrc_1_1motion__model_1_1MotionModel.html#a7e225c6be40244247a7b955d1d369573">reflect</a> (self, pt, index)</td></tr>
-<tr class="separator:a7e225c6be40244247a7b955d1d369573"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a58cd1eff0dd0da6b2d5a46f9d1995b39"><td class="memItemLeft" align="right" valign="top">def&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classsrc_1_1motion__model_1_1MotionModel.html#a58cd1eff0dd0da6b2d5a46f9d1995b39">update_points</a> (self, old_points)</td></tr>
-<tr class="separator:a58cd1eff0dd0da6b2d5a46f9d1995b39"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a8356e58ff325fe5f8fbdbe3eac39131d"><td class="memItemLeft" align="right" valign="top">None&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classsrc_1_1motion__model_1_1MotionModel.html#a8356e58ff325fe5f8fbdbe3eac39131d">__init__</a> (self, float <a class="el" href="classsrc_1_1motion__model_1_1MotionModel.html#a770f288d3048ff6cbee9faa0969fd6b0">dt</a>, <a class="el" href="classsrc_1_1boundary__geometry_1_1Boundary.html">Boundary</a> <a class="el" href="classsrc_1_1motion__model_1_1MotionModel.html#a23d35531b04e26bcae25360217ac8229">boundary</a>)</td></tr>
+<tr class="memdesc:a8356e58ff325fe5f8fbdbe3eac39131d"><td class="mdescLeft">&#160;</td><td class="mdescRight">Initialize motion model with boundary and time-scale.  <a href="#a8356e58ff325fe5f8fbdbe3eac39131d">More...</a><br /></td></tr>
+<tr class="separator:a8356e58ff325fe5f8fbdbe3eac39131d"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a5bba5749ddaeec21afdf067139c213dc"><td class="memItemLeft" align="right" valign="top">tuple&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classsrc_1_1motion__model_1_1MotionModel.html#a5bba5749ddaeec21afdf067139c213dc">update_point</a> (self, tuple pt, int index)</td></tr>
+<tr class="memdesc:a5bba5749ddaeec21afdf067139c213dc"><td class="mdescLeft">&#160;</td><td class="mdescRight">Update an individual point.  <a href="#a5bba5749ddaeec21afdf067139c213dc">More...</a><br /></td></tr>
+<tr class="separator:a5bba5749ddaeec21afdf067139c213dc"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a47035bd0c886f6de08873c882b1e43b9"><td class="memItemLeft" align="right" valign="top">tuple&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classsrc_1_1motion__model_1_1MotionModel.html#a47035bd0c886f6de08873c882b1e43b9">reflect</a> (self, tuple pt, int index)</td></tr>
+<tr class="memdesc:a47035bd0c886f6de08873c882b1e43b9"><td class="mdescLeft">&#160;</td><td class="mdescRight">Move points back in domain.  <a href="#a47035bd0c886f6de08873c882b1e43b9">More...</a><br /></td></tr>
+<tr class="separator:a47035bd0c886f6de08873c882b1e43b9"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a2c1752e8be48bfdb51d90279bad5768f"><td class="memItemLeft" align="right" valign="top">list&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classsrc_1_1motion__model_1_1MotionModel.html#a2c1752e8be48bfdb51d90279bad5768f">update_points</a> (self, list old_points)</td></tr>
+<tr class="memdesc:a2c1752e8be48bfdb51d90279bad5768f"><td class="mdescLeft">&#160;</td><td class="mdescRight">Update all non-fence points.  <a href="#a2c1752e8be48bfdb51d90279bad5768f">More...</a><br /></td></tr>
+<tr class="separator:a2c1752e8be48bfdb51d90279bad5768f"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-attribs"></a>
 Public Attributes</h2></td></tr>
@@ -96,15 +103,18 @@ Public Attributes</h2></td></tr>
 <tr class="memitem:a23d35531b04e26bcae25360217ac8229"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classsrc_1_1motion__model_1_1MotionModel.html#a23d35531b04e26bcae25360217ac8229">boundary</a></td></tr>
 <tr class="separator:a23d35531b04e26bcae25360217ac8229"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
-<h2 class="groupheader">Constructor &amp; Destructor Documentation</h2>
-<a id="a730c3d4f4d5ed00fbb99cdc524baae72"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a730c3d4f4d5ed00fbb99cdc524baae72">&#9670;&nbsp;</a></span>__init__()</h2>
+<a name="details" id="details"></a><h2 class="groupheader">Detailed Description</h2>
+<div class="textblock"><p>This class provides the basic interface for a model of motion. </p>
+<p>it should do two things, update the point positions, and reflect points off of the boundary. Because the reflection depends on the boundary, motion models and boundaries must be compatible. </p>
+</div><h2 class="groupheader">Constructor &amp; Destructor Documentation</h2>
+<a id="a8356e58ff325fe5f8fbdbe3eac39131d"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a8356e58ff325fe5f8fbdbe3eac39131d">&#9670;&nbsp;</a></span>__init__()</h2>
 
 <div class="memitem">
 <div class="memproto">
       <table class="memname">
         <tr>
-          <td class="memname">def __init__ </td>
+          <td class="memname"> None __init__ </td>
           <td>(</td>
           <td class="paramtype">&#160;</td>
           <td class="paramname"><em>self</em>, </td>
@@ -112,13 +122,13 @@ Public Attributes</h2></td></tr>
         <tr>
           <td class="paramkey"></td>
           <td></td>
-          <td class="paramtype">&#160;</td>
+          <td class="paramtype">float&#160;</td>
           <td class="paramname"><em>dt</em>, </td>
         </tr>
         <tr>
           <td class="paramkey"></td>
           <td></td>
-          <td class="paramtype">&#160;</td>
+          <td class="paramtype"><a class="el" href="classsrc_1_1boundary__geometry_1_1Boundary.html">Boundary</a>&#160;</td>
           <td class="paramname"><em>boundary</em>&#160;</td>
         </tr>
         <tr>
@@ -129,17 +139,19 @@ Public Attributes</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
+<p>Initialize motion model with boundary and time-scale. </p>
+
 </div>
 </div>
 <h2 class="groupheader">Member Function Documentation</h2>
-<a id="a7e225c6be40244247a7b955d1d369573"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a7e225c6be40244247a7b955d1d369573">&#9670;&nbsp;</a></span>reflect()</h2>
+<a id="a47035bd0c886f6de08873c882b1e43b9"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a47035bd0c886f6de08873c882b1e43b9">&#9670;&nbsp;</a></span>reflect()</h2>
 
 <div class="memitem">
 <div class="memproto">
       <table class="memname">
         <tr>
-          <td class="memname">def reflect </td>
+          <td class="memname"> tuple reflect </td>
           <td>(</td>
           <td class="paramtype">&#160;</td>
           <td class="paramname"><em>self</em>, </td>
@@ -147,13 +159,13 @@ Public Attributes</h2></td></tr>
         <tr>
           <td class="paramkey"></td>
           <td></td>
-          <td class="paramtype">&#160;</td>
+          <td class="paramtype">tuple&#160;</td>
           <td class="paramname"><em>pt</em>, </td>
         </tr>
         <tr>
           <td class="paramkey"></td>
           <td></td>
-          <td class="paramtype">&#160;</td>
+          <td class="paramtype">int&#160;</td>
           <td class="paramname"><em>index</em>&#160;</td>
         </tr>
         <tr>
@@ -164,18 +176,21 @@ Public Attributes</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
-<p>Reimplemented in <a class="el" href="classsrc_1_1motion__model_1_1BilliardMotion.html#a7e225c6be40244247a7b955d1d369573">BilliardMotion</a>.</p>
+<p>Move points back in domain. </p>
+<p>If a point is moved outside of the domain, this function provides a rule on how to move it back inside the domain. The index is the position in the set of ALL points, and can be useful in looking up sensor specific data. Reflect should return position of point in the domain. </p>
+
+<p>Reimplemented in <a class="el" href="classsrc_1_1motion__model_1_1BilliardMotion.html#a47035bd0c886f6de08873c882b1e43b9">BilliardMotion</a>.</p>
 
 </div>
 </div>
-<a id="a7cb9168c51b06b4fe2d6253f2c6ee7fa"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a7cb9168c51b06b4fe2d6253f2c6ee7fa">&#9670;&nbsp;</a></span>update_point()</h2>
+<a id="a5bba5749ddaeec21afdf067139c213dc"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a5bba5749ddaeec21afdf067139c213dc">&#9670;&nbsp;</a></span>update_point()</h2>
 
 <div class="memitem">
 <div class="memproto">
       <table class="memname">
         <tr>
-          <td class="memname">def update_point </td>
+          <td class="memname"> tuple update_point </td>
           <td>(</td>
           <td class="paramtype">&#160;</td>
           <td class="paramname"><em>self</em>, </td>
@@ -183,13 +198,13 @@ Public Attributes</h2></td></tr>
         <tr>
           <td class="paramkey"></td>
           <td></td>
-          <td class="paramtype">&#160;</td>
+          <td class="paramtype">tuple&#160;</td>
           <td class="paramname"><em>pt</em>, </td>
         </tr>
         <tr>
           <td class="paramkey"></td>
           <td></td>
-          <td class="paramtype">&#160;</td>
+          <td class="paramtype">int&#160;</td>
           <td class="paramname"><em>index</em>&#160;</td>
         </tr>
         <tr>
@@ -200,18 +215,21 @@ Public Attributes</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
-<p>Reimplemented in <a class="el" href="classsrc_1_1motion__model_1_1RunAndTumble.html#a7cb9168c51b06b4fe2d6253f2c6ee7fa">RunAndTumble</a>, and <a class="el" href="classsrc_1_1motion__model_1_1BilliardMotion.html#a7cb9168c51b06b4fe2d6253f2c6ee7fa">BilliardMotion</a>.</p>
+<p>Update an individual point. </p>
+<p>This function will be called on all points. reflection should be separate. The index is the position in the set of ALL points, and can be useful in looking up sensor specific data. Will return new position or sensor. </p>
+
+<p>Reimplemented in <a class="el" href="classsrc_1_1motion__model_1_1BilliardMotion.html#a5bba5749ddaeec21afdf067139c213dc">BilliardMotion</a>.</p>
 
 </div>
 </div>
-<a id="a58cd1eff0dd0da6b2d5a46f9d1995b39"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a58cd1eff0dd0da6b2d5a46f9d1995b39">&#9670;&nbsp;</a></span>update_points()</h2>
+<a id="a2c1752e8be48bfdb51d90279bad5768f"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a2c1752e8be48bfdb51d90279bad5768f">&#9670;&nbsp;</a></span>update_points()</h2>
 
 <div class="memitem">
 <div class="memproto">
       <table class="memname">
         <tr>
-          <td class="memname">def update_points </td>
+          <td class="memname"> list update_points </td>
           <td>(</td>
           <td class="paramtype">&#160;</td>
           <td class="paramname"><em>self</em>, </td>
@@ -219,7 +237,7 @@ Public Attributes</h2></td></tr>
         <tr>
           <td class="paramkey"></td>
           <td></td>
-          <td class="paramtype">&#160;</td>
+          <td class="paramtype">list&#160;</td>
           <td class="paramname"><em>old_points</em>&#160;</td>
         </tr>
         <tr>
@@ -230,7 +248,10 @@ Public Attributes</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
-<p>Reimplemented in <a class="el" href="classsrc_1_1motion__model_1_1RunAndTumble.html#a58cd1eff0dd0da6b2d5a46f9d1995b39">RunAndTumble</a>.</p>
+<p>Update all non-fence points. </p>
+<p>If a point is not in the domain, reflect. It is sometimes necessary to override this class method since this method is called only once per time-step. </p>
+
+<p>Reimplemented in <a class="el" href="classsrc_1_1motion__model_1_1RunAndTumble.html#a2c1752e8be48bfdb51d90279bad5768f">RunAndTumble</a>.</p>
 
 </div>
 </div>
