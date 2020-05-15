@@ -1,4 +1,6 @@
 var searchData=
 [
-  ['update',['update',['../classsrc_1_1cycle__labelling_1_1CycleLabelling.html#a43e2af9717bb7325c62917108ce0e988',1,'src::cycle_labelling::CycleLabelling']]]
+  ['phi',['phi',['../classsrc_1_1combinatorial__map_1_1CMap.html#a2b8ba340eb4b71d967c1347fc4dc5304',1,'src::combinatorial_map::CMap']]],
+  ['plotting_5ftools_2epy',['plotting_tools.py',['../plotting__tools_8py.html',1,'']]],
+  ['points',['points',['../classsrc_1_1boundary__geometry_1_1Boundary.html#ab9a89211ecb71d18bbd259853fda1c54',1,'src.boundary_geometry.Boundary.points()'],['../classsrc_1_1time__stepping_1_1EvasionPathSimulation.html#ab9a89211ecb71d18bbd259853fda1c54',1,'src.time_stepping.EvasionPathSimulation.points()']]]
 ];

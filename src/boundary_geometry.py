@@ -10,44 +10,76 @@ import numpy as np
 from abc import ABC, abstractmethod
 
 
+## Provide abstract base of features that a boundary must satisfy.
+# The boundary class generates the positions of the boundary sensors,
+# a way of specifying if a given point is in or out of the boundary.
+# It will also know the boundary cycle associated with the outside of
+# the fence (the "alpha_cycle". And finally, it will be the class to
+# generate initial data since it can determine how best go generate
+# random points inside the domain.
 class Boundary(ABC):
-    def __init__(self):
+
+    ## Must initialize the boundary points and "alpha_cycle".
+    # The points stored are the points on the boundary only.
+    def __init__(self) -> None:
         self.points = []
         self.generate_boundary_points()
         self.alpha_cycle = self.get_alpha_cycle()
 
-    def __len__(self):
+    ## length of boundary is number of boundary sensors.
+    def __len__(self) -> int:
         return len(self.points)
 
+    ## Determine if given point it in domain or not.
     @abstractmethod
-    def in_domain(self, point):
+    def in_domain(self, point: tuple) -> bool:
         return True
 
+    ## Generate boundary points in counterclockwise order.
+    # Points must be generated in counterclockwise order so that the
+    # alpha_cycle can be easily computed.
     @abstractmethod
     def generate_boundary_points(self):
         return []
 
+    ## Generate n_int sensors randomly inside the domain.
     @abstractmethod
-    def generate_interior_points(self, n_int_sensors):
+    def generate_interior_points(self, n_int_sensors: int) -> list:
         return []
 
-    def generate_points(self, n_int_sensors):
+    ## Return list of all points.
+    # Boundary points must come first and be non-empty.
+    def generate_points(self, n_int_sensors: int) -> list:
         return self.points + self.generate_interior_points(n_int_sensors)
 
-    def get_alpha_cycle(self):
+    ## construct boundary cycle.
+    # the alpha_cycle is the boundary cycle going counter-closckwise around the outside
+    # of the domain.
+    def get_alpha_cycle(self) -> tuple:
         a = [str(n + 1) + "," + str(n) for n in range(len(self.points) - 1)] + ["0," + str(len(self.points) - 1)]
         return tuple(sorted(a))
 
 
+## a rectangular domain using virtual boundary.
+# This domain implements a virtual boundary so that sensors don't get
+# too close and mess up the boundary cycle associated with the fence.
+# The input parameters specify the dimension of the desired virtual boundary
+# and the physical locations of the sensors are places slightly outside of
+# this boundary in a way that still allows sensors to form simplices with
+# boundary sensors.
 class RectangularDomain(Boundary):
 
+    ## Initialize with dimension of virtual boundary.
+    # sensor positions will be adapted to so that interior sensors may roam
+    # specified domain. Default to the unit square with spacing of 0.2. Spacing
+    # should be less that 2*sensing_radius.
     def __init__(self, spacing: float = 0.2,  # default of 0.2, with unit square
                  x_min: float = 0, x_max: float = 1,
                  y_min: float = 0, y_max: float = 1) -> None:
         self.x_max, self.y_max = x_max, y_max
         self.x_min, self.y_min = x_min, y_min
         self.spacing = spacing
-        
+
         # Initialize virtual boundary
         self.dx = self.spacing * np.sin(np.pi / 6)  # virtual boundary width
         self.vx_min, self.vx_max = self.x_min - self.dx, self.x_max + self.dx
@@ -55,18 +87,20 @@ class RectangularDomain(Boundary):
 
         super().__init__()
 
+    ## Check if point is in virtual domain.
     def in_domain(self, point: tuple) -> bool:
         return self.x_min < point[0] < self.x_max and self.y_min < point[1] < self.y_max
 
+    ## Generate points in counter-clockwise order.
     def generate_boundary_points(self) -> list:
         self.points.extend([(x, self.vy_min) for x in np.arange(self.vx_min, 0.999*self.vx_max, self.spacing)])  # bottom
         self.points.extend([(self.vx_max, y) for y in np.arange(self.vy_min, 0.999*self.vx_max, self.spacing)])  # right
         self.points.extend([(self.x_max - x, self.vy_max) for x in np.arange(self.vx_min, 0.999*self.vx_max, self.spacing)])  # top
         self.points.extend([(self.vx_min, self.y_max - y) for y in np.arange(self.vy_min, 0.999*self.vy_max, self.spacing)])  # left
-
         return self.points
 
-    def generate_interior_points(self, n_int_sensors):
+    ## Generate points distributed randomly (uniformly) in the interior.
+    def generate_interior_points(self, n_int_sensors: int)-> list:
         rand_x = np.random.uniform(self.x_min, self.x_max, size=n_int_sensors)
         rand_y = np.random.uniform(self.y_min, self.y_max, size=n_int_sensors)
         return list(zip(rand_x, rand_y))

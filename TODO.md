@@ -5,17 +5,25 @@
  - Points are not reflected during interpolation
  
  # Documentation:
- - DOxygen
+ - Document 
+    - boundary_geometry
+    - combinatorial_map
+    - motion_model
+    - EvasionPathSimulation
+    
  - Measure Complexity and benchmark algorithm
  
 # Structural:
- - Simplify/Update/Add example scripts
+ - Examples
+    - Sample Animation
+    - Simple run
+    - Run in parallel
+    - Putting max time on simulation
+    - example run.sh
  - Add unit tests
  
  # Experiments
- - N - slice
- - R - slice
- - N-R sample
+ - Write script to N-R data
  
  # Future Development:
  - Allow for fully disconnected graph ("power on")

@@ -61,7 +61,7 @@ $(function() {
 
 <div id="nav-path" class="navpath">
   <ul>
-<li class="navelem"><b>src</b></li><li class="navelem"><b>boundary_geometry</b></li><li class="navelem"><a class="el" href="classsrc_1_1boundary__geometry_1_1RectangularDomain.html">RectangularDomain</a></li>  </ul>
+<li class="navelem"><a class="el" href="namespacesrc.html">src</a></li><li class="navelem"><a class="el" href="namespacesrc_1_1boundary__geometry.html">boundary_geometry</a></li><li class="navelem"><a class="el" href="classsrc_1_1boundary__geometry_1_1RectangularDomain.html">RectangularDomain</a></li>  </ul>
 </div>
 </div><!-- top -->
 <div class="header">
@@ -73,66 +73,72 @@ $(function() {
 <div class="title">RectangularDomain Class Reference</div>  </div>
 </div><!--header-->
 <div class="contents">
+
+<p>a rectangular domain using virtual boundary.  
+ <a href="classsrc_1_1boundary__geometry_1_1RectangularDomain.html#details">More...</a></p>
+
+<p>Inherits <a class="el" href="classsrc_1_1boundary__geometry_1_1Boundary.html">Boundary</a>.</p>
 <table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-methods"></a>
 Public Member Functions</h2></td></tr>
-<tr class="memitem:af95aa7ccf7e3a0bf73111def4d52fd50"><td class="memItemLeft" align="right" valign="top"><a id="af95aa7ccf7e3a0bf73111def4d52fd50"></a>
-None&#160;</td><td class="memItemRight" valign="bottom"><b>__init__</b> (self, float spacing=0.2, float x_min=0, float x_max=1, float y_min=0, float y_max=1)</td></tr>
+<tr class="memitem:af95aa7ccf7e3a0bf73111def4d52fd50"><td class="memItemLeft" align="right" valign="top">None&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classsrc_1_1boundary__geometry_1_1RectangularDomain.html#af95aa7ccf7e3a0bf73111def4d52fd50">__init__</a> (self, float <a class="el" href="classsrc_1_1boundary__geometry_1_1RectangularDomain.html#a35a998703ea2cb77d0807a372a480fe6">spacing</a>=0.2, float x_min=0, float x_max=1, float <a class="el" href="classsrc_1_1boundary__geometry_1_1RectangularDomain.html#a9c0d1f0827567b078e9fe6ce3465efe5">y_min</a>=0, float <a class="el" href="classsrc_1_1boundary__geometry_1_1RectangularDomain.html#ab6130d81f5255392da2bf466ea9b16b5">y_max</a>=1)</td></tr>
+<tr class="memdesc:af95aa7ccf7e3a0bf73111def4d52fd50"><td class="mdescLeft">&#160;</td><td class="mdescRight">Initialize with dimension of virtual boundary.  <a href="#af95aa7ccf7e3a0bf73111def4d52fd50">More...</a><br /></td></tr>
 <tr class="separator:af95aa7ccf7e3a0bf73111def4d52fd50"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a810fdc262754b6d21f5acd0e280d4daf"><td class="memItemLeft" align="right" valign="top"><a id="a810fdc262754b6d21f5acd0e280d4daf"></a>
-def&#160;</td><td class="memItemRight" valign="bottom"><b>__len__</b> (self)</td></tr>
-<tr class="separator:a810fdc262754b6d21f5acd0e280d4daf"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:aa2feafc65992b783ef3fae91160034b1"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classsrc_1_1boundary__geometry_1_1RectangularDomain.html#aa2feafc65992b783ef3fae91160034b1">at_boundary</a> (self, tuple point)</td></tr>
-<tr class="separator:aa2feafc65992b783ef3fae91160034b1"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a4f8fa776164c359e57eea2284af7aeb5"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classsrc_1_1boundary__geometry_1_1RectangularDomain.html#a4f8fa776164c359e57eea2284af7aeb5">in_domain</a> (self, tuple point)</td></tr>
+<tr class="memdesc:a4f8fa776164c359e57eea2284af7aeb5"><td class="mdescLeft">&#160;</td><td class="mdescRight">Check if point is in virtual domain.  <a href="#a4f8fa776164c359e57eea2284af7aeb5">More...</a><br /></td></tr>
 <tr class="separator:a4f8fa776164c359e57eea2284af7aeb5"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a9e5ea7a5649608fed0d30a53513d5c80"><td class="memItemLeft" align="right" valign="top">list&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classsrc_1_1boundary__geometry_1_1RectangularDomain.html#a9e5ea7a5649608fed0d30a53513d5c80">generate_boundary_points</a> (self, float spacing)</td></tr>
-<tr class="separator:a9e5ea7a5649608fed0d30a53513d5c80"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a551ea93f11ffe2a204a35826235f00ea"><td class="memItemLeft" align="right" valign="top"><a id="a551ea93f11ffe2a204a35826235f00ea"></a>
-def&#160;</td><td class="memItemRight" valign="bottom"><b>get_alpha_cycle</b> (self)</td></tr>
-<tr class="separator:a551ea93f11ffe2a204a35826235f00ea"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a863cd13be17e72f725ecbde34a78edbb"><td class="memItemLeft" align="right" valign="top"><a id="a863cd13be17e72f725ecbde34a78edbb"></a>
-def&#160;</td><td class="memItemRight" valign="bottom"><b>generate_interior</b> (self, n_int_sensors)</td></tr>
-<tr class="separator:a863cd13be17e72f725ecbde34a78edbb"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ab8bb1b2523f61fc27413663131ec028c"><td class="memItemLeft" align="right" valign="top"><a id="ab8bb1b2523f61fc27413663131ec028c"></a>
-def&#160;</td><td class="memItemRight" valign="bottom"><b>generate_points</b> (self, n_int_sensors)</td></tr>
-<tr class="separator:ab8bb1b2523f61fc27413663131ec028c"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a3b3407b9ea96ffbbf2aee383f300e9fe"><td class="memItemLeft" align="right" valign="top">list&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classsrc_1_1boundary__geometry_1_1RectangularDomain.html#a3b3407b9ea96ffbbf2aee383f300e9fe">generate_boundary_points</a> (self)</td></tr>
+<tr class="memdesc:a3b3407b9ea96ffbbf2aee383f300e9fe"><td class="mdescLeft">&#160;</td><td class="mdescRight">Generate points in counter-clockwise order.  <a href="#a3b3407b9ea96ffbbf2aee383f300e9fe">More...</a><br /></td></tr>
+<tr class="separator:a3b3407b9ea96ffbbf2aee383f300e9fe"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a8d614c5a5ece424d6ee21ecc21c17c4c"><td class="memItemLeft" align="right" valign="top">list&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classsrc_1_1boundary__geometry_1_1RectangularDomain.html#a8d614c5a5ece424d6ee21ecc21c17c4c">generate_interior_points</a> (self, int n_int_sensors)</td></tr>
+<tr class="memdesc:a8d614c5a5ece424d6ee21ecc21c17c4c"><td class="mdescLeft">&#160;</td><td class="mdescRight">Generate points distributed randomly (uniformly) in the interior.  <a href="#a8d614c5a5ece424d6ee21ecc21c17c4c">More...</a><br /></td></tr>
+<tr class="separator:a8d614c5a5ece424d6ee21ecc21c17c4c"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="inherit_header pub_methods_classsrc_1_1boundary__geometry_1_1Boundary"><td colspan="2" onclick="javascript:toggleInherit('pub_methods_classsrc_1_1boundary__geometry_1_1Boundary')"><img src="closed.png" alt="-"/>&#160;Public Member Functions inherited from <a class="el" href="classsrc_1_1boundary__geometry_1_1Boundary.html">Boundary</a></td></tr>
+<tr class="memitem:abc1b785959b47505de72feabab160402 inherit pub_methods_classsrc_1_1boundary__geometry_1_1Boundary"><td class="memItemLeft" align="right" valign="top">None&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classsrc_1_1boundary__geometry_1_1Boundary.html#abc1b785959b47505de72feabab160402">__init__</a> (self)</td></tr>
+<tr class="memdesc:abc1b785959b47505de72feabab160402 inherit pub_methods_classsrc_1_1boundary__geometry_1_1Boundary"><td class="mdescLeft">&#160;</td><td class="mdescRight">Must initialize the boundary points and "alpha_cycle".  <a href="classsrc_1_1boundary__geometry_1_1Boundary.html#abc1b785959b47505de72feabab160402">More...</a><br /></td></tr>
+<tr class="separator:abc1b785959b47505de72feabab160402 inherit pub_methods_classsrc_1_1boundary__geometry_1_1Boundary"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:afd64a095585f64cbe93bdc3b13eba041 inherit pub_methods_classsrc_1_1boundary__geometry_1_1Boundary"><td class="memItemLeft" align="right" valign="top">int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classsrc_1_1boundary__geometry_1_1Boundary.html#afd64a095585f64cbe93bdc3b13eba041">__len__</a> (self)</td></tr>
+<tr class="memdesc:afd64a095585f64cbe93bdc3b13eba041 inherit pub_methods_classsrc_1_1boundary__geometry_1_1Boundary"><td class="mdescLeft">&#160;</td><td class="mdescRight">length of boundary is number of boundary sensors.  <a href="classsrc_1_1boundary__geometry_1_1Boundary.html#afd64a095585f64cbe93bdc3b13eba041">More...</a><br /></td></tr>
+<tr class="separator:afd64a095585f64cbe93bdc3b13eba041 inherit pub_methods_classsrc_1_1boundary__geometry_1_1Boundary"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a5b62a8237dd265bd977754a621bcf090 inherit pub_methods_classsrc_1_1boundary__geometry_1_1Boundary"><td class="memItemLeft" align="right" valign="top">list&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classsrc_1_1boundary__geometry_1_1Boundary.html#a5b62a8237dd265bd977754a621bcf090">generate_points</a> (self, int n_int_sensors)</td></tr>
+<tr class="memdesc:a5b62a8237dd265bd977754a621bcf090 inherit pub_methods_classsrc_1_1boundary__geometry_1_1Boundary"><td class="mdescLeft">&#160;</td><td class="mdescRight">Return list of all points.  <a href="classsrc_1_1boundary__geometry_1_1Boundary.html#a5b62a8237dd265bd977754a621bcf090">More...</a><br /></td></tr>
+<tr class="separator:a5b62a8237dd265bd977754a621bcf090 inherit pub_methods_classsrc_1_1boundary__geometry_1_1Boundary"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a0deae73b140ab72184d6216121398397 inherit pub_methods_classsrc_1_1boundary__geometry_1_1Boundary"><td class="memItemLeft" align="right" valign="top">tuple&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classsrc_1_1boundary__geometry_1_1Boundary.html#a0deae73b140ab72184d6216121398397">get_alpha_cycle</a> (self)</td></tr>
+<tr class="memdesc:a0deae73b140ab72184d6216121398397 inherit pub_methods_classsrc_1_1boundary__geometry_1_1Boundary"><td class="mdescLeft">&#160;</td><td class="mdescRight">construct boundary cycle.  <a href="classsrc_1_1boundary__geometry_1_1Boundary.html#a0deae73b140ab72184d6216121398397">More...</a><br /></td></tr>
+<tr class="separator:a0deae73b140ab72184d6216121398397 inherit pub_methods_classsrc_1_1boundary__geometry_1_1Boundary"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-attribs"></a>
 Public Attributes</h2></td></tr>
-<tr class="memitem:ab6130d81f5255392da2bf466ea9b16b5"><td class="memItemLeft" align="right" valign="top"><a id="ab6130d81f5255392da2bf466ea9b16b5"></a>
-&#160;</td><td class="memItemRight" valign="bottom"><b>y_max</b></td></tr>
+<tr class="memitem:ab6130d81f5255392da2bf466ea9b16b5"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classsrc_1_1boundary__geometry_1_1RectangularDomain.html#ab6130d81f5255392da2bf466ea9b16b5">y_max</a></td></tr>
 <tr class="separator:ab6130d81f5255392da2bf466ea9b16b5"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a9c0d1f0827567b078e9fe6ce3465efe5"><td class="memItemLeft" align="right" valign="top"><a id="a9c0d1f0827567b078e9fe6ce3465efe5"></a>
-&#160;</td><td class="memItemRight" valign="bottom"><b>y_min</b></td></tr>
+<tr class="memitem:a9c0d1f0827567b078e9fe6ce3465efe5"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classsrc_1_1boundary__geometry_1_1RectangularDomain.html#a9c0d1f0827567b078e9fe6ce3465efe5">y_min</a></td></tr>
 <tr class="separator:a9c0d1f0827567b078e9fe6ce3465efe5"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ab9a89211ecb71d18bbd259853fda1c54"><td class="memItemLeft" align="right" valign="top"><a id="ab9a89211ecb71d18bbd259853fda1c54"></a>
-&#160;</td><td class="memItemRight" valign="bottom"><b>points</b></td></tr>
-<tr class="separator:ab9a89211ecb71d18bbd259853fda1c54"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:aacddc911cdfe5cd5ec97b084754542d4"><td class="memItemLeft" align="right" valign="top"><a id="aacddc911cdfe5cd5ec97b084754542d4"></a>
-&#160;</td><td class="memItemRight" valign="bottom"><b>dx</b></td></tr>
+<tr class="memitem:a35a998703ea2cb77d0807a372a480fe6"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classsrc_1_1boundary__geometry_1_1RectangularDomain.html#a35a998703ea2cb77d0807a372a480fe6">spacing</a></td></tr>
+<tr class="separator:a35a998703ea2cb77d0807a372a480fe6"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aacddc911cdfe5cd5ec97b084754542d4"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classsrc_1_1boundary__geometry_1_1RectangularDomain.html#aacddc911cdfe5cd5ec97b084754542d4">dx</a></td></tr>
 <tr class="separator:aacddc911cdfe5cd5ec97b084754542d4"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ab32cff5841acd2c627d26ad38c8a0ace"><td class="memItemLeft" align="right" valign="top"><a id="ab32cff5841acd2c627d26ad38c8a0ace"></a>
-&#160;</td><td class="memItemRight" valign="bottom"><b>vx_max</b></td></tr>
+<tr class="memitem:ab32cff5841acd2c627d26ad38c8a0ace"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classsrc_1_1boundary__geometry_1_1RectangularDomain.html#ab32cff5841acd2c627d26ad38c8a0ace">vx_max</a></td></tr>
 <tr class="separator:ab32cff5841acd2c627d26ad38c8a0ace"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a8cee1e97c86de16d2efa1a4561892db4"><td class="memItemLeft" align="right" valign="top"><a id="a8cee1e97c86de16d2efa1a4561892db4"></a>
-&#160;</td><td class="memItemRight" valign="bottom"><b>vy_max</b></td></tr>
+<tr class="memitem:a8cee1e97c86de16d2efa1a4561892db4"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classsrc_1_1boundary__geometry_1_1RectangularDomain.html#a8cee1e97c86de16d2efa1a4561892db4">vy_max</a></td></tr>
 <tr class="separator:a8cee1e97c86de16d2efa1a4561892db4"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:acfd8c16e1a739470f6210f91ad98f8b6"><td class="memItemLeft" align="right" valign="top"><a id="acfd8c16e1a739470f6210f91ad98f8b6"></a>
-&#160;</td><td class="memItemRight" valign="bottom"><b>alpha_cycle</b></td></tr>
-<tr class="separator:acfd8c16e1a739470f6210f91ad98f8b6"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="inherit_header pub_attribs_classsrc_1_1boundary__geometry_1_1Boundary"><td colspan="2" onclick="javascript:toggleInherit('pub_attribs_classsrc_1_1boundary__geometry_1_1Boundary')"><img src="closed.png" alt="-"/>&#160;Public Attributes inherited from <a class="el" href="classsrc_1_1boundary__geometry_1_1Boundary.html">Boundary</a></td></tr>
+<tr class="memitem:ab9a89211ecb71d18bbd259853fda1c54 inherit pub_attribs_classsrc_1_1boundary__geometry_1_1Boundary"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classsrc_1_1boundary__geometry_1_1Boundary.html#ab9a89211ecb71d18bbd259853fda1c54">points</a></td></tr>
+<tr class="separator:ab9a89211ecb71d18bbd259853fda1c54 inherit pub_attribs_classsrc_1_1boundary__geometry_1_1Boundary"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:acfd8c16e1a739470f6210f91ad98f8b6 inherit pub_attribs_classsrc_1_1boundary__geometry_1_1Boundary"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classsrc_1_1boundary__geometry_1_1Boundary.html#acfd8c16e1a739470f6210f91ad98f8b6">alpha_cycle</a></td></tr>
+<tr class="separator:acfd8c16e1a739470f6210f91ad98f8b6 inherit pub_attribs_classsrc_1_1boundary__geometry_1_1Boundary"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <a name="details" id="details"></a><h2 class="groupheader">Detailed Description</h2>
-<div class="textblock"><pre class="fragment">This class defines the boundary and stores data related to the boundary geometry.
-    Does not store interior points but can generate them</pre> </div><h2 class="groupheader">Member Function Documentation</h2>
-<a id="aa2feafc65992b783ef3fae91160034b1"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#aa2feafc65992b783ef3fae91160034b1">&#9670;&nbsp;</a></span>at_boundary()</h2>
+<div class="textblock"><p>a rectangular domain using virtual boundary. </p>
+<p>This domain implements a virtual boundary so that sensors don't get too close and mess up the boundary cycle associated with the fence. The input parameters specify the dimension of the desired virtual boundary and the physical locations of the sensors are places slightly outside of this boundary in a way that still allows sensors to form simplices with boundary sensors. </p>
+</div><h2 class="groupheader">Constructor &amp; Destructor Documentation</h2>
+<a id="af95aa7ccf7e3a0bf73111def4d52fd50"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#af95aa7ccf7e3a0bf73111def4d52fd50">&#9670;&nbsp;</a></span>__init__()</h2>
 
 <div class="memitem">
 <div class="memproto">
       <table class="memname">
         <tr>
-          <td class="memname"> bool at_boundary </td>
+          <td class="memname"> None __init__ </td>
           <td>(</td>
           <td class="paramtype">&#160;</td>
           <td class="paramname"><em>self</em>, </td>
@@ -140,8 +146,32 @@ Public Attributes</h2></td></tr>
         <tr>
           <td class="paramkey"></td>
           <td></td>
-          <td class="paramtype">tuple&#160;</td>
-          <td class="paramname"><em>point</em>&#160;</td>
+          <td class="paramtype">float &#160;</td>
+          <td class="paramname"><em>spacing</em> = <code>0.2</code>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">float &#160;</td>
+          <td class="paramname"><em>x_min</em> = <code>0</code>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">float &#160;</td>
+          <td class="paramname"><em>x_max</em> = <code>1</code>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">float &#160;</td>
+          <td class="paramname"><em>y_min</em> = <code>0</code>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">float &#160;</td>
+          <td class="paramname"><em>y_max</em> = <code>1</code>&#160;</td>
         </tr>
         <tr>
           <td></td>
@@ -150,11 +180,15 @@ Public Attributes</h2></td></tr>
         </tr>
       </table>
 </div><div class="memdoc">
-<pre class="fragment">This function defines the boundary by determining if a point is at the boundary or not. </pre> 
+
+<p>Initialize with dimension of virtual boundary. </p>
+<p>sensor positions will be adapted to so that interior sensors may roam specified domain. Default to the unit square with spacing of 0.2. Spacing should be less that 2*sensing_radius. </p>
+
 </div>
 </div>
-<a id="a9e5ea7a5649608fed0d30a53513d5c80"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a9e5ea7a5649608fed0d30a53513d5c80">&#9670;&nbsp;</a></span>generate_boundary_points()</h2>
+<h2 class="groupheader">Member Function Documentation</h2>
+<a id="a3b3407b9ea96ffbbf2aee383f300e9fe"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a3b3407b9ea96ffbbf2aee383f300e9fe">&#9670;&nbsp;</a></span>generate_boundary_points()</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -163,13 +197,35 @@ Public Attributes</h2></td></tr>
           <td class="memname"> list generate_boundary_points </td>
           <td>(</td>
           <td class="paramtype">&#160;</td>
+          <td class="paramname"><em>self</em></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Generate points in counter-clockwise order. </p>
+
+<p>Reimplemented from <a class="el" href="classsrc_1_1boundary__geometry_1_1Boundary.html#abe1d38a6da8bd9d7944c71b902f5cc9a">Boundary</a>.</p>
+
+</div>
+</div>
+<a id="a8d614c5a5ece424d6ee21ecc21c17c4c"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a8d614c5a5ece424d6ee21ecc21c17c4c">&#9670;&nbsp;</a></span>generate_interior_points()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname"> list generate_interior_points </td>
+          <td>(</td>
+          <td class="paramtype">&#160;</td>
           <td class="paramname"><em>self</em>, </td>
         </tr>
         <tr>
           <td class="paramkey"></td>
           <td></td>
-          <td class="paramtype">float&#160;</td>
-          <td class="paramname"><em>spacing</em>&#160;</td>
+          <td class="paramtype">int&#160;</td>
+          <td class="paramname"><em>n_int_sensors</em>&#160;</td>
         </tr>
         <tr>
           <td></td>
@@ -178,10 +234,11 @@ Public Attributes</h2></td></tr>
         </tr>
       </table>
 </div><div class="memdoc">
-<pre class="fragment">Generate a list of points (represent by tuples)
-    Spacing should be *at most* 2*sensing_radius when used.
-    Points should be added in cyclic order.
-</pre> 
+
+<p>Generate points distributed randomly (uniformly) in the interior. </p>
+
+<p>Reimplemented from <a class="el" href="classsrc_1_1boundary__geometry_1_1Boundary.html#a8d614c5a5ece424d6ee21ecc21c17c4c">Boundary</a>.</p>
+
 </div>
 </div>
 <a id="a4f8fa776164c359e57eea2284af7aeb5"></a>
@@ -209,11 +266,100 @@ Public Attributes</h2></td></tr>
         </tr>
       </table>
 </div><div class="memdoc">
-<pre class="fragment">This function determines if a point is in the interior of the domain or not </pre> 
+
+<p>Check if point is in virtual domain. </p>
+
+<p>Reimplemented from <a class="el" href="classsrc_1_1boundary__geometry_1_1Boundary.html#a4f8fa776164c359e57eea2284af7aeb5">Boundary</a>.</p>
+
+</div>
+</div>
+<h2 class="groupheader">Member Data Documentation</h2>
+<a id="aacddc911cdfe5cd5ec97b084754542d4"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#aacddc911cdfe5cd5ec97b084754542d4">&#9670;&nbsp;</a></span>dx</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">dx</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+</div>
+</div>
+<a id="a35a998703ea2cb77d0807a372a480fe6"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a35a998703ea2cb77d0807a372a480fe6">&#9670;&nbsp;</a></span>spacing</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">spacing</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+</div>
+</div>
+<a id="ab32cff5841acd2c627d26ad38c8a0ace"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ab32cff5841acd2c627d26ad38c8a0ace">&#9670;&nbsp;</a></span>vx_max</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">vx_max</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+</div>
+</div>
+<a id="a8cee1e97c86de16d2efa1a4561892db4"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a8cee1e97c86de16d2efa1a4561892db4">&#9670;&nbsp;</a></span>vy_max</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">vy_max</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+</div>
+</div>
+<a id="ab6130d81f5255392da2bf466ea9b16b5"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ab6130d81f5255392da2bf466ea9b16b5">&#9670;&nbsp;</a></span>y_max</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">y_max</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+</div>
+</div>
+<a id="a9c0d1f0827567b078e9fe6ce3465efe5"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a9c0d1f0827567b078e9fe6ce3465efe5">&#9670;&nbsp;</a></span>y_min</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">y_min</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
 </div>
 </div>
 <hr/>The documentation for this class was generated from the following file:<ul>
-<li>/home/kylew/dev/Deepjoyti/src/boundary_geometry.py</li>
+<li>/home/kylew/dev/Deepjoyti/src/<a class="el" href="boundary__geometry_8py.html">boundary_geometry.py</a></li>
 </ul>
 </div><!-- contents -->
 <!-- start footer part -->

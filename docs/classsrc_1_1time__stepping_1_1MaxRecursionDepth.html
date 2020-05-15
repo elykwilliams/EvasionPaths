@@ -61,7 +61,7 @@ $(function() {
 
 <div id="nav-path" class="navpath">
   <ul>
-<li class="navelem"><b>src</b></li><li class="navelem"><b>time_stepping</b></li><li class="navelem"><a class="el" href="classsrc_1_1time__stepping_1_1MaxRecursionDepth.html">MaxRecursionDepth</a></li>  </ul>
+<li class="navelem"><a class="el" href="namespacesrc.html">src</a></li><li class="navelem"><a class="el" href="namespacesrc_1_1time__stepping.html">time_stepping</a></li><li class="navelem"><a class="el" href="classsrc_1_1time__stepping_1_1MaxRecursionDepth.html">MaxRecursionDepth</a></li>  </ul>
 </div>
 </div><!-- top -->
 <div class="header">
@@ -74,30 +74,91 @@ $(function() {
 </div><!--header-->
 <div class="contents">
 
-<p>Exception indicating that atomic change not found.  
+<p>Exception indicating that atomic transition not found.  
  <a href="classsrc_1_1time__stepping_1_1MaxRecursionDepth.html#details">More...</a></p>
 
 <p>Inherits Exception.</p>
 <table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-methods"></a>
 Public Member Functions</h2></td></tr>
-<tr class="memitem:aa7617a7f5b2126acdaf6f6a862bede8c"><td class="memItemLeft" align="right" valign="top"><a id="aa7617a7f5b2126acdaf6f6a862bede8c"></a>
-def&#160;</td><td class="memItemRight" valign="bottom"><b>__init__</b> (self, state_change)</td></tr>
+<tr class="memitem:aa7617a7f5b2126acdaf6f6a862bede8c"><td class="memItemLeft" align="right" valign="top">def&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classsrc_1_1time__stepping_1_1MaxRecursionDepth.html#aa7617a7f5b2126acdaf6f6a862bede8c">__init__</a> (self, <a class="el" href="classsrc_1_1time__stepping_1_1MaxRecursionDepth.html#a024faaeb85ffbe05345f347803199ad3">state_change</a>)</td></tr>
 <tr class="separator:aa7617a7f5b2126acdaf6f6a862bede8c"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a23e8041ce1015febe4fdace3225714f9"><td class="memItemLeft" align="right" valign="top"><a id="a23e8041ce1015febe4fdace3225714f9"></a>
-def&#160;</td><td class="memItemRight" valign="bottom"><b>__str__</b> (self)</td></tr>
+<tr class="memitem:a23e8041ce1015febe4fdace3225714f9"><td class="memItemLeft" align="right" valign="top">def&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classsrc_1_1time__stepping_1_1MaxRecursionDepth.html#a23e8041ce1015febe4fdace3225714f9">__str__</a> (self)</td></tr>
 <tr class="separator:a23e8041ce1015febe4fdace3225714f9"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-attribs"></a>
 Public Attributes</h2></td></tr>
-<tr class="memitem:a024faaeb85ffbe05345f347803199ad3"><td class="memItemLeft" align="right" valign="top"><a id="a024faaeb85ffbe05345f347803199ad3"></a>
-&#160;</td><td class="memItemRight" valign="bottom"><b>state_change</b></td></tr>
+<tr class="memitem:a024faaeb85ffbe05345f347803199ad3"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classsrc_1_1time__stepping_1_1MaxRecursionDepth.html#a024faaeb85ffbe05345f347803199ad3">state_change</a></td></tr>
 <tr class="separator:a024faaeb85ffbe05345f347803199ad3"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <a name="details" id="details"></a><h2 class="groupheader">Detailed Description</h2>
-<div class="textblock"><p>Exception indicating that atomic change not found. </p>
-</div><hr/>The documentation for this class was generated from the following file:<ul>
-<li>/home/kylew/dev/Deepjoyti/src/time_stepping.py</li>
+<div class="textblock"><p>Exception indicating that atomic transition not found. </p>
+<p>This can happen when two or more atomic transitions happen simultaniously. This is sometimes a problem for manufactured simulations. It can also indicate that a sensor has broken free of the virtual boundary and is interfering with the fence boundary cycle. There is a very rare change that a new atomic transition is discovered. </p>
+</div><h2 class="groupheader">Constructor &amp; Destructor Documentation</h2>
+<a id="aa7617a7f5b2126acdaf6f6a862bede8c"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#aa7617a7f5b2126acdaf6f6a862bede8c">&#9670;&nbsp;</a></span>__init__()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">def __init__ </td>
+          <td>(</td>
+          <td class="paramtype">&#160;</td>
+          <td class="paramname"><em>self</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">&#160;</td>
+          <td class="paramname"><em>state_change</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+</div>
+</div>
+<h2 class="groupheader">Member Function Documentation</h2>
+<a id="a23e8041ce1015febe4fdace3225714f9"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a23e8041ce1015febe4fdace3225714f9">&#9670;&nbsp;</a></span>__str__()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">def __str__ </td>
+          <td>(</td>
+          <td class="paramtype">&#160;</td>
+          <td class="paramname"><em>self</em></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+</div>
+</div>
+<h2 class="groupheader">Member Data Documentation</h2>
+<a id="a024faaeb85ffbe05345f347803199ad3"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a024faaeb85ffbe05345f347803199ad3">&#9670;&nbsp;</a></span>state_change</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">state_change</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+</div>
+</div>
+<hr/>The documentation for this class was generated from the following file:<ul>
+<li>/home/kylew/dev/Deepjoyti/src/<a class="el" href="time__stepping_8py.html">time_stepping.py</a></li>
 </ul>
 </div><!-- contents -->
 <!-- start footer part -->
