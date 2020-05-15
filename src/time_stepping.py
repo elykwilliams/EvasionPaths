@@ -9,11 +9,12 @@
 from cycle_labelling import *
 from copy import deepcopy
 from topological_state import *
+from motion_model import *
 
 
 ## Exception indicating that atomic transition not found.
 # This can happen when two or more atomic transitions
-# happen simultaniously. This is sometimes a problem for manufactured
+# happen simultaneously. This is sometimes a problem for manufactured
 # simulations. It can also indicate that a sensor has broken free of the
 # virtual boundary and is interfering with the fence boundary cycle.
 # There is a very rare change that a new atomic transition is discovered.
@@ -26,8 +27,16 @@ class MaxRecursionDepth(Exception):
                + str(self.state_change)
 
 
+## This class provides the main interface for running a simulation.
+# It provides the ability to preform a single timestep manually, run
+# until there are no possible intruders, or until a max time is reached.
 class EvasionPathSimulation:
-    def __init__(self, boundary, motion_model, n_int_sensors, sensing_radius, dt, end_time=0):
+
+    ## Initialize
+    # If end_time is set to a non-zero value, use sooner of max cutoff time or  cleared
+    # domain. Set to 0 to disable.
+    def __init__(self, boundary: Boundary, motion_model: MotionModel,
+                 n_int_sensors: int, sensing_radius: float, dt: float, end_time: int =0) -> None:
 
         # Initialize Fields
         self.evasion_paths = ""
@@ -54,11 +63,14 @@ class EvasionPathSimulation:
         self.state_change = StateChange(self.old_state, self.state)
         self.cycle_label = CycleLabelling(self.state)
 
-    def update_old_data(self):
+    ## Move to next time-step.
+    def update_old_data(self) -> None:
         self.old_points = self.points.copy()
         self.old_state = deepcopy(self.state)
 
-    def run(self):
+    ## Run until no more intruders.
+    # exit if max time is set. Returns simulation time.
+    def run(self) -> float:
         while self.cycle_label.has_intruder():
             self.time += self.dt
             self.evasion_paths = ""
@@ -67,7 +79,9 @@ class EvasionPathSimulation:
                 break
         return self.time
 
-    def do_timestep(self, new_points=(), level=0):
+    ## To single timestep.
+    # Do recursive adaptive step if non-atomic transition is found.
+    def do_timestep(self, new_points: list = (), level: int = 0) -> None:
 
         if level == 25:
             raise MaxRecursionDepth(self.state_change)
@@ -95,8 +109,10 @@ class EvasionPathSimulation:
             if level == 0:
                 return
 
+    ## Linearly interpolate points.
+    # Used when doing an adaptive step to interpolate between old an new points.
     @staticmethod
-    def interpolate_points(old_points, new_points, t):
+    def interpolate_points(old_points: list, new_points: list, t: float) -> list:
         return [(old_points[n][0] * (1 - t) + new_points[n][0] * t,
                  old_points[n][1] * (1 - t) + new_points[n][1] * t)
                 for n in range(len(old_points))]

@@ -7,7 +7,7 @@
  # Documentation:
  - Document 
     - combinatorial_map
-    - EvasionPathSimulation
+ - Write MainPage
     
  - Measure Complexity and benchmark algorithm
  
@@ -19,7 +19,7 @@
     - Putting max time on simulation
     - example run.sh
  - Add unit tests
- 
+ - giv boundary and motion model consistent interface.
  # Experiments
  - Write script to plot N-R data
  
