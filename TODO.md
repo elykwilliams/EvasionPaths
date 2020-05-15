@@ -6,9 +6,7 @@
  
  # Documentation:
  - Document 
-    - boundary_geometry
     - combinatorial_map
-    - motion_model
     - EvasionPathSimulation
     
  - Measure Complexity and benchmark algorithm
@@ -23,7 +21,7 @@
  - Add unit tests
  
  # Experiments
- - Write script to N-R data
+ - Write script to plot N-R data
  
  # Future Development:
  - Allow for fully disconnected graph ("power on")
