@@ -5,7 +5,7 @@ dependencies:
   - ffmpeg
   - gudhi=3.0.0
   - matplotlib
-  - networkx=2.4=py_0
+  - networkx
   - numpy
   - numpy-base
   - python=3.6.9
