@@ -5,8 +5,6 @@
  - Points are not reflected during interpolation
  
  # Documentation:
- - Document 
-    - combinatorial_map
  - Write MainPage
     
  - Measure Complexity and benchmark algorithm
