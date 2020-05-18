@@ -10,6 +10,7 @@ from matplotlib.animation import FuncAnimation
 from plotting_tools import *
 from motion_model import *
 from time_stepping import *
+from numpy import arctan2
 
 ## This is a sample script to show how to create animations using matplotlib.
 # In creating an animaiton, the timestepping must be done manually, and plotted
@@ -17,18 +18,54 @@ from time_stepping import *
 # that the simulation object should be in the global namespace so that it saves
 # its state (i.e. not passed by value into the update function).
 
+
+class myboundary(Boundary):
+    def __init__(self, spacing, radius):
+        self.radius = radius
+        self.spacing = spacing
+        self.dx = self.spacing
+        self.vradius = self.radius+self.dx
+        super().__init__()
+
+    def in_domain(self, point: tuple) -> bool:
+        return point[0]**2 + point[1]**2 < self.radius**2
+
+    def generate_boundary_points(self):
+        points = []
+        for theta in np.arange(0, 2*pi, self.spacing/self.vradius):
+            points.append((self.vradius*cos(theta), self.vradius*sin(theta)))
+        return points
+
+    def generate_interior_points(self, n_int_sensors: int) -> list:
+        points = []
+        for _ in range(n_int_sensors):
+            rand_theta = np.random.uniform(0, 2*pi)
+            rand_r = np.random.uniform(0, self.radius)
+            points.append((rand_r*cos(rand_theta), rand_r*sin(rand_theta)))
+        return points
+
+class mymotionmodel(BrownianMotion):
+    def reflect(self, pt: tuple, index) -> tuple:
+        x, y = pt
+        theta = arctan2(y, x)
+        r = sqrt(x ** 2 + y ** 2)
+        dr = self.epsilon()
+        while not self.boundary.in_domain(pt):
+            pt = (r - dr) * cos(theta), (r - dr) * sin(theta)
+        return pt
+
+
 num_sensors = 20
-sensing_radius = 0.095
+sensing_radius = 0.3
 timestep_size = 0.1
 
 filename_base = "SampleAnimation"
 
-unit_square = RectangularDomain(spacing=sensing_radius)
+unit_square = myboundary(spacing=sensing_radius, radius=1)
 
-brownian_motion = BilliardMotion(dt=timestep_size,
-                                 vel=0.1,
-                                 boundary=unit_square,
-                                 n_total_sensors=num_sensors+len(unit_square))
+brownian_motion = mymotionmodel(dt=timestep_size,
+                                sigma=0.1,
+                                boundary=unit_square)
 
 simulation = EvasionPathSimulation(boundary=unit_square,
                                    motion_model=brownian_motion,
@@ -85,7 +122,7 @@ def animate():
     except SimulationOver:
         print("Simulation Complete")
     finally:
-        # plt.show()  # show plot while computing
+        plt.show()  # show plot while computing
         ani.save(filename_base+'.mp4')
 
 

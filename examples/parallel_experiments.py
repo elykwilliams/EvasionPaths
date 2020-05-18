@@ -1,6 +1,7 @@
 # Kyle Williams 3/5/20
 import os
 from time_stepping import *
+from joblib import Parallel, delayed
 
 num_sensors: int = 20
 sensing_radius: float = 0.2
@@ -37,9 +38,10 @@ def output_data(filename: str, data_points: list) -> None:
 
 
 def run_experiment() -> None:
-    times = [simulate() for _ in range(n_runs)]
-    filename = output_dir + "/" + filename_base + ".txt"
-    output_data(filename, times)
+    times = Parallel(n_jobs=-1)(
+        delayed(simulate)() for _ in range(n_runs)
+    )
+    output_data(output_dir + "/" + filename_base + ".txt", times)
 
 
 def main() -> None:

@@ -7,18 +7,18 @@
  # Documentation:
  - Write MainPage
     
- 
 # Structural:
  - Examples
-    - Sample Animation
-    - Simple run
-    - Run in parallel
-    - Putting max time on simulation
-    - example run.sh
+    - implement domain/motion model
+    - Make sure they all work
+    - Comment
+    - Clean up
  - Add unit tests
  - giv boundary and motion model consistent interface.
+ 
  # Experiments
- - Write script to plot N-R data
+ - N = 20, R = 0.18, RunAndTumble
+ - More refined N/R sweep
  
  # Future Development:
  - Allow for fully disconnected graph ("power on")
