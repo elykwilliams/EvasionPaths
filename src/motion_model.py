@@ -62,10 +62,10 @@ class MotionModel(ABC):
 class BrownianMotion(MotionModel):
 
     ## Initialize boundary with typical velocity.
-    def __init__(self, dt: float, sigma: float, boundary: RectangularDomain) -> None:
+    def __init__(self, dt: float, boundary: RectangularDomain, sigma: float) -> None:
         super().__init__(dt, boundary)
         self.sigma = sigma
-        self.boundary = boundary  # not actually needed, just for type hinting.
+        self.boundary = boundary
 
     ## Random function.
     def epsilon(self) -> float:
@@ -100,7 +100,7 @@ class BilliardMotion(MotionModel):
     ## Initialize Boundary with additional velocity and number of sensors.
     # The number of sensors is required to know how to initialize the velocity
     # angles.
-    def __init__(self, dt: float, vel: float, boundary: RectangularDomain, n_total_sensors: int) -> None:
+    def __init__(self, dt: float, boundary: RectangularDomain, vel: float, n_total_sensors: int) -> None:
         super().__init__(dt, boundary)
         self.vel = vel
         self.vel_angle = random.uniform(0, 2*pi, n_total_sensors)
