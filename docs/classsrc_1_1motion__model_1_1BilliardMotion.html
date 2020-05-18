@@ -83,9 +83,9 @@ $(function() {
 <table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-methods"></a>
 Public Member Functions</h2></td></tr>
-<tr class="memitem:af4645f26243d4dcc348fe3d52d4f5e89"><td class="memItemLeft" align="right" valign="top">None&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classsrc_1_1motion__model_1_1BilliardMotion.html#af4645f26243d4dcc348fe3d52d4f5e89">__init__</a> (self, float <a class="el" href="classsrc_1_1motion__model_1_1MotionModel.html#a770f288d3048ff6cbee9faa0969fd6b0">dt</a>, float <a class="el" href="classsrc_1_1motion__model_1_1BilliardMotion.html#aa69ee4d0ac87385b7d07d0b97d900ff4">vel</a>, <a class="el" href="classsrc_1_1boundary__geometry_1_1RectangularDomain.html">RectangularDomain</a> <a class="el" href="classsrc_1_1motion__model_1_1BilliardMotion.html#a23d35531b04e26bcae25360217ac8229">boundary</a>, int n_total_sensors)</td></tr>
-<tr class="memdesc:af4645f26243d4dcc348fe3d52d4f5e89"><td class="mdescLeft">&#160;</td><td class="mdescRight">Initialize Boundary with additional velocity and number of sensors.  <a href="#af4645f26243d4dcc348fe3d52d4f5e89">More...</a><br /></td></tr>
-<tr class="separator:af4645f26243d4dcc348fe3d52d4f5e89"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a397a33b4ce48e79510c7f0c6a089a1c6"><td class="memItemLeft" align="right" valign="top">None&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classsrc_1_1motion__model_1_1BilliardMotion.html#a397a33b4ce48e79510c7f0c6a089a1c6">__init__</a> (self, float <a class="el" href="classsrc_1_1motion__model_1_1MotionModel.html#a770f288d3048ff6cbee9faa0969fd6b0">dt</a>, <a class="el" href="classsrc_1_1boundary__geometry_1_1RectangularDomain.html">RectangularDomain</a> <a class="el" href="classsrc_1_1motion__model_1_1BilliardMotion.html#a23d35531b04e26bcae25360217ac8229">boundary</a>, float <a class="el" href="classsrc_1_1motion__model_1_1BilliardMotion.html#aa69ee4d0ac87385b7d07d0b97d900ff4">vel</a>, int n_total_sensors)</td></tr>
+<tr class="memdesc:a397a33b4ce48e79510c7f0c6a089a1c6"><td class="mdescLeft">&#160;</td><td class="mdescRight">Initialize Boundary with additional velocity and number of sensors.  <a href="#a397a33b4ce48e79510c7f0c6a089a1c6">More...</a><br /></td></tr>
+<tr class="separator:a397a33b4ce48e79510c7f0c6a089a1c6"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a5bba5749ddaeec21afdf067139c213dc"><td class="memItemLeft" align="right" valign="top">tuple&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classsrc_1_1motion__model_1_1BilliardMotion.html#a5bba5749ddaeec21afdf067139c213dc">update_point</a> (self, tuple pt, int index)</td></tr>
 <tr class="memdesc:a5bba5749ddaeec21afdf067139c213dc"><td class="mdescLeft">&#160;</td><td class="mdescRight">Update point using x = x + v*dt.  <a href="#a5bba5749ddaeec21afdf067139c213dc">More...</a><br /></td></tr>
 <tr class="separator:a5bba5749ddaeec21afdf067139c213dc"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -118,8 +118,8 @@ Public Attributes</h2></td></tr>
 <div class="textblock"><p>Implement Billiard Motion for Rectangular Domain. </p>
 <p>All sensors will have same velocity bit will have random angles. Points will move a distance of vel*dt each update. </p>
 </div><h2 class="groupheader">Constructor &amp; Destructor Documentation</h2>
-<a id="af4645f26243d4dcc348fe3d52d4f5e89"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#af4645f26243d4dcc348fe3d52d4f5e89">&#9670;&nbsp;</a></span>__init__()</h2>
+<a id="a397a33b4ce48e79510c7f0c6a089a1c6"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a397a33b4ce48e79510c7f0c6a089a1c6">&#9670;&nbsp;</a></span>__init__()</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -139,14 +139,14 @@ Public Attributes</h2></td></tr>
         <tr>
           <td class="paramkey"></td>
           <td></td>
-          <td class="paramtype">float&#160;</td>
-          <td class="paramname"><em>vel</em>, </td>
+          <td class="paramtype"><a class="el" href="classsrc_1_1boundary__geometry_1_1RectangularDomain.html">RectangularDomain</a>&#160;</td>
+          <td class="paramname"><em>boundary</em>, </td>
         </tr>
         <tr>
           <td class="paramkey"></td>
           <td></td>
-          <td class="paramtype"><a class="el" href="classsrc_1_1boundary__geometry_1_1RectangularDomain.html">RectangularDomain</a>&#160;</td>
-          <td class="paramname"><em>boundary</em>, </td>
+          <td class="paramtype">float&#160;</td>
+          <td class="paramname"><em>vel</em>, </td>
         </tr>
         <tr>
           <td class="paramkey"></td>

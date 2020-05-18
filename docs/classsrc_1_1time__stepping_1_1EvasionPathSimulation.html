@@ -103,6 +103,8 @@ Static Public Member Functions</h2></td></tr>
 Public Attributes</h2></td></tr>
 <tr class="memitem:a83faf33c1e2c321c6cc67c7cdcb0ef6e"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classsrc_1_1time__stepping_1_1EvasionPathSimulation.html#a83faf33c1e2c321c6cc67c7cdcb0ef6e">evasion_paths</a></td></tr>
 <tr class="separator:a83faf33c1e2c321c6cc67c7cdcb0ef6e"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a3e344fb251b57845174d2b006122f4f9"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classsrc_1_1time__stepping_1_1EvasionPathSimulation.html#a3e344fb251b57845174d2b006122f4f9">is_connected</a></td></tr>
+<tr class="separator:a3e344fb251b57845174d2b006122f4f9"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a4c8205fdd592e54d9c16836d2ff77988"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classsrc_1_1time__stepping_1_1EvasionPathSimulation.html#a4c8205fdd592e54d9c16836d2ff77988">cmap</a></td></tr>
 <tr class="separator:a4c8205fdd592e54d9c16836d2ff77988"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ac05124be53355bf8ec090df5446fc1ed"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classsrc_1_1time__stepping_1_1EvasionPathSimulation.html#ac05124be53355bf8ec090df5446fc1ed">motion_model</a></td></tr>
@@ -134,7 +136,7 @@ Public Attributes</h2></td></tr>
 </table>
 <a name="details" id="details"></a><h2 class="groupheader">Detailed Description</h2>
 <div class="textblock"><p>This class provides the main interface for running a simulation. </p>
-<p>It provides the ability to preform a single timestep manually, run until there are no possible intruders, or until a max time is reached. </p>
+<p>It provides the ability to preform a single timestep manually, run until there are no possible intruders, or until a max time is reached. evasion_paths provides the name of the transitions per timestep, is_connected is a flag that will be true as long as the graph remains connects. </p>
 </div><h2 class="groupheader">Constructor &amp; Destructor Documentation</h2>
 <a id="a83eb7176a8b8c1cf15be1489db2f333e"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#a83eb7176a8b8c1cf15be1489db2f333e">&#9670;&nbsp;</a></span>__init__()</h2>
@@ -386,6 +388,20 @@ Public Attributes</h2></td></tr>
       <table class="memname">
         <tr>
           <td class="memname">evasion_paths</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+</div>
+</div>
+<a id="a3e344fb251b57845174d2b006122f4f9"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a3e344fb251b57845174d2b006122f4f9">&#9670;&nbsp;</a></span>is_connected</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">is_connected</td>
         </tr>
       </table>
 </div><div class="memdoc">

@@ -1,4 +1,5 @@
 var searchData=
 [
-  ['points',['points',['../classsrc_1_1boundary__geometry_1_1Boundary.html#ab9a89211ecb71d18bbd259853fda1c54',1,'src.boundary_geometry.Boundary.points()'],['../classsrc_1_1time__stepping_1_1EvasionPathSimulation.html#ab9a89211ecb71d18bbd259853fda1c54',1,'src.time_stepping.EvasionPathSimulation.points()']]]
+  ['old_5fpoints',['old_points',['../classsrc_1_1time__stepping_1_1EvasionPathSimulation.html#ad1f8eaa293e862c93bb5cd1553df5371',1,'src::time_stepping::EvasionPathSimulation']]],
+  ['old_5fstate',['old_state',['../classsrc_1_1time__stepping_1_1EvasionPathSimulation.html#ace080316f31cd1de00b6b5203bcafd01',1,'src::time_stepping::EvasionPathSimulation']]]
 ];

@@ -5,6 +5,7 @@ var searchData=
   ['interpolate_5fpoints',['interpolate_points',['../classsrc_1_1time__stepping_1_1EvasionPathSimulation.html#a601c89b7847ff92e7e3489386f2a1e82',1,'src::time_stepping::EvasionPathSimulation']]],
   ['invalidstatechange',['InvalidStateChange',['../classsrc_1_1topological__state_1_1InvalidStateChange.html',1,'src::topological_state']]],
   ['is_5fatomic',['is_atomic',['../classsrc_1_1topological__state_1_1StateChange.html#a4a5fe96d4b2fe8e1eee848a4ff4c606f',1,'src::topological_state::StateChange']]],
+  ['is_5fconnected',['is_connected',['../classsrc_1_1time__stepping_1_1EvasionPathSimulation.html#a3e344fb251b57845174d2b006122f4f9',1,'src.time_stepping.EvasionPathSimulation.is_connected()'],['../classsrc_1_1topological__state_1_1TopologicalState.html#adbf6b5bd7350556f7817ca50f9cd0892',1,'src.topological_state.TopologicalState.is_connected()']]],
   ['is_5fconnected_5fcycle',['is_connected_cycle',['../classsrc_1_1topological__state_1_1TopologicalState.html#abbffde6bde94bb764d9994f34ade732e',1,'src::topological_state::TopologicalState']]],
   ['is_5fconnected_5fsimplex',['is_connected_simplex',['../classsrc_1_1topological__state_1_1TopologicalState.html#a62fd3f5f2cbee4bfb524f0fcde65af55',1,'src::topological_state::TopologicalState']]],
   ['is_5fsubset',['is_subset',['../namespacesrc_1_1topological__state.html#a233caf47a33f732fea8904fc648005eb',1,'src::topological_state']]]

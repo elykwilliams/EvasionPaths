@@ -83,6 +83,9 @@ Public Member Functions</h2></td></tr>
 <tr class="memitem:aabd9ffd0ff4a70eaabdd4e35d9b04ff3"><td class="memItemLeft" align="right" valign="top">def&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classsrc_1_1topological__state_1_1TopologicalState.html#aabd9ffd0ff4a70eaabdd4e35d9b04ff3">__init__</a> (self, points, sensing_radius, boundary)</td></tr>
 <tr class="memdesc:aabd9ffd0ff4a70eaabdd4e35d9b04ff3"><td class="mdescLeft">&#160;</td><td class="mdescRight">Compute Alpha-complex and combinatorial map and extract simplices and boundary cycles.  <a href="#aabd9ffd0ff4a70eaabdd4e35d9b04ff3">More...</a><br /></td></tr>
 <tr class="separator:aabd9ffd0ff4a70eaabdd4e35d9b04ff3"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:adbf6b5bd7350556f7817ca50f9cd0892"><td class="memItemLeft" align="right" valign="top">def&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classsrc_1_1topological__state_1_1TopologicalState.html#adbf6b5bd7350556f7817ca50f9cd0892">is_connected</a> (self)</td></tr>
+<tr class="memdesc:adbf6b5bd7350556f7817ca50f9cd0892"><td class="mdescLeft">&#160;</td><td class="mdescRight">Check if graph is connected.  <a href="#adbf6b5bd7350556f7817ca50f9cd0892">More...</a><br /></td></tr>
+<tr class="separator:adbf6b5bd7350556f7817ca50f9cd0892"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:abbffde6bde94bb764d9994f34ade732e"><td class="memItemLeft" align="right" valign="top">def&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classsrc_1_1topological__state_1_1TopologicalState.html#abbffde6bde94bb764d9994f34ade732e">is_connected_cycle</a> (self, cycle)</td></tr>
 <tr class="memdesc:abbffde6bde94bb764d9994f34ade732e"><td class="mdescLeft">&#160;</td><td class="mdescRight">Check if a boundary cycle is connected to the fence.  <a href="#abbffde6bde94bb764d9994f34ade732e">More...</a><br /></td></tr>
 <tr class="separator:abbffde6bde94bb764d9994f34ade732e"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -165,6 +168,27 @@ Public Member Functions</h2></td></tr>
 
 <p>Access CombinatorialMap's boundary cycles. </p>
 <p>Will be returned as a list of boundary cycle with the boundary cycle of the fence removed. See CMap for details on boundary cycle structure (though it really shouldn't matter) </p>
+
+</div>
+</div>
+<a id="adbf6b5bd7350556f7817ca50f9cd0892"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#adbf6b5bd7350556f7817ca50f9cd0892">&#9670;&nbsp;</a></span>is_connected()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">def is_connected </td>
+          <td>(</td>
+          <td class="paramtype">&#160;</td>
+          <td class="paramname"><em>self</em></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Check if graph is connected. </p>
+<p>This is used for flagging when the graph has become disconnected. </p>
 
 </div>
 </div>

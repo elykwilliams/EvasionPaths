@@ -6,18 +6,15 @@
  
  # Documentation:
  - Write MainPage
+ - Document Examples
     
 # Structural:
- - Examples
-    - Make sure they all work
-    - Comment
-    - Clean up
  - Add unit tests
- - giv boundary and motion model consistent interface.
  
  # Experiments
  - N = 20, R = 0.18, RunAndTumble
  - More refined N/R sweep
+ - N/R sweep with brownian motion
  
  # Future Development:
  - Allow for fully disconnected graph ("power on")

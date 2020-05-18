@@ -1,5 +1,6 @@
 var searchData=
 [
-  ['old_5fpoints',['old_points',['../classsrc_1_1time__stepping_1_1EvasionPathSimulation.html#ad1f8eaa293e862c93bb5cd1553df5371',1,'src::time_stepping::EvasionPathSimulation']]],
-  ['old_5fstate',['old_state',['../classsrc_1_1time__stepping_1_1EvasionPathSimulation.html#ace080316f31cd1de00b6b5203bcafd01',1,'src::time_stepping::EvasionPathSimulation']]]
+  ['n_5fsteps',['n_steps',['../classsrc_1_1time__stepping_1_1EvasionPathSimulation.html#a782efa25cc50c3f024d330b642a8b38c',1,'src::time_stepping::EvasionPathSimulation']]],
+  ['new_5fstate',['new_state',['../classsrc_1_1topological__state_1_1StateChange.html#abd6f6b91591376ccd3a008e870b940e3',1,'src::topological_state::StateChange']]],
+  ['num_5fsensors',['num_sensors',['../namespacesrc_1_1plotting__tools.html#a40fbd34e71e2faae68d1b32c9cd45f9f',1,'src::plotting_tools']]]
 ];

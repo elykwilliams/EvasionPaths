@@ -3,9 +3,9 @@ var indexSectionsWithContent =
   0: "_abcdeghimnoprstuvy",
   1: "bceimrst",
   2: "s",
-  3: "_bcmpt",
+  3: "_bcempt",
   4: "_abcdeghinprsu",
-  5: "abcdemnopstuvy"
+  5: "abcdeimnopstuvy"
 };
 
 var indexSectionNames =
