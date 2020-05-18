@@ -9,7 +9,6 @@
     
 # Structural:
  - Examples
-    - implement domain/motion model
     - Make sure they all work
     - Comment
     - Clean up

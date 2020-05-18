@@ -19,7 +19,7 @@ from numpy import arctan2
 # its state (i.e. not passed by value into the update function).
 
 
-class myboundary(Boundary):
+class myBoundary(Boundary):
     def __init__(self, spacing, radius):
         self.radius = radius
         self.spacing = spacing
@@ -44,7 +44,23 @@ class myboundary(Boundary):
             points.append((rand_r*cos(rand_theta), rand_r*sin(rand_theta)))
         return points
 
-class mymotionmodel(BrownianMotion):
+
+class myMotionModel(MotionModel):
+
+    ## Initialize boundary with typical velocity.
+    def __init__(self, dt: float, boundary: myBoundary, sigma: float) -> None:
+        super().__init__(dt, boundary)
+        self.sigma = sigma
+        self.boundary = boundary
+
+    ## Random function.
+    def epsilon(self) -> float:
+        return self.sigma * sqrt(self.dt) * random.normal(0, 1)
+
+    ## Update each coordinate with brownian model.
+    def update_point(self, pt: tuple, index=0) -> tuple:
+        return pt[0] + self.epsilon(), pt[1] + self.epsilon()
+
     def reflect(self, pt: tuple, index) -> tuple:
         x, y = pt
         theta = arctan2(y, x)
@@ -61,9 +77,9 @@ timestep_size = 0.1
 
 filename_base = "SampleAnimation"
 
-unit_square = myboundary(spacing=sensing_radius, radius=1)
+unit_square = myBoundary(spacing=sensing_radius, radius=1)
 
-brownian_motion = mymotionmodel(dt=timestep_size,
+brownian_motion = myMotionModel(dt=timestep_size,
                                 sigma=0.1,
                                 boundary=unit_square)
 
