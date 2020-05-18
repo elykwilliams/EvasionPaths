@@ -22,8 +22,7 @@ class Boundary(ABC):
     ## Must initialize the boundary points and "alpha_cycle".
     # The points stored are the points on the boundary only.
     def __init__(self) -> None:
-        self.points = []
-        self.generate_boundary_points()
+        self.points = self.generate_boundary_points()
         self.alpha_cycle = self.get_alpha_cycle()
 
     ## length of boundary is number of boundary sensors.
