@@ -7,7 +7,6 @@
  # Documentation:
  - Write MainPage
     
- - Measure Complexity and benchmark algorithm
  
 # Structural:
  - Examples
@@ -29,4 +28,5 @@
  - Work towards fully distributed algorithm
  - 3D?
  - "Smart" Motion Model
+ - Measure Complexity and benchmark algorithm
  

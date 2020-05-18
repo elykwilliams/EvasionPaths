@@ -30,6 +30,8 @@ class MaxRecursionDepth(Exception):
 ## This class provides the main interface for running a simulation.
 # It provides the ability to preform a single timestep manually, run
 # until there are no possible intruders, or until a max time is reached.
+# evasion_paths provides the name of the transitions per timestep, is_connected
+# is a flag that will be true as long as the graph remains connects.
 class EvasionPathSimulation:
 
     ## Initialize
@@ -40,6 +42,7 @@ class EvasionPathSimulation:
 
         # Initialize Fields
         self.evasion_paths = ""
+        self.is_connected = True
         self.cmap = None
 
         self.motion_model = motion_model
@@ -104,6 +107,7 @@ class EvasionPathSimulation:
                 self.do_timestep(self.points, level=level + 1)
 
             self.n_steps += 1
+            self.is_connected = self.is_connected and self.state.is_connected()
             self.update_old_data()
 
             if level == 0:

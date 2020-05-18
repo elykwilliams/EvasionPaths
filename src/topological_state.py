@@ -45,6 +45,14 @@ class TopologicalState(object):
 
         self._connected_nodes = nx.node_connected_component(graph, 0)
 
+    ## Check if graph is connected.
+    # This is used for flagging when the graph has become disconnected.
+    def is_connected(self):
+        graph = nx.Graph()
+        graph.add_nodes_from(self._simplices[0])
+        graph.add_edges_from(self._simplices[1])
+        return nx.is_connected(graph)
+
     ## Check if a boundary cycle is connected to the fence. This is done by and
     # comparing nodes of the boundary cycle to the set of all nodes connected to
     # node #0 (which is guaranteed to be on the fence).
