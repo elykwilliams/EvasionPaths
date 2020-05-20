@@ -92,11 +92,12 @@ class RectangularDomain(Boundary):
 
     ## Generate points in counter-clockwise order.
     def generate_boundary_points(self) -> list:
-        self.points.extend([(x, self.vy_min) for x in np.arange(self.vx_min, 0.999*self.vx_max, self.spacing)])  # bottom
-        self.points.extend([(self.vx_max, y) for y in np.arange(self.vy_min, 0.999*self.vx_max, self.spacing)])  # right
-        self.points.extend([(self.x_max - x, self.vy_max) for x in np.arange(self.vx_min, 0.999*self.vx_max, self.spacing)])  # top
-        self.points.extend([(self.vx_min, self.y_max - y) for y in np.arange(self.vy_min, 0.999*self.vy_max, self.spacing)])  # left
-        return self.points
+        points = []
+        points.extend([(x, self.vy_min) for x in np.arange(self.vx_min, 0.999*self.vx_max, self.spacing)])  # bottom
+        points.extend([(self.vx_max, y) for y in np.arange(self.vy_min, 0.999*self.vx_max, self.spacing)])  # right
+        points.extend([(self.x_max - x, self.vy_max) for x in np.arange(self.vx_min, 0.999*self.vx_max, self.spacing)])  # top
+        points.extend([(self.vx_min, self.y_max - y) for y in np.arange(self.vy_min, 0.999*self.vy_max, self.spacing)])  # left
+        return points
 
     ## Generate points distributed randomly (uniformly) in the interior.
     def generate_interior_points(self, n_int_sensors: int)-> list:
