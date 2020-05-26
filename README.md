@@ -13,7 +13,6 @@ To download this repository, use the following
 # Configuration 
 The `enviroment.yml` file specifies the exact python enviroment used; this ensures consistant results across platforms. 
 
-
 To configure using the Makefile
 
 `make install`
