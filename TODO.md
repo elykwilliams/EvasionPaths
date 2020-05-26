@@ -3,13 +3,18 @@
  
 # Bugs:
  - Points are not reflected during interpolation
+ - Bug in graphing when all sensors become disconnected
+ - Catch error when sensor "jumps the fence"
  
- # Documentation:
+# Documentation:
  - Write MainPage
  - Document Examples
     
 # Structural:
  - Add unit tests
+ - refactor 1,2-simplex pair check into TopologicalState
+ - refactor reflection??
+ - add optional setting to enforce connected graph vs power-off
  
  # Experiments
  - N = 20, R = 0.18, RunAndTumble

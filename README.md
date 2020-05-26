@@ -27,8 +27,8 @@ To activate:
 To deactivate:
 `conda deactivate EvasionPaths-env`
 
-
-
+# Documentation
+Documentation for this project can be found [here](https://elykwilliams.github.io/EvasionPaths/)
 
 
 
