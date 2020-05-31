@@ -17,7 +17,7 @@ from time_stepping import *
 # that the simulation object should be in the global namespace so that it saves
 # its state (i.e. not passed by value into the update function).
 
-num_sensors = 20
+num_sensors = 5
 sensing_radius = 0.095
 timestep_size = 0.1
 
@@ -28,7 +28,7 @@ unit_square = RectangularDomain(spacing=sensing_radius)
 brownian_motion = BilliardMotion(dt=timestep_size,
                                  vel=0.1,
                                  boundary=unit_square,
-                                 n_total_sensors=num_sensors+len(unit_square))
+                                 n_int_sensors=num_sensors)
 
 simulation = EvasionPathSimulation(boundary=unit_square,
                                    motion_model=brownian_motion,
@@ -85,8 +85,8 @@ def animate():
     except SimulationOver:
         print("Simulation Complete")
     finally:
-        # plt.show()  # show plot while computing
-        ani.save(filename_base+'.mp4')
+        plt.show()  # show plot while computing
+        #ani.save(filename_base+'.mp4')
 
 
 if __name__ == "__main__":

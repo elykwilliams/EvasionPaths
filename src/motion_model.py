@@ -100,10 +100,10 @@ class BilliardMotion(MotionModel):
     ## Initialize Boundary with additional velocity and number of sensors.
     # The number of sensors is required to know how to initialize the velocity
     # angles.
-    def __init__(self, dt: float, boundary: RectangularDomain, vel: float, n_total_sensors: int) -> None:
+    def __init__(self, dt: float, boundary: RectangularDomain, vel: float, n_int_sensors: int) -> None:
         super().__init__(dt, boundary)
         self.vel = vel
-        self.vel_angle = random.uniform(0, 2*pi, n_total_sensors)
+        self.vel_angle = random.uniform(0, 2*pi, n_int_sensors+len(boundary))
         self.boundary = boundary  # not actually needed, just for type hinting.
 
     ## Update point using x = x + v*dt.
