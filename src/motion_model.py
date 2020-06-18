@@ -38,8 +38,8 @@ class MotionModel(ABC):
     # be useful in looking up sensor specific data. Reflect should
     # return position of point in the domain.
     @abstractmethod
-    def reflect_point(self, pt: tuple, index: int) -> tuple:
-        return pt
+    def reflect_point(self, old_pt: tuple, new_pt: int) -> tuple:
+        return old_pt
 
     @abstractmethod
     def reflect_velocity(self, pt, index):
@@ -55,8 +55,8 @@ class MotionModel(ABC):
         for (n, pt) in enumerate(interior_pts):
             interior_pts[n] = self.update_point(pt, offset+n)
             if not self.boundary.in_domain(interior_pts[n]):
+                interior_pts[n] = self.boundary.reflect_point(pt, self.reflect_point(pt, interior_pts[n]))
                 self.reflect_velocity(pt, offset+n)
-                interior_pts[n] = self.boundary.reflect_point(interior_pts[n], self.reflect_point(pt, offset + n))
 
         return self.boundary.points + interior_pts
 
@@ -83,18 +83,18 @@ class BrownianMotion(MotionModel):
     ## Move point inside domain.
     # If point moves outside vertical wall, fix y-coordinate, and update
     # x coordinate until in domain. Visa-versa for the horizontal walls.
-    def reflect_point(self, pt: tuple, index) -> tuple:
-        x, y = pt
-        while not self.boundary.in_domain(pt):
+    def reflect_point(self, old_pt: tuple, new_pt) -> tuple:
+        x, y = old_pt
+        while not self.boundary.in_domain(old_pt):
             if x >= self.boundary.x_max:
-                pt = (self.boundary.x_max - abs(self.epsilon()), y)
+                old_pt = (self.boundary.x_max - abs(self.epsilon()), y)
             elif x <= self.boundary.x_min:
-                pt = (self.boundary.x_min + abs(self.epsilon()), y)
+                old_pt = (self.boundary.x_min + abs(self.epsilon()), y)
             if y >= self.boundary.y_max:
-                pt = (x, self.boundary.y_max - abs(self.epsilon()))
+                old_pt = (x, self.boundary.y_max - abs(self.epsilon()))
             elif y <= self.boundary.y_min:
-                pt = (x, self.boundary.y_min + abs(self.epsilon()))
-        return pt
+                old_pt = (x, self.boundary.y_min + abs(self.epsilon()))
+        return old_pt
 
     def reflect_velocity(self, pt, index):
         return
@@ -119,7 +119,6 @@ class BilliardMotion(MotionModel):
         theta = self.vel_angle[index]
         return pt[0] + self.dt*self.vel*cos(theta), pt[1] + self.dt*self.vel*sin(theta)
 
-
     def reflect_velocity(self, pt, index):
         if pt[0] <= self.boundary.x_min or pt[0] >= self.boundary.x_max:
             self.vel_angle[index] = pi - self.vel_angle[index]
@@ -128,8 +127,20 @@ class BilliardMotion(MotionModel):
         self.vel_angle[index] %= 2 * pi
 
     ## Reflect using angle in = angle out.
-    def reflect_point(self, pt: tuple, index: int) -> tuple:
-        return self.update_point(pt, index)
+    def reflect_point(self, old_pt: tuple, new_pt: tuple) -> tuple:
+        pt = new_pt
+        if old_pt[0] <= self.boundary.x_min:
+            pt = (self.boundary.x_min + abs(self.boundary.x_min - new_pt[0]), new_pt[1])
+        elif old_pt[0] >= self.boundary.x_max:
+            pt = (self.boundary.x_max - abs(self.boundary.x_max - new_pt[0]), new_pt[1])
+
+        new_pt = pt
+        if old_pt[1] <= self.boundary.y_min:
+            pt = (new_pt[0], self.boundary.y_min + abs(self.boundary.y_min - new_pt[1]))
+        elif old_pt[1] >= self.boundary.y_max:
+            pt = (new_pt[0], self.boundary.y_max - abs(self.boundary.y_max - new_pt[1]))
+
+        return pt
 
 
 ## Implement randomized variant of Billiard motion.
