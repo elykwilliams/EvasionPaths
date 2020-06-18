@@ -58,7 +58,7 @@ class Boundary(ABC):
         a = [str(n + 1) + "," + str(n) for n in range(len(self.points) - 1)] + ["0," + str(len(self.points) - 1)]
         return tuple(sorted(a))
 
-    def reflect(self, old_pt, new_pt):
+    def reflect_point(self, old_pt, new_pt):
         return new_pt
 
 

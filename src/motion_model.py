@@ -38,8 +38,12 @@ class MotionModel(ABC):
     # be useful in looking up sensor specific data. Reflect should
     # return position of point in the domain.
     @abstractmethod
-    def reflect(self, pt: tuple, index: int) -> tuple:
+    def reflect_point(self, pt: tuple, index: int) -> tuple:
         return pt
+
+    @abstractmethod
+    def reflect_velocity(self, pt, index):
+        return
 
     ## Update all non-fence points.
     # If a point is not in the domain, reflect. It is sometimes
@@ -51,7 +55,8 @@ class MotionModel(ABC):
         for (n, pt) in enumerate(interior_pts):
             interior_pts[n] = self.update_point(pt, offset+n)
             if not self.boundary.in_domain(interior_pts[n]):
-                interior_pts[n] = self.boundary.reflect(interior_pts[n], self.reflect(pt, offset+n))
+                self.reflect_velocity(pt, offset+n)
+                interior_pts[n] = self.boundary.reflect_point(interior_pts[n], self.reflect_point(pt, offset + n))
 
         return self.boundary.points + interior_pts
 
@@ -78,7 +83,7 @@ class BrownianMotion(MotionModel):
     ## Move point inside domain.
     # If point moves outside vertical wall, fix y-coordinate, and update
     # x coordinate until in domain. Visa-versa for the horizontal walls.
-    def reflect(self, pt: tuple, index) -> tuple:
+    def reflect_point(self, pt: tuple, index) -> tuple:
         x, y = pt
         while not self.boundary.in_domain(pt):
             if x >= self.boundary.x_max:
@@ -90,6 +95,9 @@ class BrownianMotion(MotionModel):
             elif y <= self.boundary.y_min:
                 pt = (x, self.boundary.y_min + abs(self.epsilon()))
         return pt
+
+    def reflect_velocity(self, pt, index):
+        return
 
 
 ## Implement Billiard Motion for Rectangular Domain.
@@ -111,14 +119,16 @@ class BilliardMotion(MotionModel):
         theta = self.vel_angle[index]
         return pt[0] + self.dt*self.vel*cos(theta), pt[1] + self.dt*self.vel*sin(theta)
 
-    ## Reflect using angle in = angle out.
-    def reflect(self, pt: tuple, index: int) -> tuple:
+
+    def reflect_velocity(self, pt, index):
         if pt[0] <= self.boundary.x_min or pt[0] >= self.boundary.x_max:
             self.vel_angle[index] = pi - self.vel_angle[index]
         if pt[1] <= self.boundary.y_min or pt[1] >= self.boundary.y_max:
             self.vel_angle[index] = - self.vel_angle[index]
         self.vel_angle[index] %= 2 * pi
 
+    ## Reflect using angle in = angle out.
+    def reflect_point(self, pt: tuple, index: int) -> tuple:
         return self.update_point(pt, index)
 
 
