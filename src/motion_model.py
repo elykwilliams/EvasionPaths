@@ -128,19 +128,7 @@ class BilliardMotion(MotionModel):
 
     ## Reflect using angle in = angle out.
     def reflect_point(self, old_pt: tuple, new_pt: tuple) -> tuple:
-        pt = new_pt
-        if old_pt[0] <= self.boundary.x_min:
-            pt = (self.boundary.x_min + abs(self.boundary.x_min - new_pt[0]), new_pt[1])
-        elif old_pt[0] >= self.boundary.x_max:
-            pt = (self.boundary.x_max - abs(self.boundary.x_max - new_pt[0]), new_pt[1])
-
-        new_pt = pt
-        if old_pt[1] <= self.boundary.y_min:
-            pt = (new_pt[0], self.boundary.y_min + abs(self.boundary.y_min - new_pt[1]))
-        elif old_pt[1] >= self.boundary.y_max:
-            pt = (new_pt[0], self.boundary.y_max - abs(self.boundary.y_max - new_pt[1]))
-
-        return pt
+        return new_pt
 
 
 ## Implement randomized variant of Billiard motion.
