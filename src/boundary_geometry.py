@@ -58,6 +58,9 @@ class Boundary(ABC):
         a = [str(n + 1) + "," + str(n) for n in range(len(self.points) - 1)] + ["0," + str(len(self.points) - 1)]
         return tuple(sorted(a))
 
+    def reflect(self, old_pt, new_pt):
+        return new_pt
+
 
 ## a rectangular domain using virtual boundary.
 # This domain implements a virtual boundary so that sensors don't get
@@ -104,4 +107,3 @@ class RectangularDomain(Boundary):
         rand_x = np.random.uniform(self.x_min, self.x_max, size=n_int_sensors)
         rand_y = np.random.uniform(self.y_min, self.y_max, size=n_int_sensors)
         return list(zip(rand_x, rand_y))
-

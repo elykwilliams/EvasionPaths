@@ -51,7 +51,7 @@ class MotionModel(ABC):
         for (n, pt) in enumerate(interior_pts):
             interior_pts[n] = self.update_point(pt, offset+n)
             if not self.boundary.in_domain(interior_pts[n]):
-                interior_pts[n] = self.reflect(pt, offset+n)
+                interior_pts[n] = self.boundary.reflect(interior_pts[n], self.reflect(pt, offset+n))
 
         return self.boundary.points + interior_pts
 
