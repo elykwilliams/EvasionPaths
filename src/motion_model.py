@@ -32,17 +32,16 @@ class MotionModel(ABC):
         return pt
 
     @abstractmethod
-    def reflect_velocity(self, pt, index):
-        return
+    def reflect(self, old_pt, new_pt, index):
+        return self.boundary.reflect_point(old_pt, new_pt)
 
     ## Update all non-fence points.
     # If a point is not in the domain, reflect. It is sometimes
     # necessary to override this class method since this method is
     # called only once per time-step.
     def update_points(self, old_points: list) -> list:
-        return old_points[0:len(self.boundary)] \
+        return self.boundary.points \
             + [self.update_point(pt, n) for n, pt in enumerate(old_points) if n >= len(self.boundary)]
-
 
 ## Provide random motion for rectangular domain.
 # Will move a point randomly with an average step
@@ -64,11 +63,11 @@ class BrownianMotion(MotionModel):
         new_pt = pt[0] + self.epsilon(), pt[1] + self.epsilon()
 
         if not self.boundary.in_domain(new_pt):
-            self.reflect_velocity(new_pt, index)
+            self.reflect(pt, new_pt, index)
         return self.boundary.reflect_point(pt, new_pt)
 
-    def reflect_velocity(self, pt, index):
-        return
+    def reflect(self, old_pt, new_pt, index):
+        return new_pt
 
 
 ## Implement Billiard Motion for Rectangular Domain.
@@ -90,15 +89,19 @@ class BilliardMotion(MotionModel):
         theta = self.vel_angle[index]
         new_pt = pt[0] + self.dt * self.vel * cos(theta), pt[1] + self.dt * self.vel * sin(theta)
         if not self.boundary.in_domain(new_pt):
-            self.reflect_velocity(new_pt, index)
+            self.reflect(pt, new_pt, index)
         return self.boundary.reflect_point(pt, new_pt)
 
-    def reflect_velocity(self, pt, index):
-        if pt[0] <= self.boundary.x_min or pt[0] >= self.boundary.x_max:
+    def reflect(self, old_pt, new_pt, index):
+        if new_pt[0] <= self.boundary.x_min or new_pt[0] >= self.boundary.x_max:
             self.vel_angle[index] = pi - self.vel_angle[index]
-        if pt[1] <= self.boundary.y_min or pt[1] >= self.boundary.y_max:
+        if new_pt[1] <= self.boundary.y_min or new_pt[1] >= self.boundary.y_max:
             self.vel_angle[index] = - self.vel_angle[index]
         self.vel_angle[index] %= 2 * pi
+        self.vel_angle[index] = self.boundary.reflect_velocity(new_pt, self.vel_angle[index])
+        return self.boundary.reflect_point(old_pt, new_pt)
+
+
 
 
 ## Implement randomized variant of Billiard motion.

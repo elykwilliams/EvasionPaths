@@ -62,6 +62,9 @@ class Boundary(ABC):
     def reflect_point(self, old_pt, new_pt):
         return new_pt
 
+    @abstractmethod
+    def reflect_velocity(self, pt, vel):
+        return vel
 
 ## a rectangular domain using virtual boundary.
 # This domain implements a virtual boundary so that sensors don't get
@@ -124,3 +127,6 @@ class RectangularDomain(Boundary):
             pt = (new_pt[0], self.y_max - abs(self.y_max - new_pt[1]))
 
         return pt
+
+    def reflect_velocity(self, pt, vel):
+        return vel
