@@ -73,7 +73,7 @@ class EvasionPathSimulation:
     # exit if max time is set. Returns simulation time.
     def run(self) -> float:
         while self.cycle_label.has_intruder():
-            self.time += self.dt
+            # self.time += self.dt
             self.evasion_paths = ""
             self.do_timestep()
             if 0 < self.Tend < self.time:
@@ -95,15 +95,14 @@ class EvasionPathSimulation:
             self.state = TopologicalState(new_points, self.sensing_radius, self.boundary)
             self.state_change = StateChange(self.old_state, self.state)
 
-            try:
+            if self.state_change.is_atomic():
                 self.cycle_label.update(self.state_change)
+                self.time += dt
                 self.points = new_points
-
-            except InvalidStateChange:
+                self.is_connected &= self.state.is_connected()
+                self.update_old_data()
+            else:
                 self.do_timestep(level=level + 1)
-
-            self.is_connected = self.is_connected and self.state.is_connected()
-            self.update_old_data()
 
             if level == 0:
                 return
