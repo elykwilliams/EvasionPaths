@@ -105,3 +105,39 @@ class RectangularDomain(Boundary):
         rand_y = np.random.uniform(self.y_min, self.y_max, size=n_int_sensors)
         return list(zip(rand_x, rand_y))
 
+
+
+class CircularDomain(Boundary):
+    def __init__(self, spacing) -> None:
+
+        self.spacing = spacing
+        self.center = np.array([0, 0])
+        self.radius = 0.9
+
+        #Initialize virtual boundary
+        self.dx = 0.1
+        self.v_rad = self.radius + self.dx  #virtual boundary is unit circle, actual boundary has radius 0.9
+
+        super().__init__()
+
+
+    def in_domain(self, point: tuple) -> bool:
+        return np.linalg.norm(np.asarray(point) - self.center) < self.radius
+
+
+    def generate_boundary_points(self) -> list:
+        points = [(np.cos(a), np.sin(a))
+                       for a in np.arange(0, 2 * np.pi, self.spacing)]
+        return points
+
+
+    def generate_interior_points(self, n_int_sensors):
+        generated_int_pts = [(np.cos(a), np.sin(a))
+                                  for a in np.random.uniform(0, 2 * np.pi, size = n_int_sensors)]
+
+        rand_radii = np.random.uniform(0, 0.89, size=n_int_sensors)
+
+        for i in range(n_int_sensors):
+            generated_int_pts[i] = rand_radii[i] * generated_int_pts[i][0], rand_radii[i] * generated_int_pts[i][1]
+
+        return generated_int_pts

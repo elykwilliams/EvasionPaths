@@ -14,7 +14,7 @@ import matplotlib.pyplot as plt
 def get_graph(sim):
     """ This function is to access the combinatorial map externally primarily
         this function is meant to help with plotting and not to be used internally"""
-    from gudhi import AlphaComplex
+    from gudhi.alpha_complex import AlphaComplex
     alpha_complex = AlphaComplex(sim.points)
     simplex_tree = alpha_complex.create_simplex_tree(max_alpha_square=sim.sensing_radius ** 2)
 
@@ -35,11 +35,12 @@ def show_boundary_points(sim):
 
 
 def show_virtual_boundary(sim):
-    axis = plt.gca()
-    b = sim.boundary
-    xpts = [b.x_min, b.x_min, b.x_max, b.x_max, b.x_min]
-    ypts = [b.y_min, b.y_max, b.y_max, b.y_min, b.y_min]
-    axis.plot(xpts, ypts)
+    pass
+    #axis = plt.gca()
+    #b = sim.boundary
+    #xpts = [b.x_min, b.x_min, b.x_max, b.x_max, b.x_min]
+    #ypts = [b.y_min, b.y_max, b.y_max, b.y_min, b.y_min]
+    #axis.plot(xpts, ypts)
 
 
 def show_labelled_graph(sim):

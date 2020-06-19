@@ -7,7 +7,7 @@
 # ************************************************************
 
 from combinatorial_map import *
-from gudhi import AlphaComplex
+from gudhi.alpha_complex import AlphaComplex
 import networkx as nx
 
 
