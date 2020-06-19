@@ -40,7 +40,8 @@ class MotionModel(ABC):
     # If a point is not in the domain, reflect. It is sometimes
     # necessary to override this class method since this method is
     # called only once per time-step.
-    def update_points(self, old_points: list) -> list:
+    def update_points(self, old_points: list, dt: float) -> list:
+        self.dt = dt
         return self.boundary.points \
             + [self.update_point(pt, n) for n, pt in enumerate(old_points) if n >= len(self.boundary)]
 
@@ -60,9 +61,9 @@ class BrownianMotion(MotionModel):
         return self.sigma * sqrt(self.dt) * random.normal(0, 1)
 
     ## Update each coordinate with brownian model.
-    def update_point(self, pt: tuple, index=0) -> tuple:
-        new_pt = pt[0] + self.epsilon(), pt[1] + self.epsilon()
-        return new_pt if self.boundary.in_domain(new_pt) else self.reflect(pt, new_pt, index)
+    def update_point(self, old_pt: tuple, index) -> tuple:
+        new_pt = old_pt[0] + self.epsilon(), old_pt[1] + self.epsilon()
+        return new_pt if self.boundary.in_domain(new_pt) else self.reflect(old_pt, new_pt, index)
 
     def reflect(self, old_pt, new_pt, index):
         return self.boundary.reflect_point(old_pt, new_pt)

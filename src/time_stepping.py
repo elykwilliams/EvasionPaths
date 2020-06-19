@@ -93,7 +93,7 @@ class EvasionPathSimulation:
 
             # Update Points
             if level == 0:
-                self.points = self.motion_model.update_points(self.points)
+                self.points = self.motion_model.update_points(self.points, self.dt)
             else:
                 self.points = self.interpolate_points(self.old_points, new_points, t)
 
