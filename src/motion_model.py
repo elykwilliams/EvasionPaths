@@ -31,29 +31,19 @@ class MotionModel(ABC):
     def update_point(self, pt: tuple, index: int) -> tuple:
         return pt
 
-    ## Move points back in domain.
-    # If a point is moved outside of the domain, this function
-    # provides a rule on how to move it back inside the domain.
-    # The index is the position in the set of ALL points, and can
-    # be useful in looking up sensor specific data. Reflect should
-    # return position of point in the domain.
     @abstractmethod
-    def reflect(self, pt: tuple, index: int) -> tuple:
-        return pt
+    def reflect(self, old_pt, new_pt, index):
+        self.boundary.reflect_velocity(old_pt, new_pt)
+        return self.boundary.reflect_point(old_pt, new_pt)
 
     ## Update all non-fence points.
     # If a point is not in the domain, reflect. It is sometimes
     # necessary to override this class method since this method is
     # called only once per time-step.
-    def update_points(self, old_points: list) -> list:
-        offset = len(self.boundary)
-        interior_pts = old_points[offset:]
-        for (n, pt) in enumerate(interior_pts):
-            interior_pts[n] = self.update_point(pt, offset+n)
-            if not self.boundary.in_domain(interior_pts[n]):
-                interior_pts[n] = self.reflect(pt, offset+n)
-
-        return self.boundary.points + interior_pts
+    def update_points(self, old_points: list, dt: float) -> list:
+        self.dt = dt
+        return self.boundary.points \
+            + [self.update_point(pt, n) for n, pt in enumerate(old_points) if n >= len(self.boundary)]
 
 
 ## Provide random motion for rectangular domain.
@@ -62,34 +52,21 @@ class MotionModel(ABC):
 class BrownianMotion(MotionModel):
 
     ## Initialize boundary with typical velocity.
-    def __init__(self, dt: float, boundary: RectangularDomain, sigma: float) -> None:
+    def __init__(self, dt: float, boundary: Boundary, sigma: float) -> None:
         super().__init__(dt, boundary)
         self.sigma = sigma
-        self.boundary = boundary
 
     ## Random function.
     def epsilon(self) -> float:
-        return self.sigma*sqrt(self.dt)*random.normal(0, 1)
+        return self.sigma * sqrt(self.dt) * random.normal(0, 1)
 
     ## Update each coordinate with brownian model.
-    def update_point(self, pt: tuple, index=0) -> tuple:
-        return pt[0] + self.epsilon(), pt[1] + self.epsilon()
+    def update_point(self, old_pt: tuple, index) -> tuple:
+        new_pt = old_pt[0] + self.epsilon(), old_pt[1] + self.epsilon()
+        return new_pt if self.boundary.in_domain(new_pt) else self.reflect(old_pt, new_pt, index)
 
-    ## Move point inside domain.
-    # If point moves outside vertical wall, fix y-coordinate, and update
-    # x coordinate until in domain. Visa-versa for the horizontal walls.
-    def reflect(self, pt: tuple, index) -> tuple:
-        x, y = pt
-        while not self.boundary.in_domain(pt):
-            if x >= self.boundary.x_max:
-                pt = (self.boundary.x_max - abs(self.epsilon()), y)
-            elif x <= self.boundary.x_min:
-                pt = (self.boundary.x_min + abs(self.epsilon()), y)
-            if y >= self.boundary.y_max:
-                pt = (x, self.boundary.y_max - abs(self.epsilon()))
-            elif y <= self.boundary.y_min:
-                pt = (x, self.boundary.y_min + abs(self.epsilon()))
-        return pt
+    def reflect(self, old_pt, new_pt, index):
+        return self.boundary.reflect_point(old_pt, new_pt)
 
 
 ## Implement Billiard Motion for Rectangular Domain.
@@ -100,26 +77,20 @@ class BilliardMotion(MotionModel):
     ## Initialize Boundary with additional velocity and number of sensors.
     # The number of sensors is required to know how to initialize the velocity
     # angles.
-    def __init__(self, dt: float, boundary: RectangularDomain, vel: float, n_int_sensors: int) -> None:
+    def __init__(self, dt: float, boundary: Boundary, vel: float, n_int_sensors: int) -> None:
         super().__init__(dt, boundary)
         self.vel = vel
-        self.vel_angle = random.uniform(0, 2*pi, n_int_sensors+len(boundary))
-        self.boundary = boundary  # not actually needed, just for type hinting.
+        self.vel_angle = random.uniform(0, 2 * pi, n_int_sensors + len(boundary))
 
     ## Update point using x = x + v*dt.
     def update_point(self, pt: tuple, index: int) -> tuple:
         theta = self.vel_angle[index]
-        return pt[0] + self.dt*self.vel*cos(theta), pt[1] + self.dt*self.vel*sin(theta)
+        new_pt = pt[0] + self.dt * self.vel * cos(theta), pt[1] + self.dt * self.vel * sin(theta)
+        return new_pt if self.boundary.in_domain(new_pt) else self.reflect(pt, new_pt, index)
 
-    ## Reflect using angle in = angle out.
-    def reflect(self, pt: tuple, index: int) -> tuple:
-        if pt[0] <= self.boundary.x_min or pt[0] >= self.boundary.x_max:
-            self.vel_angle[index] = pi - self.vel_angle[index]
-        if pt[1] <= self.boundary.y_min or pt[1] >= self.boundary.y_max:
-            self.vel_angle[index] = - self.vel_angle[index]
-        self.vel_angle[index] %= 2 * pi
-
-        return self.update_point(pt, index)
+    def reflect(self, old_pt, new_pt, index):
+        self.vel_angle[index] = self.boundary.reflect_velocity(old_pt, new_pt)
+        return self.boundary.reflect_point(old_pt, new_pt)
 
 
 ## Implement randomized variant of Billiard motion.
@@ -129,10 +100,7 @@ class RunAndTumble(BilliardMotion):
     ## Update angles before updating points.
     # Each update every point has a 1 : 5 chance of having its velocity
     # angle changed. Then update as normal.
-    def update_points(self, old_points: list) -> list:
-
-        for n in range(len(self.vel_angle)):
-            if random.randint(0, 5) == 4:
-                self.vel_angle[n] = random.uniform(0, 2 * pi)
-
-        return super().update_points(old_points)
+    def update_point(self, pt: tuple, index: int) -> tuple:
+        if random.randint(0, 5) == 4:
+            self.vel_angle[index] = random.uniform(0, 2 * pi)
+        return super().update_point(pt, index)
