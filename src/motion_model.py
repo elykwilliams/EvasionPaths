@@ -40,12 +40,8 @@ class MotionModel(ABC):
     # necessary to override this class method since this method is
     # called only once per time-step.
     def update_points(self, old_points: list) -> list:
-        offset = len(self.boundary)
-        interior_pts = old_points[offset:]
-        for (n, pt) in enumerate(interior_pts):
-            interior_pts[n] = self.update_point(pt, offset+n)
-
-        return self.boundary.points + interior_pts
+        return old_points[0:len(self.boundary)] \
+            + [self.update_point(pt, n) for n, pt in enumerate(old_points) if n >= len(self.boundary)]
 
 
 ## Provide random motion for rectangular domain.
@@ -61,7 +57,7 @@ class BrownianMotion(MotionModel):
 
     ## Random function.
     def epsilon(self) -> float:
-        return self.sigma*sqrt(self.dt)*random.normal(0, 1)
+        return self.sigma * sqrt(self.dt) * random.normal(0, 1)
 
     ## Update each coordinate with brownian model.
     def update_point(self, pt: tuple, index=0) -> tuple:
@@ -86,13 +82,13 @@ class BilliardMotion(MotionModel):
     def __init__(self, dt: float, boundary: RectangularDomain, vel: float, n_int_sensors: int) -> None:
         super().__init__(dt, boundary)
         self.vel = vel
-        self.vel_angle = random.uniform(0, 2*pi, n_int_sensors+len(boundary))
+        self.vel_angle = random.uniform(0, 2 * pi, n_int_sensors + len(boundary))
         self.boundary = boundary  # not actually needed, just for type hinting.
 
     ## Update point using x = x + v*dt.
     def update_point(self, pt: tuple, index: int) -> tuple:
         theta = self.vel_angle[index]
-        new_pt = pt[0] + self.dt*self.vel*cos(theta), pt[1] + self.dt*self.vel*sin(theta)
+        new_pt = pt[0] + self.dt * self.vel * cos(theta), pt[1] + self.dt * self.vel * sin(theta)
         if not self.boundary.in_domain(new_pt):
             self.reflect_velocity(new_pt, index)
         return self.boundary.reflect_point(pt, new_pt)
