@@ -33,6 +33,7 @@ class MotionModel(ABC):
 
     @abstractmethod
     def reflect(self, old_pt, new_pt, index):
+        self.boundary.reflect_velocity(old_pt, new_pt)
         return self.boundary.reflect_point(old_pt, new_pt)
 
     ## Update all non-fence points.
@@ -43,16 +44,16 @@ class MotionModel(ABC):
         return self.boundary.points \
             + [self.update_point(pt, n) for n, pt in enumerate(old_points) if n >= len(self.boundary)]
 
+
 ## Provide random motion for rectangular domain.
 # Will move a point randomly with an average step
 # size of sigma*dt
 class BrownianMotion(MotionModel):
 
     ## Initialize boundary with typical velocity.
-    def __init__(self, dt: float, boundary: RectangularDomain, sigma: float) -> None:
+    def __init__(self, dt: float, boundary: Boundary, sigma: float) -> None:
         super().__init__(dt, boundary)
         self.sigma = sigma
-        self.boundary = boundary
 
     ## Random function.
     def epsilon(self) -> float:
@@ -61,13 +62,10 @@ class BrownianMotion(MotionModel):
     ## Update each coordinate with brownian model.
     def update_point(self, pt: tuple, index=0) -> tuple:
         new_pt = pt[0] + self.epsilon(), pt[1] + self.epsilon()
-
-        if not self.boundary.in_domain(new_pt):
-            self.reflect(pt, new_pt, index)
-        return self.boundary.reflect_point(pt, new_pt)
+        return new_pt if self.boundary.in_domain(new_pt) else self.reflect(pt, new_pt, index)
 
     def reflect(self, old_pt, new_pt, index):
-        return new_pt
+        return self.boundary.reflect_point(old_pt, new_pt)
 
 
 ## Implement Billiard Motion for Rectangular Domain.
@@ -78,30 +76,20 @@ class BilliardMotion(MotionModel):
     ## Initialize Boundary with additional velocity and number of sensors.
     # The number of sensors is required to know how to initialize the velocity
     # angles.
-    def __init__(self, dt: float, boundary: RectangularDomain, vel: float, n_int_sensors: int) -> None:
+    def __init__(self, dt: float, boundary: Boundary, vel: float, n_int_sensors: int) -> None:
         super().__init__(dt, boundary)
         self.vel = vel
         self.vel_angle = random.uniform(0, 2 * pi, n_int_sensors + len(boundary))
-        self.boundary = boundary  # not actually needed, just for type hinting.
 
     ## Update point using x = x + v*dt.
     def update_point(self, pt: tuple, index: int) -> tuple:
         theta = self.vel_angle[index]
         new_pt = pt[0] + self.dt * self.vel * cos(theta), pt[1] + self.dt * self.vel * sin(theta)
-        if not self.boundary.in_domain(new_pt):
-            self.reflect(pt, new_pt, index)
-        return self.boundary.reflect_point(pt, new_pt)
+        return new_pt if self.boundary.in_domain(new_pt) else self.reflect(pt, new_pt, index)
 
     def reflect(self, old_pt, new_pt, index):
-        if new_pt[0] <= self.boundary.x_min or new_pt[0] >= self.boundary.x_max:
-            self.vel_angle[index] = pi - self.vel_angle[index]
-        if new_pt[1] <= self.boundary.y_min or new_pt[1] >= self.boundary.y_max:
-            self.vel_angle[index] = - self.vel_angle[index]
-        self.vel_angle[index] %= 2 * pi
-        self.vel_angle[index] = self.boundary.reflect_velocity(new_pt, self.vel_angle[index])
+        self.vel_angle[index] = self.boundary.reflect_velocity(old_pt, new_pt)
         return self.boundary.reflect_point(old_pt, new_pt)
-
-
 
 
 ## Implement randomized variant of Billiard motion.
@@ -111,10 +99,7 @@ class RunAndTumble(BilliardMotion):
     ## Update angles before updating points.
     # Each update every point has a 1 : 5 chance of having its velocity
     # angle changed. Then update as normal.
-    def update_points(self, old_points: list) -> list:
-
-        for n in range(len(self.vel_angle)):
-            if random.randint(0, 5) == 4:
-                self.vel_angle[n] = random.uniform(0, 2 * pi)
-
-        return super().update_points(old_points)
+    def update_point(self, pt: tuple, index: int) -> tuple:
+        if random.randint(0, 5) == 4:
+            self.vel_angle[index] = random.uniform(0, 2 * pi)
+        return super().update_point(pt, index)

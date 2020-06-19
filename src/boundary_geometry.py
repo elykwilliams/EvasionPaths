@@ -63,8 +63,10 @@ class Boundary(ABC):
         return new_pt
 
     @abstractmethod
-    def reflect_velocity(self, pt, vel):
-        return vel
+    def reflect_velocity(self, old_pt, new_pt):
+        vel_angle = np.arctan2(new_pt[1] - old_pt[1], new_pt[0] - old_pt[0])
+        return vel_angle
+
 
 ## a rectangular domain using virtual boundary.
 # This domain implements a virtual boundary so that sensors don't get
@@ -108,7 +110,7 @@ class RectangularDomain(Boundary):
         return points
 
     ## Generate points distributed randomly (uniformly) in the interior.
-    def generate_interior_points(self, n_int_sensors: int)-> list:
+    def generate_interior_points(self, n_int_sensors: int) -> list:
         rand_x = np.random.uniform(self.x_min, self.x_max, size=n_int_sensors)
         rand_y = np.random.uniform(self.y_min, self.y_max, size=n_int_sensors)
         return list(zip(rand_x, rand_y))
@@ -128,5 +130,11 @@ class RectangularDomain(Boundary):
 
         return pt
 
-    def reflect_velocity(self, pt, vel):
-        return vel
+    def reflect_velocity(self, old_pt, new_pt):
+        vel_angle = np.arctan2(new_pt[1] - old_pt[1], new_pt[0] - old_pt[0])
+        if new_pt[0] <= self.x_min or new_pt[0] >= self.x_max:
+            vel_angle = np.pi - vel_angle
+        if new_pt[1] <= self.y_min or new_pt[1] >= self.y_max:
+            vel_angle = - vel_angle
+        vel_angle %= 2 * np.pi
+        return vel_angle % (2 * np.pi)
