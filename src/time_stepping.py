@@ -59,7 +59,6 @@ class EvasionPathSimulation:
 
         # Point data
         self.points = boundary.generate_points(n_int_sensors)
-        self.old_points = self.points
 
         self.state = TopologicalState(self.points, self.sensing_radius, self.boundary)
         self.old_state = self.state
@@ -68,14 +67,13 @@ class EvasionPathSimulation:
 
     ## Move to next time-step.
     def update_old_data(self) -> None:
-        self.old_points = self.points.copy()
         self.old_state = deepcopy(self.state)
 
     ## Run until no more intruders.
     # exit if max time is set. Returns simulation time.
     def run(self) -> float:
         while self.cycle_label.has_intruder():
-            self.time += self.dt
+            # self.time += self.dt
             self.evasion_paths = ""
             self.do_timestep()
             if 0 < self.Tend < self.time:
@@ -84,39 +82,27 @@ class EvasionPathSimulation:
 
     ## To single timestep.
     # Do recursive adaptive step if non-atomic transition is found.
-    def do_timestep(self, new_points: list = (), level: int = 0) -> None:
+    def do_timestep(self, level: int = 0) -> None:
+
+        dt = self.dt * 2 ** -(level+1)
 
         if level == 25:
             raise MaxRecursionDepth(self.state_change)
 
-        for t in [0.5, 1.0]:
+        for _ in range(2):
 
-            # Update Points
-            if level == 0:
-                self.points = self.motion_model.update_points(self.points)
-            else:
-                self.points = self.interpolate_points(self.old_points, new_points, t)
-
-            self.state = TopologicalState(self.points, self.sensing_radius, self.boundary)
+            new_points = self.motion_model.update_points(self.points, dt)
+            self.state = TopologicalState(new_points, self.sensing_radius, self.boundary)
             self.state_change = StateChange(self.old_state, self.state)
 
-            try:
+            if self.state_change.is_atomic():
                 self.cycle_label.update(self.state_change)
-
-            except InvalidStateChange:
-                self.do_timestep(self.points, level=level + 1)
-
-            self.n_steps += 1
-            self.is_connected = self.is_connected and self.state.is_connected()
-            self.update_old_data()
+                self.time += dt
+                self.points = new_points
+                self.is_connected &= self.state.is_connected()
+                self.update_old_data()
+            else:
+                self.do_timestep(level=level + 1)
 
             if level == 0:
                 return
-
-    ## Linearly interpolate points.
-    # Used when doing an adaptive step to interpolate between old an new points.
-    @staticmethod
-    def interpolate_points(old_points: list, new_points: list, t: float) -> list:
-        return [(old_points[n][0] * (1 - t) + new_points[n][0] * t,
-                 old_points[n][1] * (1 - t) + new_points[n][1] * t)
-                for n in range(len(old_points))]

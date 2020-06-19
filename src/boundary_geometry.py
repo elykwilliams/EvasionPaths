@@ -58,6 +58,15 @@ class Boundary(ABC):
         a = [str(n + 1) + "," + str(n) for n in range(len(self.points) - 1)] + ["0," + str(len(self.points) - 1)]
         return tuple(sorted(a))
 
+    @abstractmethod
+    def reflect_point(self, old_pt, new_pt):
+        return new_pt
+
+    @abstractmethod
+    def reflect_velocity(self, old_pt, new_pt):
+        vel_angle = np.arctan2(new_pt[1] - old_pt[1], new_pt[0] - old_pt[0])
+        return vel_angle
+
 
 ## a rectangular domain using virtual boundary.
 # This domain implements a virtual boundary so that sensors don't get
@@ -88,7 +97,8 @@ class RectangularDomain(Boundary):
 
     ## Check if point is in virtual domain.
     def in_domain(self, point: tuple) -> bool:
-        return self.x_min < point[0] < self.x_max and self.y_min < point[1] < self.y_max
+        return self.x_min < point[0] < self.x_max \
+               and self.y_min < point[1] < self.y_max
 
     ## Generate points in counter-clockwise order.
     def generate_boundary_points(self) -> list:
@@ -100,11 +110,34 @@ class RectangularDomain(Boundary):
         return points
 
     ## Generate points distributed randomly (uniformly) in the interior.
-    def generate_interior_points(self, n_int_sensors: int)-> list:
+    def generate_interior_points(self, n_int_sensors: int) -> list:
         rand_x = np.random.uniform(self.x_min, self.x_max, size=n_int_sensors)
         rand_y = np.random.uniform(self.y_min, self.y_max, size=n_int_sensors)
         return list(zip(rand_x, rand_y))
 
+    def reflect_point(self, old_pt, new_pt):
+        pt = new_pt
+        if new_pt[0] <= self.x_min:
+            pt = (self.x_min + abs(self.x_min - new_pt[0]), new_pt[1])
+        elif new_pt[0] >= self.x_max:
+            pt = (self.x_max - abs(self.x_max - new_pt[0]), new_pt[1])
+
+        new_pt = pt
+        if new_pt[1] <= self.y_min:
+            pt = (new_pt[0], self.y_min + abs(self.y_min - new_pt[1]))
+        elif new_pt[1] >= self.y_max:
+            pt = (new_pt[0], self.y_max - abs(self.y_max - new_pt[1]))
+
+        return pt
+
+    def reflect_velocity(self, old_pt, new_pt):
+        vel_angle = np.arctan2(new_pt[1] - old_pt[1], new_pt[0] - old_pt[0])
+        if new_pt[0] <= self.x_min or new_pt[0] >= self.x_max:
+            vel_angle = np.pi - vel_angle
+        if new_pt[1] <= self.y_min or new_pt[1] >= self.y_max:
+            vel_angle = - vel_angle
+        vel_angle %= 2 * np.pi
+        return vel_angle % (2 * np.pi)
 
 
 class CircularDomain(Boundary):
