@@ -38,12 +38,7 @@ class EvasionPathSimulation:
     # If end_time is set to a non-zero value, use sooner of max cutoff time or  cleared
     # domain. Set to 0 to disable.
     def __init__(self, boundary: Boundary, motion_model: MotionModel,
-                 n_int_sensors: int, sensing_radius: float, dt: float, end_time: int =0) -> None:
-
-        # Initialize Fields
-        self.evasion_paths = ""
-        self.is_connected = True
-        self.cmap = None
+                 n_int_sensors: int, sensing_radius: float, dt: float, end_time: int = 0) -> None:
 
         self.motion_model = motion_model
         self.boundary = boundary
@@ -55,26 +50,18 @@ class EvasionPathSimulation:
 
         # Internal time keeping
         self.time = 0
-        self.n_steps = 0
 
         # Point data
         self.points = boundary.generate_points(n_int_sensors)
 
         self.state = TopologicalState(self.points, self.sensing_radius, self.boundary)
-        self.old_state = self.state
-        self.state_change = StateChange(self.old_state, self.state)
         self.cycle_label = CycleLabelling(self.state)
-
-    ## Move to next time-step.
-    def update_old_data(self) -> None:
-        self.old_state = deepcopy(self.state)
 
     ## Run until no more intruders.
     # exit if max time is set. Returns simulation time.
     def run(self) -> float:
         while self.cycle_label.has_intruder():
-            # self.time += self.dt
-            self.evasion_paths = ""
+            self.time += self.dt
             self.do_timestep()
             if 0 < self.Tend < self.time:
                 break
@@ -86,21 +73,18 @@ class EvasionPathSimulation:
 
         dt = self.dt * 2 ** -(level+1)
 
-        if level == 25:
-            raise MaxRecursionDepth(self.state_change)
-
         for _ in range(2):
 
             new_points = self.motion_model.update_points(self.points, dt)
-            self.state = TopologicalState(new_points, self.sensing_radius, self.boundary)
-            self.state_change = StateChange(self.old_state, self.state)
+            state = TopologicalState(new_points, self.sensing_radius, self.boundary)
+            state_change = StateChange(self.state, state)
 
-            if self.state_change.is_atomic():
-                self.cycle_label.update(self.state_change)
-                self.time += dt
+            if state_change.is_atomic():
+                self.cycle_label.update(state_change)
                 self.points = new_points
-                self.is_connected &= self.state.is_connected()
-                self.update_old_data()
+                self.state = state
+            elif level + 1 == 25:
+                raise MaxRecursionDepth(state_change)
             else:
                 self.do_timestep(level=level + 1)
 
