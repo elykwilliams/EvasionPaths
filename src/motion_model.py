@@ -142,7 +142,7 @@ class Viscek(BilliardMotion):
         return new_points
 
 
-class DorsognaModel(MotionModel):
+class Dorsogna(MotionModel):
     def __init__(self, dt, boundary, max_vel, n_int_sensors, sensing_radius, eta_scale_factor, DO_coeff):
         super().__init__(dt, boundary)
         self.velocities = np.random.uniform(-max_vel, max_vel, (n_int_sensors, 2))
@@ -150,6 +150,8 @@ class DorsognaModel(MotionModel):
         self.boundary = boundary
         self.sensing_radius = sensing_radius
         self.eta = eta_scale_factor * sensing_radius
+        if len(DO_coeff) != 4:
+            raise ValueError("Not enough parameters in DO_coeff")
         self.DO_coeff = DO_coeff
 
     def update_point(self, pt: tuple, index: int) -> tuple:
@@ -157,42 +159,26 @@ class DorsognaModel(MotionModel):
         return pt
 
     def reflect(self, old_pt, new_pt, index) -> tuple:
-        v = self.velocities[index]
-        norm_v = sqrt(v[0]**2 + v[1]**2)
+        norm_v = norm(self.velocities[index])
         theta = self.boundary.reflect_velocity(old_pt, new_pt)
-        pt = self.boundary.reflect_point(old_pt, new_pt)
         self.velocities[index] = (norm_v*cos(theta), norm_v*sin(theta))
-        return pt
-
+        return self.boundary.reflect_point(old_pt, new_pt)
 
     def gradient(self, xs, ys):
-        gradUx, gradUy = [0] * self.n_sensors, [0] * self.n_sensors
+        gradUx, gradUy = [0.0] * self.n_sensors, [0.0] * self.n_sensors
 
         for i in range(0, self.n_sensors):
-            pairwise_dist = [0] * self.n_sensors
-            attract_term, repel_term = [0] * self.n_sensors, [0] * self.n_sensors
+            for j in range(self.n_sensors):
+                r = norm((xs[i] - xs[j], ys[i] - ys[j]))
+                if 0.0 < r < 2 * self.sensing_radius:
 
-            for j in range(0, self.n_sensors):
-                if norm((xs[i] - xs[j], ys[i] - ys[j])) > 2 * self.sensing_radius:
-                    pairwise_dist[j] = 0.0
-                else:
-                    pairwise_dist[j] = norm((xs[i] - xs[j], ys[i] - ys[j]))
+                    attract_term = (self.DO_coeff[0]*np.exp(-r/self.DO_coeff[1]) / (self.DO_coeff[1]*r))
+                    repel_term = (self.DO_coeff[2]*np.exp(-r/self.DO_coeff[3]) / (self.DO_coeff[3]*r))
 
-            for j in range(0, self.n_sensors):
-                if pairwise_dist[j] == 0.0:
-                    attract_term[j] = 0
-                    repel_term[j] = 0
-                else:
-                    attract_term[j] = self.DO_coeff[0]*np.exp(-pairwise_dist[j]/self.DO_coeff[1])/(self.DO_coeff[1]*pairwise_dist[j])
-                    repel_term[j] = self.DO_coeff[2]*np.exp(-pairwise_dist[j]/self.DO_coeff[3])/(self.DO_coeff[3] * pairwise_dist[j])
-
-            gradUx[i] = sum(((xs[i]-xs[j]) * attract_term[j]) - ((xs[i]-xs[j]) * repel_term[j])
-                               for j in range(0, self.n_sensors) if pairwise_dist[j] != 0.0)
-            gradUy[i] = sum(((ys[i]-ys[j]) * attract_term[j]) - ((ys[i]-ys[j]) * repel_term[j])
-                               for j in range(0, self.n_sensors) if pairwise_dist[j] != 0.0)
+                    gradUx[i] += (xs[i]-xs[j]) * attract_term - (xs[i]-xs[j]) * repel_term
+                    gradUy[i] += (ys[i]-ys[j]) * attract_term - (ys[i]-ys[j]) * repel_term
 
         return array(gradUx), array(gradUy)
-
 
     def time_derivative(self, _, state):
         # ode solver gives us np array in the form [xvals | yvals | vxvals | vyvals]
@@ -207,7 +193,6 @@ class DorsognaModel(MotionModel):
         dvxdt = (1.5 - (0.5 * norm((dxdt, dydt))**2)) * dxdt - gradU[0]
         dvydt = (1.5 - (0.5 * norm((dxdt, dydt))**2)) * dydt - gradU[1]
         return np.concatenate([dxdt, dydt, dvxdt, dvydt])
-
 
     def update_points(self, old_points, dt) -> list:
         self.dt = dt
