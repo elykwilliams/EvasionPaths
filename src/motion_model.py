@@ -7,7 +7,10 @@
 # ************************************************************
 
 from boundary_geometry import *
-from numpy import sqrt, random, sin, cos, pi
+from numpy import sqrt, random, sin, cos, pi, mean
+from numpy.linalg import norm
+from numpy import array
+from scipy.integrate import solve_ivp
 from abc import ABC, abstractmethod
 
 
@@ -104,3 +107,36 @@ class RunAndTumble(BilliardMotion):
         if random.randint(0, 5) == 4:
             self.vel_angle[index] = random.uniform(0, 2 * pi)
         return super().update_point(pt, index)
+
+
+class Viscek(BilliardMotion):
+
+    def __init__(self, boundary: Boundary, n_int_sensors, sensing_radius):
+        super().__init__(dt=0, boundary=boundary, vel=1, n_int_sensors=n_int_sensors)
+        self.radius = sensing_radius
+
+    @staticmethod
+    def dist(pt1, pt2):
+        return norm(array(pt1) - array(pt2))
+
+    def eta(self):
+        return (pi/12) * random.uniform(-1, 1)
+
+    def update_points(self, old_points: list, dt: float) -> list:
+        self.dt = dt
+        offset = len(self.boundary)
+        indices = [[] for _ in old_points]
+
+        new_points = self.boundary.points \
+            + [self.update_point(pt, offset + n) for n, pt in enumerate(old_points[offset:])]
+
+        for i, pti in enumerate(old_points[offset:]):
+            for j, ptj in enumerate(old_points[offset:]):
+                if j != i and self.dist(pti, ptj) < 2 * self.radius:
+                    indices[i + offset].append(offset + j)
+
+        for i, index_list in enumerate(indices):
+            if index_list:
+                self.vel_angle[i] = (mean([self.vel_angle[j] for j in index_list])+self.eta()) % (2 * pi)
+
+        return new_points
