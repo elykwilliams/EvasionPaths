@@ -97,8 +97,8 @@ class RectangularDomain(Boundary):
 
     ## Check if point is in virtual domain.
     def in_domain(self, point: tuple) -> bool:
-        return self.x_min < point[0] < self.x_max \
-               and self.y_min < point[1] < self.y_max
+        return self.x_min <= point[0] <= self.x_max \
+               and self.y_min <= point[1] <= self.y_max
 
     ## Generate points in counter-clockwise order.
     def generate_boundary_points(self) -> list:
@@ -136,5 +136,4 @@ class RectangularDomain(Boundary):
             vel_angle = np.pi - vel_angle
         if new_pt[1] <= self.y_min or new_pt[1] >= self.y_max:
             vel_angle = - vel_angle
-        vel_angle %= 2 * np.pi
         return vel_angle % (2 * np.pi)

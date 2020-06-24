@@ -46,7 +46,7 @@ class MotionModel(ABC):
     def update_points(self, old_points: list, dt: float) -> list:
         self.dt = dt
         return self.boundary.points \
-            + [self.update_point(pt, n) for n, pt in enumerate(old_points) if n >= len(self.boundary)]
+               + [self.update_point(pt, n) for n, pt in enumerate(old_points) if n >= len(self.boundary)]
 
 
 ## Provide random motion for rectangular domain.
@@ -88,7 +88,7 @@ class BilliardMotion(MotionModel):
     ## Update point using x = x + v*dt.
     def update_point(self, pt: tuple, index: int) -> tuple:
         theta = self.vel_angle[index]
-        new_pt = pt[0] + self.dt * self.vel * cos(theta), pt[1] + self.dt * self.vel * sin(theta)
+        new_pt = (pt[0] + self.dt * self.vel * cos(theta)), (pt[1] + self.dt * self.vel * sin(theta))
         return new_pt if self.boundary.in_domain(new_pt) else self.reflect(pt, new_pt, index)
 
     def reflect(self, old_pt, new_pt, index):
@@ -120,7 +120,7 @@ class Viscek(BilliardMotion):
         return norm(array(pt1) - array(pt2))
 
     def eta(self):
-        return (pi/12) * random.uniform(-1, 1)
+        return (pi / 12) * random.uniform(-1, 1)
 
     def update_points(self, old_points: list, dt: float) -> list:
         self.dt = dt
@@ -128,7 +128,7 @@ class Viscek(BilliardMotion):
         indices = [[] for _ in old_points]
 
         new_points = self.boundary.points \
-            + [self.update_point(pt, offset + n) for n, pt in enumerate(old_points[offset:])]
+                     + [self.update_point(pt, offset + n) for n, pt in enumerate(old_points[offset:])]
 
         for i, pti in enumerate(old_points[offset:]):
             for j, ptj in enumerate(old_points[offset:]):
