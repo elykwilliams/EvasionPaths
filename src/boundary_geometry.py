@@ -49,7 +49,7 @@ class Boundary(ABC):
         return []
 
     @abstractmethod
-    def virtual_boundary_points(self):
+    def domain_boundary_points(self):
         x_pts, y_pts = [], []
         return x_pts, y_pts
 
@@ -95,7 +95,7 @@ class RectangularDomain(Boundary):
         self.x_min, self.y_min = x_min, y_min
         self.spacing = spacing
 
-        # Initialize virtual boundary
+        # Initialize fence boundary
         self.dx = self.spacing * np.sin(np.pi / 6)  # virtual boundary width
         self.vx_min, self.vx_max = self.x_min - self.dx, self.x_max + self.dx
         self.vy_min, self.vy_max = self.y_min - self.dx, self.y_max + self.dx
@@ -122,7 +122,7 @@ class RectangularDomain(Boundary):
         rand_y = np.random.uniform(self.y_min, self.y_max, size=n_int_sensors)
         return list(zip(rand_x, rand_y))
 
-    def virtual_boundary_points(self):
+    def domain_boundary_points(self):
         x_pts = [self.x_min, self.x_min, self.x_max, self.x_max, self.x_min]
         y_pts = [self.y_min, self.y_max, self.y_max, self.y_min, self.y_min]
         return x_pts, y_pts
@@ -176,7 +176,7 @@ class CircularDomain(Boundary):
         radius = np.random.uniform(0, self.radius, size=n_int_sensors)
         return [(r*cos(t), r*sin(t)) for r, t in zip(radius, theta)]
 
-    def virtual_boundary_points(self):
+    def domain_boundary_points(self):
         x_pts = [self.radius*cos(t) for t in arange(0, 2*pi, 0.01)]
         y_pts = [self.radius*sin(t) for t in arange(0, 2*pi, 0.01)]
         return x_pts, y_pts

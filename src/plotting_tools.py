@@ -34,10 +34,10 @@ def show_boundary_points(sim):
     axis.plot(xpts, ypts, "k*")
 
 
-def show_virtual_boundary(sim):
+def show_domain_boundary(sim):
     axis = plt.gca()
     b = sim.boundary
-    xpts, ypts = b.virtual_boundary_points()
+    xpts, ypts = b.domain_boundary_points()
     axis.plot(xpts, ypts)
 
 
@@ -140,7 +140,7 @@ if __name__ == "__main__":
 
     plt.figure(1)
     show_boundary_points(simulation)
-    show_virtual_boundary(simulation)
+    show_domain_boundary(simulation)
 
     plt.figure(2)
     show_labelled_graph(simulation)
