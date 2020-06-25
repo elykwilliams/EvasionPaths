@@ -111,9 +111,10 @@ class RunAndTumble(BilliardMotion):
 
 class Viscek(BilliardMotion):
 
-    def __init__(self, boundary: Boundary, n_int_sensors, sensing_radius):
+    def __init__(self, dt, boundary: Boundary, n_int_sensors, sensing_radius):
         super().__init__(dt=0, boundary=boundary, vel=1, n_int_sensors=n_int_sensors)
         self.radius = sensing_radius
+        self.large_dt = dt
 
     @staticmethod
     def dist(pt1, pt2):
@@ -128,16 +129,17 @@ class Viscek(BilliardMotion):
         indices = [[] for _ in old_points]
 
         new_points = self.boundary.points \
-                     + [self.update_point(pt, offset + n) for n, pt in enumerate(old_points[offset:])]
+            + [self.update_point(pt, offset + n) for n, pt in enumerate(old_points[offset:])]
 
-        for i, pti in enumerate(old_points[offset:]):
-            for j, ptj in enumerate(old_points[offset:]):
-                if j != i and self.dist(pti, ptj) < 2 * self.radius:
-                    indices[i + offset].append(offset + j)
+        if abs(self.dt - self.large_dt) < 1e-6:
+            for i, pti in enumerate(old_points[offset:]):
+                for j, ptj in enumerate(old_points[offset:]):
+                    if j != i and self.dist(pti, ptj) < 2 * self.radius:
+                        indices[i + offset].append(offset + j)
 
-        for i, index_list in enumerate(indices):
-            if index_list:
-                self.vel_angle[i] = (mean([self.vel_angle[j] for j in index_list]) + self.eta()) % (2 * pi)
+            for i, index_list in enumerate(indices):
+                if index_list:
+                    self.vel_angle[i] = (mean([self.vel_angle[j] for j in index_list]) + self.eta()) % (2 * pi)
 
         return new_points
 
