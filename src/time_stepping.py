@@ -7,7 +7,6 @@
 # ************************************************************
 
 from cycle_labelling import *
-from copy import deepcopy
 from topological_state import *
 from motion_model import *
 
@@ -76,13 +75,13 @@ class EvasionPathSimulation:
         for _ in range(2):
 
             new_points = self.motion_model.update_points(self.points, dt)
-            state = TopologicalState(new_points, self.sensing_radius, self.boundary)
-            state_change = StateChange(self.state, state)
+            new_state = TopologicalState(new_points, self.sensing_radius, self.boundary)
+            state_change = StateChange(self.state, new_state)
 
             if state_change.is_atomic():
                 self.cycle_label.update(state_change)
                 self.points = new_points
-                self.state = state
+                self.state = new_state
             elif level + 1 == 25:
                 raise MaxRecursionDepth(state_change)
             else:
