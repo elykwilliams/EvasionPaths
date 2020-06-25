@@ -7,6 +7,8 @@
 # ************************************************************
 
 import numpy as np
+from numpy import sin, cos, arange, pi, array, arctan2
+from numpy.linalg import norm
 from abc import ABC, abstractmethod
 
 
@@ -147,3 +149,57 @@ class RectangularDomain(Boundary):
         if new_pt[1] <= self.y_min or new_pt[1] >= self.y_max:
             vel_angle = - vel_angle
         return vel_angle % (2 * np.pi)
+
+
+class CircularDomain(Boundary):
+    def __init__(self, spacing, radius) -> None:
+
+        self.spacing = spacing
+        self.center = np.array([0, 0])
+        self.radius = radius
+
+        #Initialize virtual boundary
+        self.dx = self.spacing
+        self.v_rad = self.radius + self.dx
+
+        super().__init__()
+
+    def in_domain(self, point: tuple) -> bool:
+        return norm(point) < self.radius
+
+    def generate_boundary_points(self) -> list:
+        points = [(self.v_rad*cos(t), self.v_rad*sin(t)) for t in arange(0, 2 * pi, self.spacing)]
+        return points
+
+    def generate_interior_points(self, n_int_sensors):
+        theta = np.random.uniform(0, 2 * pi, size=n_int_sensors)
+        radius = np.random.uniform(0, self.radius, size=n_int_sensors)
+        return [(r*cos(t), r*sin(t)) for r, t in zip(radius, theta)]
+
+    def virtual_boundary_points(self):
+        x_pts = [self.radius*cos(t) for t in arange(0, 2*pi, 0.01)]
+        y_pts = [self.radius*sin(t) for t in arange(0, 2*pi, 0.01)]
+        return x_pts, y_pts
+
+    def _get_intersection(self, old_pt, new_pt):
+        d = new_pt - old_pt
+        x0 = old_pt
+        t_vals = np.roots([norm(d)**2, 2*np.dot(d, x0), norm(x0)**2 - self.radius**2])
+        t = t_vals[0] if 0 <= t_vals[0] <= 1 else t_vals[1]
+        return (1-t)*old_pt + t*new_pt
+
+    def reflect_point(self, old_pt, new_pt):
+        old_pt, new_pt = array(old_pt), array(new_pt)
+        boundary_pt = self._get_intersection(old_pt, new_pt)
+        disp = new_pt - boundary_pt
+        normal = boundary_pt/norm(boundary_pt)
+        reflected_disp = disp - 2*np.dot(disp, normal)*normal
+        reflected_pt = boundary_pt + reflected_disp
+        return reflected_pt[0], reflected_pt[1]
+
+    def reflect_velocity(self, old_pt, new_pt):
+        old_pt, new_pt = array(old_pt), array(new_pt)
+        boundary_pt = self._get_intersection(old_pt, new_pt)
+        reflected_pt = self.reflect_point(old_pt, new_pt)
+        disp_from_wall = array(reflected_pt) - boundary_pt
+        return arctan2(disp_from_wall[1], disp_from_wall[0]) % (2 * pi)
