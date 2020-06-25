@@ -37,8 +37,7 @@ def show_boundary_points(sim):
 def show_virtual_boundary(sim):
     axis = plt.gca()
     b = sim.boundary
-    xpts = [b.x_min, b.x_min, b.x_max, b.x_max, b.x_min]
-    ypts = [b.y_min, b.y_max, b.y_max, b.y_min, b.y_min]
+    xpts, ypts = b.virtual_boundary_points()
     axis.plot(xpts, ypts)
 
 

@@ -46,6 +46,11 @@ class Boundary(ABC):
     def generate_interior_points(self, n_int_sensors: int) -> list:
         return []
 
+    @abstractmethod
+    def virtual_boundary_points(self):
+        x_pts, y_pts = [], []
+        return x_pts, y_pts
+
     ## Return list of all points.
     # Boundary points must come first and be non-empty.
     def generate_points(self, n_int_sensors: int) -> list:
@@ -114,6 +119,11 @@ class RectangularDomain(Boundary):
         rand_x = np.random.uniform(self.x_min, self.x_max, size=n_int_sensors)
         rand_y = np.random.uniform(self.y_min, self.y_max, size=n_int_sensors)
         return list(zip(rand_x, rand_y))
+
+    def virtual_boundary_points(self):
+        x_pts = [self.x_min, self.x_min, self.x_max, self.x_max, self.x_min]
+        y_pts = [self.y_min, self.y_max, self.y_max, self.y_min, self.y_min]
+        return x_pts, y_pts
 
     def reflect_point(self, old_pt, new_pt):
         pt = new_pt
