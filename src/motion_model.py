@@ -5,6 +5,7 @@
 # of the BSD-3 license with this file.
 # If not, visit: https://opensource.org/licenses/BSD-3-Clause
 # ************************************************************
+from copy import deepcopy
 
 from boundary_geometry import *
 from numpy import sqrt, random, sin, cos, pi, sum
@@ -72,6 +73,8 @@ class BrownianMotion(MotionModel):
         return self.boundary.reflect_point(old_pt, new_pt)
 
 
+
+
 ## Implement Billiard Motion for Rectangular Domain.
 # All sensors will have same velocity bit will have random angles.
 # Points will move a distance of vel*dt each update.
@@ -94,6 +97,8 @@ class BilliardMotion(MotionModel):
     def reflect(self, old_pt, new_pt, index):
         self.vel_angle[index] = self.boundary.reflect_velocity(old_pt, new_pt)
         return self.boundary.reflect_point(old_pt, new_pt)
+
+
 
 
 ## Implement randomized variant of Billiard motion.
@@ -128,15 +133,11 @@ class CollectiveMotion(MotionModel):
         return pt
 
 
-    def reflect(self, pt: tuple, index: int) -> tuple:
+    def reflect(self, old_pt, new_pt, index) -> tuple:
         v = self.velocities[index]
-        theta = np.arctan2(v[1], v[0])
         norm_v = sqrt(v[0]**2 + v[1]**2)
-        if pt[0] <= self.boundary.x_min or pt[0] >= self.boundary.x_max:
-            theta = pi - theta
-        if pt[1] <= self.boundary.y_min or pt[1] >= self.boundary.y_max:
-            theta = - theta
-        theta %= 2 * pi
+        theta = self.boundary.reflect_velocity(old_pt, new_pt)
+        pt = self.boundary.reflect_point(old_pt, new_pt)
         self.velocities[index] = (norm_v*cos(theta), norm_v*sin(theta))
         return pt
 
@@ -185,7 +186,7 @@ class CollectiveMotion(MotionModel):
         return np.concatenate([dxdt, dydt, dvxdt, dvydt])
 
 
-    def update_points(self, old_points: list) -> list:
+    def update_points(self, old_points, dt) -> list:
         # Remove boundary points, and put into form ode solver wants
         xs = [old_points[i][0] for i in range(len(self.boundary), len(old_points))]
         ys = [old_points[i][1] for i in range(len(self.boundary), len(old_points))]
@@ -210,9 +211,11 @@ class CollectiveMotion(MotionModel):
         points = list(zip(split_state[0], split_state[1]))
         for n, pt in enumerate(points):
             if not self.boundary.in_domain(pt):
-                points[n] = self.reflect(pt, n)
+                points[n] = self.reflect(old_points[len(self.boundary)+n], pt, n)
 
         return old_points[0:len(self.boundary)] + points
+
+
 
 
 
@@ -230,18 +233,13 @@ class DorsognaModel(MotionModel):
         #Not used
         return pt
 
-    def reflect(self, pt: tuple, index: int) -> tuple:
+    def reflect(self, old_pt, new_pt, index) -> tuple:
         v = self.velocities[index]
-        theta = np.arctan2(v[1], v[0])
         norm_v = sqrt(v[0]**2 + v[1]**2)
-        if pt[0] <= self.boundary.x_min or pt[0] >= self.boundary.x_max:
-            theta = pi - theta
-        if pt[1] <= self.boundary.y_min or pt[1] >= self.boundary.y_max:
-            theta = - theta
-        theta %= 2 * pi
+        theta = self.boundary.reflect_velocity(old_pt, new_pt)
+        pt = self.boundary.reflect_point(old_pt, new_pt)
         self.velocities[index] = (norm_v*cos(theta), norm_v*sin(theta))
         return pt
-
 
 
     def gradient(self, xs, ys):
@@ -264,7 +262,6 @@ class DorsognaModel(MotionModel):
                 else:
                     attract_term[j] = self.DO_coeff[0]*np.exp(-pairwise_dist[j]/self.DO_coeff[1])/(self.DO_coeff[1]*pairwise_dist[j])
                     repel_term[j] = self.DO_coeff[2]*np.exp(-pairwise_dist[j]/self.DO_coeff[3])/(self.DO_coeff[3] * pairwise_dist[j])
-
 
             gradUx[i] = sum(((xs[i]-xs[j]) * attract_term[j]) - ((xs[i]-xs[j]) * repel_term[j])
                                for j in range(0, self.n_sensors) if pairwise_dist[j] != 0.0)
@@ -289,7 +286,7 @@ class DorsognaModel(MotionModel):
         return np.concatenate([dxdt, dydt, dvxdt, dvydt])
 
 
-    def update_points(self, old_points: list) -> list:
+    def update_points(self, old_points, dt) -> list:
         # Remove boundary points, and put into form ode solver wants
         xs = [old_points[i][0] for i in range(len(self.boundary), len(old_points))]
         ys = [old_points[i][1] for i in range(len(self.boundary), len(old_points))]
@@ -314,10 +311,49 @@ class DorsognaModel(MotionModel):
         points = list(zip(split_state[0], split_state[1]))
         for n, pt in enumerate(points):
             if not self.boundary.in_domain(pt):
-                points[n] = self.reflect(pt, n)
+                points[n] = self.reflect(old_points[len(self.boundary)+n], pt, n)
 
         return old_points[0:len(self.boundary)] + points
 
 # Coefficients are: [C_attraction, L_attraction, C_repulsion, L_repulsion]
 # DO_coeff = [0.5, 2, 0.5, 0.5]
-# tuned_coeff_2 = [0.95, 1, 1, 0.1]
+# tuned_coeff = [0.95, 1, 1, 0.1]
+
+
+
+class Vicsek(BilliardMotion):
+
+    def __init__(self, dt: float, boundary: Boundary, vel: float, n_int_sensors: int) -> None:
+        super().__init__(dt, boundary)
+        self.velocities = vel
+        self.theta = random.uniform(0, 2 * pi, n_int_sensors + len(boundary))
+        self.n_sensors = n_int_sensors
+
+
+    def update_point(self, pt) -> tuple:
+        return pt
+
+    def reflect(self, old_pt, new_pt, index):
+        self.vel_angle[index] = self.boundary.reflect_velocity(old_pt, new_pt)
+        return self.boundary.reflect_point(old_pt, new_pt)
+
+    def update_points(self, old_points: list, dt) -> list:
+        xs = [old_points[i][0] for i in range(len(self.boundary), len(old_points))]
+        ys = [old_points[i][1] for i in range(len(self.boundary), len(old_points))]
+        new_thetas = [0] * self.n_sensors
+        offset = len(self.boundary)
+        indices = [[] for _ in old_points]
+
+        for i in range(0, self.n_sensors):
+            for j in range(0, self.n_sensors):
+                pass
+
+        self.theta = deepcopy(new_thetas)
+        self.velocities = [(cos(self.theta[i]), sin(self.theta[i])) for i in range(0, self.n_sensors)]
+        points = [(xs[i] + dt*self.velocities[i][0], ys[i] + dt*self.velocities[i][1]) for i in range(0, self.n_sensors)]
+
+        for n, pt in enumerate(points):
+            if not self.boundary.in_domain(pt):
+                points[n] = self.reflect(old_points[len(self.boundary) + n], pt, n)
+
+        return old_points[0:len(self.boundary)] + points

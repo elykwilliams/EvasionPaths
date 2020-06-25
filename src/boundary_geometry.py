@@ -89,7 +89,7 @@ class RectangularDomain(Boundary):
         self.spacing = spacing
 
         # Initialize virtual boundary
-        self.dx = self.spacing * np.sin(np.pi / 6)  # virtual boundary width
+        self.dx = self.spacing
         self.vx_min, self.vx_max = self.x_min - self.dx, self.x_max + self.dx
         self.vy_min, self.vy_max = self.y_min - self.dx, self.y_max + self.dx
 
@@ -127,8 +127,8 @@ class RectangularDomain(Boundary):
             pt = (new_pt[0], self.y_min + abs(self.y_min - new_pt[1]))
         elif new_pt[1] >= self.y_max:
             pt = (new_pt[0], self.y_max - abs(self.y_max - new_pt[1]))
-
         return pt
+
 
     def reflect_velocity(self, old_pt, new_pt):
         vel_angle = np.arctan2(new_pt[1] - old_pt[1], new_pt[0] - old_pt[0])
@@ -140,12 +140,14 @@ class RectangularDomain(Boundary):
         return vel_angle % (2 * np.pi)
 
 
+
+
 class CircularDomain(Boundary):
     def __init__(self, spacing) -> None:
 
         self.spacing = spacing
         self.center = np.array([0, 0])
-        self.radius = 0.9
+        self.radius = 1 - self.spacing
 
         #Initialize virtual boundary
         self.dx = 0.1
@@ -174,3 +176,31 @@ class CircularDomain(Boundary):
             generated_int_pts[i] = rand_radii[i] * generated_int_pts[i][0], rand_radii[i] * generated_int_pts[i][1]
 
         return generated_int_pts
+
+
+    def reflect_point(self, old_pt, new_pt):
+        pt = old_pt
+        vel_angle = np.arctan2(old_pt[1], old_pt[0])
+        trespass_dist = np.linalg.norm(np.asarray(pt) - self.center) - self.radius
+        if trespass_dist >= 0.0:
+            boundary_int = (old_pt[0] - (np.cos(vel_angle)*trespass_dist), old_pt[1] - (np.sin(vel_angle)*trespass_dist))
+            n = -np.asarray(pt) / np.linalg.norm(pt)
+            v_i = np.array([np.cos(vel_angle), np.sin(vel_angle)])
+            v_r = v_i - ((2 * np.dot(v_i, n)) * n)
+            v_r = trespass_dist * (v_r / np.linalg.norm(v_r))
+            new_pt = (boundary_int[0] + v_r[0], boundary_int[1] + v_r[1])
+        else:
+            new_pt = old_pt
+        return new_pt
+
+
+    def reflect_velocity(self, old_pt, new_pt):
+        pt = new_pt
+        vel_angle = np.arctan2(new_pt[1] - old_pt[1], new_pt[0] - old_pt[0])
+        if np.linalg.norm(np.asarray(pt) - self.center) >= self.radius:
+            n = -np.asarray(pt) / np.linalg.norm(pt)
+            v_i = np.array([np.cos(vel_angle), np.sin(vel_angle)])
+            v_r = v_i - ((2 * np.dot(v_i, n)) * n)
+            vel_angle = np.arctan2(v_r[1], v_r[0]) % (2*np.pi)
+        return vel_angle
+

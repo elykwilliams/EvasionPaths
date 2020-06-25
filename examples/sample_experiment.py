@@ -5,13 +5,13 @@ from time_stepping import *
 num_sensors: int = 20
 sensing_radius: float = 0.2
 timestep_size: float = 0.01
+coeff = [0.5, 2, 0.5, 0.5]
 
 boundary: Boundary = RectangularDomain(spacing=sensing_radius)
 
 # noinspection PyTypeChecker
-brownian_motion: MotionModel = BrownianMotion(dt=timestep_size,
-                                              sigma=0.01,
-                                              boundary=boundary)
+DO_model: MotionModel = DorsognaModel(dt=timestep_size, boundary=boundary, max_vel=1, n_int_sensors=num_sensors,
+                                      sensing_radius=sensing_radius, eta_scale_factor=0.5, DO_coeff=coeff)
 
 output_dir: str = "./output"
 filename_base: str = "data"
@@ -23,7 +23,7 @@ n_runs: int = 1
 def simulate() -> float:
 
     simulation = EvasionPathSimulation(boundary=boundary,
-                                       motion_model=brownian_motion,
+                                       motion_model=DO_model,
                                        n_int_sensors=num_sensors,
                                        sensing_radius=sensing_radius,
                                        dt=timestep_size)
