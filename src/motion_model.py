@@ -126,20 +126,18 @@ class Viscek(BilliardMotion):
     def update_points(self, old_points: list, dt: float) -> list:
         self.dt = dt
         offset = len(self.boundary)
-        indices = [[] for _ in old_points]
 
         new_points = self.boundary.points \
             + [self.update_point(pt, offset + n) for n, pt in enumerate(old_points[offset:])]
 
-        if abs(self.dt - self.large_dt) < 1e-6:
-            for i, pti in enumerate(old_points[offset:]):
-                for j, ptj in enumerate(old_points[offset:]):
-                    if j != i and self.dist(pti, ptj) < 2 * self.radius:
-                        indices[i + offset].append(offset + j)
+        if self.dt != self.large_dt:
+            return new_points
 
-            for i, index_list in enumerate(indices):
-                if index_list:
-                    self.vel_angle[i] = (mean([self.vel_angle[j] for j in index_list]) + self.eta()) % (2 * pi)
+        for i, pti in enumerate(old_points[offset:]):
+            index_list = [j for j, ptj in enumerate(old_points[offset:]) if self.dist(pti, ptj) < self.radius]
+
+            if index_list:
+                self.vel_angle[i+offset] = (mean([self.vel_angle[j+offset] for j in index_list]) + self.eta()) % (2 * pi)
 
         return new_points
 
