@@ -69,8 +69,7 @@ class Boundary(ABC):
         return tuple(sorted(a))
 
     ## Reflect a point off the boundary.
-    # If a sensor leaves the domain, we need to move the sensors
-    back in 
+    # If a sensor leaves the domain, we need to move the sensors back in
     @abstractmethod
     def reflect_point(self, old_pt, new_pt):
         return new_pt
