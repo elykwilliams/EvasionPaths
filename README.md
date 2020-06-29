@@ -18,7 +18,7 @@ To configure using the Makefile
 `make install`
 
 
-This will create the EvasionPaths-env conda environment. To run examples you will i still need to activate and deactivate the environment.
+This will create the EvasionPaths-env conda environment. To run examples you will still need to activate and deactivate the environment.
 
 To activate:
 `conda activate EvasionPaths-env`
