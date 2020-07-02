@@ -80,6 +80,7 @@ class CycleLabelling:
             value = self._cycle_label[item]
         except KeyError:
             raise CycleNotFound(item)
+        return value
 
     ## Check if any boundary cycles have an intruder.
     def has_intruder(self):
