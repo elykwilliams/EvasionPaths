@@ -76,7 +76,10 @@ class CycleLabelling:
     ## Protected access to cycle labelling.
     # The cycle labelling should be read only, and all updates managed internally.
     def __getitem__(self, item):
-        return self._cycle_label[item]
+        try:
+            value = self._cycle_label[item]
+        except KeyError:
+            raise CycleNotFound(item)
 
     ## Check if any boundary cycles have an intruder.
     def has_intruder(self):
@@ -229,3 +232,16 @@ class CycleLabelling:
                             connected_simplices)
 
         return StateChange.case2name[state_change.case]
+
+
+class CycleNotFound:
+    def __init__(self, boundary_cycle):
+        self.b = boundary_cycle
+
+    def __str__(self):
+        return "Attempted to retrieve labelling for " + str(self.b) + ", " \
+                 "but this cycle was not found in the cycle labelling.\n" \
+                 "This most likely has occurred because you are tyring to update " \
+                 "the labelling manually an not using the update() function.\n" \
+                 "\nIf this error has occurred as a result of update() please create an issue" \
+                 "on github https://github.com/elykwilliams/EvasionPaths/issues"
