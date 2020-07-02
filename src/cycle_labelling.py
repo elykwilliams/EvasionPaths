@@ -242,7 +242,7 @@ class CycleNotFound:
     def __str__(self):
         return "Attempted to retrieve labelling for " + str(self.b) + ", " \
                  "but this cycle was not found in the cycle labelling.\n" \
-                 "This most likely has occurred because you are tyring to update " \
-                 "the labelling manually an not using the update() function.\n" \
-                 "\nIf this error has occurred as a result of update() please create an issue" \
+                 "This most likely has occurred because you are updating " \
+                 "the labelling manually and not using the update() function.\n" \
+                 "\nIf this error has occurred as a result of update(), please create an issue" \
                  "on github https://github.com/elykwilliams/EvasionPaths/issues"
