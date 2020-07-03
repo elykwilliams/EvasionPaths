@@ -17,21 +17,18 @@ from time_stepping import *
 # that the simulation object should be in the global namespace so that it saves
 # its state (i.e. not passed by value into the update function).
 
-num_sensors = 5
-sensing_radius = 0.095
-timestep_size = 0.1
+num_sensors = 10
+sensing_radius = 0.2
+timestep_size = 0.01
 
 filename_base = "SampleAnimation"
 
 unit_square = RectangularDomain(spacing=sensing_radius)
 
-brownian_motion = BilliardMotion(dt=timestep_size,
-                                 vel=0.1,
-                                 boundary=unit_square,
-                                 n_int_sensors=num_sensors)
+billiard = BilliardMotion(dt=timestep_size, vel=1, boundary=unit_square, n_int_sensors=num_sensors)
 
 simulation = EvasionPathSimulation(boundary=unit_square,
-                                   motion_model=brownian_motion,
+                                   motion_model=billiard,
                                    n_int_sensors=num_sensors,
                                    sensing_radius=sensing_radius,
                                    dt=timestep_size)
@@ -67,7 +64,7 @@ def update(_):
 
     # log the steps that were taken
     with open(filename_base+".log", "a+") as file:
-        file.write("{0:5.2f}: {1}\n".format(simulation.time, simulation.evasion_paths))
+        file.write("{0:5.2f} \n".format(simulation.time))
 
 
 # Animation driver
@@ -77,7 +74,7 @@ def animate():
     n_steps = 250
 
     # milliseconds per frame in resulting mp4 file
-    ms_per_frame = 1000*timestep_size
+    ms_per_frame = 5000*timestep_size
 
     fig = plt.figure(1)
     try:
@@ -85,8 +82,9 @@ def animate():
     except SimulationOver:
         print("Simulation Complete")
     finally:
-        plt.show()  # show plot while computing
-        #ani.save(filename_base+'.mp4')
+        # uncomment below to show plot while computing
+        plt.show()
+        ani.save(filename_base+'.mp4')
 
 
 if __name__ == "__main__":

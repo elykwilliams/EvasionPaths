@@ -2,16 +2,14 @@
 import os
 from time_stepping import *
 
-num_sensors: int = 20
+num_sensors: int = 10
 sensing_radius: float = 0.2
 timestep_size: float = 0.01
-coeff = [0.5, 2, 0.5, 0.5]
 
-boundary: Boundary = RectangularDomain(spacing=sensing_radius)
+unit_square: Boundary = RectangularDomain(spacing=sensing_radius)
 
 # noinspection PyTypeChecker
-DO_model: MotionModel = DorsognaModel(dt=timestep_size, boundary=boundary, max_vel=1, n_int_sensors=num_sensors,
-                                      sensing_radius=sensing_radius, eta_scale_factor=0.5, DO_coeff=coeff)
+billiard: MotionModel = BilliardMotion(dt=timestep_size, boundary=unit_square, vel=1, n_int_sensors=num_sensors)
 
 output_dir: str = "./output"
 filename_base: str = "data"
@@ -22,8 +20,8 @@ n_runs: int = 1
 # Unlike the animation, each simulation needs to create its own simulation object
 def simulate() -> float:
 
-    simulation = EvasionPathSimulation(boundary=boundary,
-                                       motion_model=DO_model,
+    simulation = EvasionPathSimulation(boundary=unit_square,
+                                       motion_model=billiard,
                                        n_int_sensors=num_sensors,
                                        sensing_radius=sensing_radius,
                                        dt=timestep_size)

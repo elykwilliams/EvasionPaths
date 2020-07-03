@@ -7,27 +7,25 @@ from joblib import Parallel, delayed
 # make sure that the simulation to not exit out in the middle, and that if there are
 # errors, we know what they were. This example shows how to catch those errors
 
-num_sensors: int = 20
+num_sensors: int = 10
 sensing_radius: float = 0.2
 timestep_size: float = 0.01
 
-boundary: Boundary = RectangularDomain(spacing=sensing_radius)
+unit_square: Boundary = RectangularDomain(spacing=sensing_radius)
 
 # noinspection PyTypeChecker
-brownian_motion: MotionModel = BrownianMotion(dt=timestep_size,
-                                              sigma=0.01,
-                                              boundary=boundary)
+billiard: MotionModel = BilliardMotion(dt=timestep_size, boundary=unit_square, vel=1, n_int_sensors=num_sensors)
 
 output_dir: str = "./output"
 filename_base: str = "data"
 
-n_runs: int = 1000
+n_runs: int = 10
 
 
 def simulate() -> float:
 
-    simulation = EvasionPathSimulation(boundary=boundary,
-                                       motion_model=brownian_motion,
+    simulation = EvasionPathSimulation(boundary=unit_square,
+                                       motion_model=billiard,
                                        n_int_sensors=num_sensors,
                                        sensing_radius=sensing_radius,
                                        dt=timestep_size)
