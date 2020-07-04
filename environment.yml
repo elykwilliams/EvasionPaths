@@ -11,4 +11,5 @@ dependencies:
   - python=3.6.9
   - scipy
   - setuptools
+  - joblib
 
