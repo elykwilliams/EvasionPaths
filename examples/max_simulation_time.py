@@ -21,8 +21,7 @@ output_dir: str = "./output"
 filename_base: str = "data"
 
 n_runs: int = 1000
-# max_time: int = 600  # time in seconds
-max_time: int = 5
+max_time: int = 600  # time in seconds
 
 class TimedOutExc(Exception):
     pass

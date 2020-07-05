@@ -2,7 +2,7 @@
 import os
 from time_stepping import *
 
-num_sensors: int = 10
+num_sensors: int = 20
 sensing_radius: float = 0.2
 timestep_size: float = 0.01
 

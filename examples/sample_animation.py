@@ -17,7 +17,7 @@ from time_stepping import *
 # that the simulation object should be in the global namespace so that it saves
 # its state (i.e. not passed by value into the update function).
 
-num_sensors = 10
+num_sensors = 20
 sensing_radius = 0.2
 timestep_size = 0.01
 
@@ -83,7 +83,7 @@ def animate():
         print("Simulation Complete")
     finally:
         # uncomment below to show plot while computing
-        plt.show()
+        # plt.show()
         ani.save(filename_base+'.mp4')
 
 

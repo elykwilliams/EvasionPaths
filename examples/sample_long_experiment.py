@@ -7,7 +7,7 @@ from joblib import Parallel, delayed
 # make sure that the simulation to not exit out in the middle, and that if there are
 # errors, we know what they were. This example shows how to catch those errors
 
-num_sensors: int = 10
+num_sensors: int = 20
 sensing_radius: float = 0.2
 timestep_size: float = 0.01
 
