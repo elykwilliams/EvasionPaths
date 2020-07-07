@@ -2,7 +2,7 @@
 import os
 from time_stepping import *
 
-num_sensors: int = 10
+num_sensors: int = 20
 sensing_radius: float = 0.2
 timestep_size: float = 0.01
 
@@ -31,7 +31,11 @@ def simulate() -> float:
 
 def output_data(filename: str, data_points: list) -> None:
     with open(filename, 'a+') as file:
-        file.writelines("%.2f\n" % d for d in data_points)
+        for d in data_points:
+            if type(d) != str:
+                file.writelines("%.2f\n" % d)
+            else:
+                file.writelines(str(d) + "\n")
 
 
 def run_experiment() -> None:

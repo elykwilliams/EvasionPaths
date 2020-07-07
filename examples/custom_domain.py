@@ -172,8 +172,8 @@ class myMotionModel(MotionModel):
 
 
 
-num_sensors = 5
-sensing_radius = 0.1
+num_sensors = 20
+sensing_radius = 0.2
 timestep_size = 0.01
 
 filename_base = "SampleAnimation"

@@ -4,7 +4,7 @@ from time_stepping import *
 from joblib import Parallel, delayed
 
 num_sensors: int = 20
-sensing_radius: float = 0.05
+sensing_radius: float = 0.2
 timestep_size: float = 0.01
 
 unit_square: Boundary = RectangularDomain(spacing=sensing_radius)
