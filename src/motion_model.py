@@ -126,7 +126,6 @@ class Viscek(BilliardMotion):
     def update_points(self, old_points: list, dt: float) -> list:
         self.dt = dt
         offset = len(self.boundary)
-
         new_points = self.boundary.points \
             + [self.update_point(pt, offset + n) for n, pt in enumerate(old_points[offset:])]
 
@@ -134,14 +133,22 @@ class Viscek(BilliardMotion):
             return new_points
 
         for i, pti in enumerate(old_points[offset:]):
-            index_list = [j for j, ptj in enumerate(old_points[offset:]) if self.dist(pti, ptj) < self.radius]
-
+            index_list = [j for j, ptj in enumerate(old_points[offset:]) if self.dist(pti, ptj) < self.radius
+                          and (self.radius < ptj[0] < 1 - self.radius)
+                          and (self.radius < ptj[1] < 1 - self.radius)]
+            # cluster_center = (np.mean([pti[j][0] for j in index_list]), np.mean([pti[j][1] for j in index_list]))
             if index_list:
                 self.vel_angle[i+offset] = (mean([self.vel_angle[j+offset] for j in index_list]) + self.eta()) % (2 * pi)
 
         return new_points
 
 
+
+## Implement D'Orsogna Collective Motion Model
+# Each sensor has a potential determined by it's distance to other sensors nearby which is used to compute dv/dt.
+# This motion model was originally developed to roughly emulate the dynamics of a large school of fish, for example.
+# Sensors are attracted to one another within a certain distance, but within a much shorter distance, they begin repel
+# one another.
 class Dorsogna(MotionModel):
     def __init__(self, dt, boundary, max_vel, n_int_sensors, sensing_radius, eta_scale_factor, DO_coeff):
         super().__init__(dt, boundary)
@@ -158,12 +165,21 @@ class Dorsogna(MotionModel):
         #Not used
         return pt
 
+    ## This updates the velocities of each point before calling the reflect_point function for the given boundary
+    # If the point is outside the boundary, the reflect_point function for the boundary will reflect it accordingly.
     def reflect(self, old_pt, new_pt, index) -> tuple:
         norm_v = norm(self.velocities[index])
         theta = self.boundary.reflect_velocity(old_pt, new_pt)
         self.velocities[index] = (norm_v*cos(theta), norm_v*sin(theta))
         return self.boundary.reflect_point(old_pt, new_pt)
 
+    ## The potential function is a sum of exponential terms that takes the negative pairwise distances as an argument.
+    # Each summand is a difference of two exponential terms, with the "attraction" term being subtracted from the
+    # "repulsion" term for each given pairwise distance. (This is so that the gradient of this function has the
+    # repulsion term being subtracted from the attraction term)
+    # The coefficients of the repulsion and attraction terms determine the strength of repulsion and attraction,
+    # respectively, at a given distance.
+    # /f$ /sum{C_re^{-|x_i - x_j|/L_r} - C_ae^{-|x_i - x_j|/L_a}} /f$
     def gradient(self, xs, ys):
         gradUx, gradUy = [0.0] * self.n_sensors, [0.0] * self.n_sensors
 
@@ -180,6 +196,7 @@ class Dorsogna(MotionModel):
 
         return array(gradUx), array(gradUy)
 
+    ## This computes dx/dt, dy/dt, dvx/dt, dvy/dt which are later solved to compute the next set of x,y coordinates
     def time_derivative(self, _, state):
         # ode solver gives us np array in the form [xvals | yvals | vxvals | vyvals]
         # split into individual np array
@@ -190,10 +207,14 @@ class Dorsogna(MotionModel):
         # I just have d(x, y)/dt = (vx, vy), d(vx, vy)/dt = (1, -1)
         dxdt = split_state[2]
         dydt = split_state[3]
-        dvxdt = (1.5 - (0.5 * norm((dxdt, dydt))**2)) * dxdt - gradU[0]
-        dvydt = (1.5 - (0.5 * norm((dxdt, dydt))**2)) * dydt - gradU[1]
+        dvxdt = (5 - (0.5 * norm((dxdt, dydt))**2)) * dxdt - gradU[0]
+        dvydt = (5 - (0.5 * norm((dxdt, dydt))**2)) * dydt - gradU[1]
         return np.concatenate([dxdt, dydt, dvxdt, dvydt])
 
+    ## This solves an initial value problem to compute the next x,y coordinates
+    # This solves for the next x,y coordinates using the equations for dx/dt, dy/dt, dvx/dt, and dvy/dt and the previous
+    # x,y coordinates and velocitites as initial values. If the new x,y coordinates are outside the boundary, the
+    # reflect function for boundary is called
     def update_points(self, old_points, dt) -> list:
         self.dt = dt
         # Remove boundary points, and put into form ode solver wants
