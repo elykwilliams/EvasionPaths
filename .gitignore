@@ -386,3 +386,4 @@ htmlcov
 /examples/movies/movies.db
 *.orig
 CHANGELOG.temp
+/tests/_trial_temp/

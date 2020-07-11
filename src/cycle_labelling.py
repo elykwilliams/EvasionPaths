@@ -96,6 +96,8 @@ class CycleLabelling:
         self._delete_all(removed_cycles)
 
     def _remove_1simplex(self, removed_cycles, added_cycles):
+        assert(len(added_cycles) == 1)
+
         self._cycle_label[added_cycles[0]] = any([self._cycle_label[s] for s in removed_cycles])
         self._delete_all(removed_cycles)
 
