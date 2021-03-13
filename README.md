@@ -26,6 +26,11 @@ To activate:
 To deactivate:
 `conda deactivate EvasionPaths-env`
 
+# Configuation in Windows
+Use the Anaconda Navigator to import the environment.yml file. This will create the environment. 
+Then, be sure to set this environment as the project interpreter in your IDE of choice. 
+Finally, be sure to set the `src` folder as a Source folder in your IDE (otherwise it will complain about modules not being found)
+
 # Documentation
 Documentation for this project can be found [here](https://elykwilliams.github.io/EvasionPaths/)
 
