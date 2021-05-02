@@ -83,12 +83,12 @@ class BilliardMotion(MotionModel):
     def __init__(self, dt: float, boundary: Boundary, vel: float, n_int_sensors: int) -> None:
         super().__init__(dt, boundary)
         self.vel = vel
-        self.vel_angle = random.uniform(0, 2 * pi, n_int_sensors + len(boundary))
+        self.vel_angle = random.uniform(0, 2 * pi, n_int_sensors + len(boundary)).tolist()
 
     ## Update point using x = x + v*dt.
     def update_point(self, pt: tuple, index: int) -> tuple:
         theta = self.vel_angle[index]
-        new_pt = (pt[0] + self.dt * self.vel * cos(theta)), (pt[1] + self.dt * self.vel * sin(theta))
+        new_pt = (pt[0] + self.dt * self.vel * math.cos(theta)), (pt[1] + self.dt * self.vel * math.sin(theta))
         return new_pt if self.boundary.in_domain(new_pt) else self.reflect(pt, new_pt, index)
 
     def reflect(self, old_pt, new_pt, index):
@@ -137,7 +137,7 @@ class Viscek(BilliardMotion):
             index_list = [j for j, ptj in enumerate(old_points[offset:]) if self.dist(pti, ptj) < self.radius]
 
             if index_list:
-                self.vel_angle[i+offset] = (mean([self.vel_angle[j+offset] for j in index_list]) + self.eta()) % (2 * pi)
+                self.vel_angle[i+offset] = float(mean([self.vel_angle[j+offset] for j in index_list]) + self.eta()) % (2 * pi)
 
         return new_points
 

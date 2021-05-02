@@ -5,6 +5,7 @@
 # of the BSD-3 license with this file.
 # If not, visit: https://opensource.org/licenses/BSD-3-Clause
 # ************************************************************
+import numpy
 
 from cycle_labelling import *
 from topological_state import *
@@ -89,3 +90,20 @@ class EvasionPathSimulation:
 
             if level == 0:
                 return
+
+    ## Initialize simiulation with given sensor positions.
+    def initalize_from_points(self, filename) -> None:
+        pass
+
+    ## Takes output from saved_state to initialize continuation run.
+    def load_state(self, filename: str) -> None:
+        pass
+
+    ## Dumps current state to be resumed later.
+    def save_state(self, filename: str) -> None:
+        assert filename, "Error: Output filename not specified"
+        import yaml
+        with open(filename, "w") as file:
+            file.write(yaml.dump(self, default_flow_style=False))
+
+

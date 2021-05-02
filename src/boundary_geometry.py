@@ -5,6 +5,7 @@
 # of the BSD-3 license with this file.
 # If not, visit: https://opensource.org/licenses/BSD-3-Clause
 # ************************************************************
+import math
 
 import numpy as np
 from numpy import sin, cos, arange, pi, array, arctan2
@@ -77,7 +78,7 @@ class Boundary(ABC):
     @abstractmethod
     def reflect_velocity(self, old_pt, new_pt):
         vel_angle = np.arctan2(new_pt[1] - old_pt[1], new_pt[0] - old_pt[0])
-        return vel_angle
+        return float(vel_angle)
 
 
 ## a rectangular domain using virtual boundary.
@@ -101,7 +102,7 @@ class RectangularDomain(Boundary):
         self.spacing = spacing
 
         # Initialize fence boundary
-        self.dx = self.spacing * np.sin(np.pi / 6)  # virtual boundary width
+        self.dx = self.spacing * math.sin(np.pi / 6)  # virtual boundary width
         self.vx_min, self.vx_max = self.x_min - self.dx, self.x_max + self.dx
         self.vy_min, self.vy_max = self.y_min - self.dx, self.y_max + self.dx
 
@@ -115,10 +116,12 @@ class RectangularDomain(Boundary):
     ## Generate points in counter-clockwise order.
     def generate_boundary_points(self) -> list:
         points = []
-        points.extend([(x, self.vy_min) for x in np.arange(self.vx_min, 0.999*self.vx_max, self.spacing)])  # bottom
-        points.extend([(self.vx_max, y) for y in np.arange(self.vy_min, 0.999*self.vx_max, self.spacing)])  # right
-        points.extend([(self.x_max - x, self.vy_max) for x in np.arange(self.vx_min, 0.999*self.vx_max, self.spacing)])  # top
-        points.extend([(self.vx_min, self.y_max - y) for y in np.arange(self.vy_min, 0.999*self.vy_max, self.spacing)])  # left
+        points.extend([(float(x), self.vy_min) for x in np.arange(self.vx_min, 0.999*self.vx_max, self.spacing)])  # bottom
+        points.extend([(self.vx_max, float(y)) for y in np.arange(self.vy_min, 0.999*self.vx_max, self.spacing)])  # right
+        points.extend([(self.x_max - float(x), self.vy_max)
+                       for x in np.arange(self.vx_min, 0.999*self.vx_max, self.spacing)])  # top
+        points.extend([(self.vx_min, self.y_max - float(y))
+                       for y in np.arange(self.vy_min, 0.999*self.vy_max, self.spacing)])  # left
         return points
 
     ## Generate points distributed randomly (uniformly) in the interior.
@@ -156,7 +159,7 @@ class RectangularDomain(Boundary):
             vel_angle = np.pi - vel_angle
         if new_pt[1] <= self.y_min or new_pt[1] >= self.y_max:
             vel_angle = - vel_angle
-        return vel_angle % (2 * np.pi)
+        return float(vel_angle) % (2 * math.pi)
 
 
 ## a circular domain using virtual boundary.
@@ -184,7 +187,7 @@ class CircularDomain(Boundary):
 
     ## Generate points in counter-clockwise order.
     def generate_boundary_points(self) -> list:
-        return [(self.v_rad*cos(t), self.v_rad*sin(t)) for t in arange(0, 2 * pi, self.spacing)]
+        return [(self.v_rad*math.cos(t), self.v_rad*math.sin(t)) for t in arange(0, 2 * pi, self.spacing)]
 
     ## Generate points distributed randomly (uniformly) in the interior.
     def generate_interior_points(self, n_int_sensors):
