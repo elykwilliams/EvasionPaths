@@ -56,6 +56,10 @@ class EvasionPathSimulation:
             self.points = boundary.generate_points(n_int_sensors)
         else:
             self.points = boundary.generate_boundary_points() + points
+            if motion_model.n_sensors:
+                assert motion_model.n_sensors == len(points), \
+                    "motion_model.n_sensors != len(points) \n"\
+                    "Use the correct number of sensors when initializing the motion model."
 
         self.state = TopologicalState(self.points, self.sensing_radius, self.boundary)
         self.cycle_label = CycleLabelling(self.state)

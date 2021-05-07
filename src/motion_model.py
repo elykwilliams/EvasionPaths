@@ -24,6 +24,7 @@ class MotionModel(ABC):
     def __init__(self, dt: float, boundary: Boundary) -> None:
         self.dt = dt
         self.boundary = boundary
+        self.n_sensors = None
 
     ## Update an individual point.
     # This function will be called on all points.
@@ -31,11 +32,11 @@ class MotionModel(ABC):
     # in the set of ALL points, and can be useful in looking up
     # sensor specific data. Will return new position or sensor.
     @abstractmethod
-    def update_point(self, pt: tuple, index: int) -> tuple:
+    def update_point(self, pt: tuple, sensor_id: int) -> tuple:
         return pt
 
     @abstractmethod
-    def reflect(self, old_pt, new_pt, index):
+    def reflect(self, old_pt, new_pt, sensor_id):
         self.boundary.reflect_velocity(old_pt, new_pt)
         return self.boundary.reflect_point(old_pt, new_pt)
 
@@ -46,7 +47,7 @@ class MotionModel(ABC):
     def update_points(self, old_points: list, dt: float) -> list:
         self.dt = dt
         return self.boundary.points \
-               + [self.update_point(pt, n) for n, pt in enumerate(old_points) if n >= len(self.boundary)]
+            + [self.update_point(pt, n) for n, pt in enumerate(old_points) if n >= len(self.boundary)]
 
 
 ## Provide random motion for rectangular domain.
@@ -64,11 +65,11 @@ class BrownianMotion(MotionModel):
         return self.sigma * sqrt(self.dt) * random.normal(0, 1)
 
     ## Update each coordinate with brownian model.
-    def update_point(self, old_pt: tuple, index) -> tuple:
+    def update_point(self, old_pt: tuple, sensor_id) -> tuple:
         new_pt = old_pt[0] + self.epsilon(), old_pt[1] + self.epsilon()
-        return new_pt if self.boundary.in_domain(new_pt) else self.reflect(old_pt, new_pt, index)
+        return new_pt if self.boundary.in_domain(new_pt) else self.reflect(old_pt, new_pt, sensor_id)
 
-    def reflect(self, old_pt, new_pt, index):
+    def reflect(self, old_pt, new_pt, sensor_id):
         return self.boundary.reflect_point(old_pt, new_pt)
 
 
@@ -84,15 +85,16 @@ class BilliardMotion(MotionModel):
         super().__init__(dt, boundary)
         self.vel = vel
         self.vel_angle = random.uniform(0, 2 * pi, n_int_sensors + len(boundary)).tolist()
+        self.n_sensors = n_int_sensors  # used in point-wise simulation initialization
 
     ## Update point using x = x + v*dt.
-    def update_point(self, pt: tuple, index: int) -> tuple:
-        theta = self.vel_angle[index]
+    def update_point(self, pt: tuple, sensor_id: int) -> tuple:
+        theta = self.vel_angle[sensor_id]
         new_pt = (pt[0] + self.dt * self.vel * math.cos(theta)), (pt[1] + self.dt * self.vel * math.sin(theta))
-        return new_pt if self.boundary.in_domain(new_pt) else self.reflect(pt, new_pt, index)
+        return new_pt if self.boundary.in_domain(new_pt) else self.reflect(pt, new_pt, sensor_id)
 
-    def reflect(self, old_pt, new_pt, index):
-        self.vel_angle[index] = self.boundary.reflect_velocity(old_pt, new_pt)
+    def reflect(self, old_pt, new_pt, sensor_id):
+        self.vel_angle[sensor_id] = self.boundary.reflect_velocity(old_pt, new_pt)
         return self.boundary.reflect_point(old_pt, new_pt)
 
 
@@ -103,10 +105,10 @@ class RunAndTumble(BilliardMotion):
     ## Update angles before updating points.
     # Each update every point has a 1 : 5 chance of having its velocity
     # angle changed. Then update as normal.
-    def update_point(self, pt: tuple, index: int) -> tuple:
+    def update_point(self, pt: tuple, sensor_id: int) -> tuple:
         if random.randint(0, 5) == 4:
-            self.vel_angle[index] = random.uniform(0, 2 * pi)
-        return super().update_point(pt, index)
+            self.vel_angle[sensor_id] = random.uniform(0, 2 * pi)
+        return super().update_point(pt, sensor_id)
 
 
 class Viscek(BilliardMotion):
@@ -128,7 +130,7 @@ class Viscek(BilliardMotion):
         offset = len(self.boundary)
 
         new_points = self.boundary.points \
-            + [self.update_point(pt, offset + n) for n, pt in enumerate(old_points[offset:])]
+                     + [self.update_point(pt, offset + n) for n, pt in enumerate(old_points[offset:])]
 
         if self.dt != self.large_dt:
             return new_points
@@ -137,7 +139,8 @@ class Viscek(BilliardMotion):
             index_list = [j for j, ptj in enumerate(old_points[offset:]) if self.dist(pti, ptj) < self.radius]
 
             if index_list:
-                self.vel_angle[i+offset] = float(mean([self.vel_angle[j+offset] for j in index_list]) + self.eta()) % (2 * pi)
+                self.vel_angle[i + offset] = float(
+                    mean([self.vel_angle[j + offset] for j in index_list]) + self.eta()) % (2 * pi)
 
         return new_points
 
@@ -155,13 +158,13 @@ class Dorsogna(MotionModel):
         self.DO_coeff = DO_coeff
 
     def update_point(self, pt: tuple, index: int) -> tuple:
-        #Not used
+        # Not used
         return pt
 
     def reflect(self, old_pt, new_pt, index) -> tuple:
         norm_v = norm(self.velocities[index])
         theta = self.boundary.reflect_velocity(old_pt, new_pt)
-        self.velocities[index] = (norm_v*cos(theta), norm_v*sin(theta))
+        self.velocities[index] = (norm_v * cos(theta), norm_v * sin(theta))
         return self.boundary.reflect_point(old_pt, new_pt)
 
     def gradient(self, xs, ys):
@@ -171,12 +174,11 @@ class Dorsogna(MotionModel):
             for j in range(self.n_sensors):
                 r = norm((xs[i] - xs[j], ys[i] - ys[j]))
                 if 0.0 < r < 2 * self.sensing_radius:
+                    attract_term = (self.DO_coeff[0] * np.exp(-r / self.DO_coeff[1]) / (self.DO_coeff[1] * r))
+                    repel_term = (self.DO_coeff[2] * np.exp(-r / self.DO_coeff[3]) / (self.DO_coeff[3] * r))
 
-                    attract_term = (self.DO_coeff[0]*np.exp(-r/self.DO_coeff[1]) / (self.DO_coeff[1]*r))
-                    repel_term = (self.DO_coeff[2]*np.exp(-r/self.DO_coeff[3]) / (self.DO_coeff[3]*r))
-
-                    gradUx[i] += (xs[i]-xs[j]) * attract_term - (xs[i]-xs[j]) * repel_term
-                    gradUy[i] += (ys[i]-ys[j]) * attract_term - (ys[i]-ys[j]) * repel_term
+                    gradUx[i] += (xs[i] - xs[j]) * attract_term - (xs[i] - xs[j]) * repel_term
+                    gradUy[i] += (ys[i] - ys[j]) * attract_term - (ys[i] - ys[j]) * repel_term
 
         return array(gradUx), array(gradUy)
 
@@ -190,8 +192,8 @@ class Dorsogna(MotionModel):
         # I just have d(x, y)/dt = (vx, vy), d(vx, vy)/dt = (1, -1)
         dxdt = split_state[2]
         dydt = split_state[3]
-        dvxdt = (1.5 - (0.5 * norm((dxdt, dydt))**2)) * dxdt - gradU[0]
-        dvydt = (1.5 - (0.5 * norm((dxdt, dydt))**2)) * dydt - gradU[1]
+        dvxdt = (1.5 - (0.5 * norm((dxdt, dydt)) ** 2)) * dxdt - gradU[0]
+        dvydt = (1.5 - (0.5 * norm((dxdt, dydt)) ** 2)) * dydt - gradU[1]
         return np.concatenate([dxdt, dydt, dvxdt, dvydt])
 
     def update_points(self, old_points, dt) -> list:
@@ -220,6 +222,6 @@ class Dorsogna(MotionModel):
         points = list(zip(split_state[0], split_state[1]))
         for n, pt in enumerate(points):
             if not self.boundary.in_domain(pt):
-                points[n] = self.reflect(old_points[n+len(self.boundary)], pt, n)
+                points[n] = self.reflect(old_points[n + len(self.boundary)], pt, n)
 
         return old_points[0:len(self.boundary)] + points
