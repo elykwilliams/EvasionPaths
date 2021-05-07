@@ -5,8 +5,6 @@
 # of the BSD-3 license with this file.
 # If not, visit: https://opensource.org/licenses/BSD-3-Clause
 # ************************************************************
-import numpy
-
 import pickle
 from cycle_labelling import *
 from topological_state import *
@@ -39,7 +37,8 @@ class EvasionPathSimulation:
     # If end_time is set to a non-zero value, use sooner of max cutoff time or  cleared
     # domain. Set to 0 to disable.
     def __init__(self, boundary: Boundary, motion_model: MotionModel,
-                 n_int_sensors: int, sensing_radius: float, dt: float, end_time: int = 0) -> None:
+                 n_int_sensors: int, sensing_radius: float, dt: float, end_time: int = 0,
+                 points=[]) -> None:
 
         self.motion_model = motion_model
         self.boundary = boundary
@@ -53,7 +52,10 @@ class EvasionPathSimulation:
         self.time = 0
 
         # Point data
-        self.points = boundary.generate_points(n_int_sensors)
+        if not points:
+            self.points = boundary.generate_points(n_int_sensors)
+        else:
+            self.points = boundary.generate_boundary_points() + points
 
         self.state = TopologicalState(self.points, self.sensing_radius, self.boundary)
         self.cycle_label = CycleLabelling(self.state)
@@ -92,10 +94,6 @@ class EvasionPathSimulation:
             if level == 0:
                 return
 
-    ## Initialize simiulation with given sensor positions.
-    def initialize_from_points(self, filename) -> None:
-        pass
-
 
 ## Takes output from save_state() to initialize a simulation.
 # WARNING: Only use pickle files created by this software on a specific machine.
@@ -115,6 +113,3 @@ def save_state(simulation, filename: str) -> None:
     assert filename, "Error: Output filename not specified"
     with open(filename, "wb") as file:
         pickle.dump(simulation, file)
-
-
-
