@@ -7,6 +7,7 @@
 # ************************************************************
 import numpy
 
+import pickle
 from cycle_labelling import *
 from topological_state import *
 from motion_model import *
@@ -92,18 +93,28 @@ class EvasionPathSimulation:
                 return
 
     ## Initialize simiulation with given sensor positions.
-    def initalize_from_points(self, filename) -> None:
+    def initialize_from_points(self, filename) -> None:
         pass
 
-    ## Takes output from saved_state to initialize continuation run.
-    def load_state(self, filename: str) -> None:
-        pass
 
-    ## Dumps current state to be resumed later.
-    def save_state(self, filename: str) -> None:
-        assert filename, "Error: Output filename not specified"
-        import yaml
-        with open(filename, "w") as file:
-            file.write(yaml.dump(self, default_flow_style=False))
+## Takes output from save_state() to initialize a simulation.
+# WARNING: Only use pickle files created by this software on a specific machine.
+#          do not send pickle files over a network.
+# Load a previously saved simulation.
+def load_state(filename: str) -> EvasionPathSimulation:
+    assert filename, "Error: Output filename not specified"
+    with open(filename, "rb") as file:
+        return pickle.load(file)
+
+
+## Dumps current state to be resumed later.
+# This function is used to save the current state of a simulation.
+# This is useful for saving a random initial state for testing or
+# for saving an incomplete simulation to restart later.
+def save_state(simulation, filename: str) -> None:
+    assert filename, "Error: Output filename not specified"
+    with open(filename, "wb") as file:
+        pickle.dump(simulation, file)
+
 
 
