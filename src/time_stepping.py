@@ -38,7 +38,7 @@ class EvasionPathSimulation:
     # domain. Set to 0 to disable.
     def __init__(self, boundary: Boundary, motion_model: MotionModel,
                  n_int_sensors: int, sensing_radius: float, dt: float, end_time: int = 0,
-                 points=[]) -> None:
+                 points=()) -> None:
 
         self.motion_model = motion_model
         self.boundary = boundary
