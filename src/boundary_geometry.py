@@ -24,7 +24,7 @@ class Boundary(ABC):
     ## Must initialize the boundary points and "alpha_cycle".
     # The points stored are the points on the boundary only.
     def __init__(self) -> None:
-        self.points = self.generate_boundary_points()
+        self.points = self.generate_fence()
         self.alpha_cycle = self.get_alpha_cycle()
 
     ## length of boundary is number of boundary sensors.
@@ -40,7 +40,7 @@ class Boundary(ABC):
     # Points must be generated in counterclockwise order so that the
     # alpha_cycle can be easily computed.
     @abstractmethod
-    def generate_boundary_points(self):
+    def generate_fence(self):
         return []
 
     ## Generate n_int sensors randomly inside the domain.
@@ -55,11 +55,6 @@ class Boundary(ABC):
     def domain_boundary_points(self):
         x_pts, y_pts = [], []
         return x_pts, y_pts
-
-    ## Return list of all points.
-    # Boundary points must come first and be non-empty.
-    def generate_points(self, n_int_sensors: int) -> list:
-        return self.points + self.generate_interior_points(n_int_sensors)
 
     ## construct boundary cycle.
     # the alpha_cycle is the boundary cycle going counter-closckwise around the outside
@@ -113,7 +108,7 @@ class RectangularDomain(Boundary):
                and self.y_min <= point[1] <= self.y_max
 
     ## Generate points in counter-clockwise order.
-    def generate_boundary_points(self) -> list:
+    def generate_fence(self) -> list:
         points = []
         points.extend([(x, self.vy_min) for x in np.arange(self.vx_min, 0.999*self.vx_max, self.spacing)])  # bottom
         points.extend([(self.vx_max, y) for y in np.arange(self.vy_min, 0.999*self.vx_max, self.spacing)])  # right
@@ -185,7 +180,7 @@ class CircularDomain(Boundary):
         return norm(point) < self.radius
 
     ## Generate points in counter-clockwise order.
-    def generate_boundary_points(self) -> list:
+    def generate_fence(self) -> list:
         return [(self.v_rad*np.cos(t), self.v_rad*np.sin(t)) for t in arange(0, 2 * pi, self.spacing)]
 
     ## Generate points distributed randomly (uniformly) in the interior.

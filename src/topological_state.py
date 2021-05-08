@@ -27,10 +27,10 @@ class TopologicalState(object):
 
     ## Compute Alpha-complex and combinatorial map and extract simplices and boundary cycles. Also
     # save connectivity information.
-    def __init__(self, sensors, boundary):
-        points = [sensor.position for sensor in sensors]
+    def __init__(self, sensor_network, boundary):
+        points = [sensor.position for sensor in sensor_network]
         alpha_complex = AlphaComplex(points)
-        simplex_tree = alpha_complex.create_simplex_tree(max_alpha_square=sensors[0].radius ** 2)
+        simplex_tree = alpha_complex.create_simplex_tree(max_alpha_square=sensor_network.sensing_radius ** 2)
 
         self._simplices = [[], [], []]
         self._simplices[0] = [simplex[0] for simplex, _ in simplex_tree.get_skeleton(0)]

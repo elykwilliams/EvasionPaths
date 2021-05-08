@@ -49,7 +49,7 @@ class EvasionPathSimulation:
         self.time = 0
 
         self.sensor_network = SensorNetwork(motion_model, boundary, sensing_radius, n_int_sensors, points)
-        self.state = TopologicalState(self.sensor_network.sensors, self.boundary)
+        self.state = TopologicalState(self.sensor_network, self.boundary)
         self.cycle_label = CycleLabelling(self.state)
 
     ## Run until no more intruders.
@@ -67,9 +67,8 @@ class EvasionPathSimulation:
         dt = self.dt * 2 ** -level
 
         for _ in range(2):
-
             self.sensor_network.move(dt)
-            new_state = TopologicalState(self.sensor_network.sensors, self.boundary)
+            new_state = TopologicalState(self.sensor_network, self.boundary)
             state_change = StateChange(self.state, new_state)
 
             if state_change.is_atomic():

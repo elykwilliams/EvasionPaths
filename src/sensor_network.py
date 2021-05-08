@@ -7,40 +7,56 @@ class Sensor:
         self.radius = sensing_radius
         self.boundary_flag = boundary_sensor
 
-    def update_position(self, motion_model, dt, pt=()):
+    def move(self, motion_model, dt, pt=()):
+        if self.boundary_flag:
+            return
+
         if pt:
             self.position = pt
         else:
             pass
 
-    def update_old_position(self):
+    def update(self):
+        assert not self.boundary_flag, "Boundary sensors cannot be updated"
         self.old_pos = self.position
 
 
 class SensorNetwork:
-    def __init__(self, motion_model, boundary, sensing_radius, n_sensors, points):
+    def __init__(self, motion_model, boundary, sensing_radius, n_sensors=0, points=(), velocities=()):
+        if velocities:
+            assert len(points) == len(velocities), \
+                "len(points) != len(velocities)"
+        if n_sensors and points:
+            assert len(points) == n_sensors, \
+                "The number points specified is different than the number of points provided"
+
         self.motion_model = motion_model
         self.sensing_radius = sensing_radius
-        # Initialize sensor positions
-        if points and motion_model.n_sensors != len(points):
-            assert False, \
-                "motion_model.n_sensors != len(points) \n"\
-                "Use the correct number of sensors when initializing the motion model."
 
-        self.sensors = [Sensor(pt, (0, 0), sensing_radius, True) for pt in boundary.generate_boundary_points()]
-        if points:
-            self.sensors.extend([Sensor(pt, None, sensing_radius) for pt in points])
+        # Initialize sensor positions
+
+        self.fence_sensors = [Sensor(pt, (0, 0), sensing_radius, True) for pt in boundary.generate_fence()]
+
+        if velocities:
+            self.mobile_sensors = [Sensor(pt, v, sensing_radius) for pt, v in zip(points, velocities)]
+        elif points:
+            self.mobile_sensors = [Sensor(pt, None, sensing_radius) for pt in points]
         else:
-            self.sensors.extend([Sensor(pt, None, sensing_radius)
-                                 for pt in boundary.generate_interior_points(n_sensors)])
+            # vel = self.motion_model.initialize_velocity()
+            vel = None
+            self.mobile_sensors = [Sensor(pt, vel, sensing_radius) for pt in boundary.generate_interior_points(n_sensors)]
+
+    def __iter__(self):
+        return iter(self.fence_sensors + self.mobile_sensors)
 
     def move(self, dt):
-        points = [s.old_pos for s in self.sensors]
+        sensors = self.fence_sensors + self.mobile_sensors
+        points = [s.old_pos for s in sensors]
         motion_model_points = self.motion_model.update_points(points, dt)
 
-        for sensor, pt in zip(self.sensors, motion_model_points):
-            sensor.update_position(self.motion_model, dt, pt)
+        for sensor, pt in zip(sensors, motion_model_points):
+            sensor.move(self.motion_model, dt, pt)
 
     def update(self):
-        for s in self.sensors:
-            s.update_old_position()
+        for s in self.mobile_sensors:
+            s.update()
