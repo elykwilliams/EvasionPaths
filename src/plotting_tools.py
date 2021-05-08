@@ -16,7 +16,7 @@ def get_graph(sim):
         this function is meant to help with plotting and not to be used internally"""
     from gudhi import AlphaComplex
     alpha_complex = AlphaComplex([s.position for s in sim.sensor_network.sensors])
-    simplex_tree = alpha_complex.create_simplex_tree(max_alpha_square=sim.sensing_radius ** 2)
+    simplex_tree = alpha_complex.create_simplex_tree(max_alpha_square=sim.sensor_network.sensing_radius ** 2)
 
     simplices1 = [tuple(simplex) for simplex, _ in simplex_tree.get_skeleton(1) if len(simplex) == 2]
 
@@ -59,7 +59,7 @@ def show_sensor_points(sim):
 def show_sensor_radius(sim):
     axis = plt.gca()
     for pt in [s.position for s in sim.sensor_network.sensors]:
-        axis.add_artist(plt.Circle(pt, sim.sensing_radius, color='b', alpha=0.1, clip_on=False))
+        axis.add_artist(plt.Circle(pt, sim.sensor_network.sensing_radius, color='b', alpha=0.1, clip_on=False))
 
 
 def show_possible_intruder(sim):

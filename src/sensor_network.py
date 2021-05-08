@@ -20,7 +20,7 @@ class Sensor:
 class SensorNetwork:
     def __init__(self, motion_model, boundary, sensing_radius, n_sensors, points):
         self.motion_model = motion_model
-
+        self.sensing_radius = sensing_radius
         # Initialize sensor positions
         if points and motion_model.n_sensors != len(points):
             assert False, \
