@@ -90,7 +90,7 @@ class BilliardMotion(MotionModel):
     ## Update point using x = x + v*dt.
     def update_point(self, pt: tuple, sensor_id: int) -> tuple:
         theta = self.vel_angle[sensor_id]
-        new_pt = (pt[0] + self.dt * self.vel * math.cos(theta)), (pt[1] + self.dt * self.vel * math.sin(theta))
+        new_pt = (pt[0] + self.dt * self.vel * np.cos(theta)), (pt[1] + self.dt * self.vel * np.sin(theta))
         return new_pt if self.boundary.in_domain(new_pt) else self.reflect(pt, new_pt, sensor_id)
 
     def reflect(self, old_pt, new_pt, sensor_id):

@@ -9,6 +9,7 @@ import pickle
 from cycle_labelling import *
 from topological_state import *
 from motion_model import *
+from sensor_network import *
 
 
 ## Exception indicating that atomic transition not found.
@@ -26,24 +27,6 @@ class MaxRecursionDepth(Exception):
                + str(self.state_change)
 
 
-class Sensor:
-    def __init__(self, position, velocity, sensing_radius, boundary_sensor=False):
-        self.position = position
-        self.old_pos = position
-        self.velocity = velocity
-        self.radius = sensing_radius
-        self.boundary_flag = boundary_sensor
-
-    def update_position(self, motion_model, dt, pt=()):
-        if pt:
-            self.position = pt
-        else:
-            pass
-
-    def update_old_position(self):
-        self.old_pos = self.position
-
-
 ## This class provides the main interface for running a simulation.
 # It provides the ability to preform a single timestep manually, run
 # until there are no possible intruders, or until a max time is reached.
@@ -58,9 +41,7 @@ class EvasionPathSimulation:
                  n_int_sensors: int, sensing_radius: float, dt: float, end_time: int = 0,
                  points=()) -> None:
 
-        self.motion_model = motion_model
         self.boundary = boundary
-        self.sensing_radius = sensing_radius
         # Parameters
         self.dt = dt
         self.Tend = end_time
@@ -68,20 +49,8 @@ class EvasionPathSimulation:
         # Internal time keeping
         self.time = 0
 
-        # Initialize sensor positions
-        if points and motion_model.n_sensors != len(points):
-            assert False, \
-                "motion_model.n_sensors != len(points) \n"\
-                "Use the correct number of sensors when initializing the motion model."
-
-        self.sensors = [Sensor(pt, (0, 0), sensing_radius, True) for pt in boundary.generate_boundary_points()]
-        if points:
-            self.sensors.extend([Sensor(pt, None, sensing_radius) for pt in points])
-        else:
-            self.sensors.extend([Sensor(pt, None, sensing_radius)
-                                 for pt in boundary.generate_interior_points(n_int_sensors)])
-
-        self.state = TopologicalState(self.sensors, self.boundary)
+        self.sensor_network = SensorNetwork(motion_model, boundary, sensing_radius, n_int_sensors, points)
+        self.state = TopologicalState(self.sensor_network.sensors, self.boundary)
         self.cycle_label = CycleLabelling(self.state)
 
     ## Run until no more intruders.
@@ -102,18 +71,18 @@ class EvasionPathSimulation:
 
         for _ in range(2):
 
-            points = [s.old_pos for s in self.sensors]
-            motion_model_points = self.motion_model.update_points(points, dt)
+            points = [s.old_pos for s in self.sensor_network.sensors]
+            motion_model_points = self.sensor_network.motion_model.update_points(points, dt)
 
-            for sensor, pt in zip(self.sensors, motion_model_points):
-                sensor.update_position(self.motion_model, dt, pt)
+            for sensor, pt in zip(self.sensor_network.sensors, motion_model_points):
+                sensor.update_position(self.sensor_network.motion_model, dt, pt)
 
-            new_state = TopologicalState(self.sensors, self.boundary)
+            new_state = TopologicalState(self.sensor_network.sensors, self.boundary)
             state_change = StateChange(self.state, new_state)
 
             if state_change.is_atomic():
                 self.cycle_label.update(state_change)
-                for s in self.sensors:
+                for s in self.sensor_network.sensors:
                     s.update_old_position()
                 self.state = new_state
             elif level + 1 == 25:
