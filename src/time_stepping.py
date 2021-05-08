@@ -42,11 +42,10 @@ class EvasionPathSimulation:
                  points=()) -> None:
 
         self.boundary = boundary
-        # Parameters
+
+        # time settings
         self.dt = dt
         self.Tend = end_time
-
-        # Internal time keeping
         self.time = 0
 
         self.sensor_network = SensorNetwork(motion_model, boundary, sensing_radius, n_int_sensors, points)
@@ -56,11 +55,9 @@ class EvasionPathSimulation:
     ## Run until no more intruders.
     # exit if max time is set. Returns simulation time.
     def run(self) -> float:
-        while self.cycle_label.has_intruder():
-            self.time += self.dt
+        while self.cycle_label.has_intruder() and self.Tend < self.time:
             self.do_timestep()
-            if 0 < self.Tend < self.time:
-                break
+            self.time += self.dt
         return self.time
 
     ## To single timestep.
@@ -71,20 +68,12 @@ class EvasionPathSimulation:
 
         for _ in range(2):
 
-            points = [s.old_pos for s in self.sensor_network.sensors]
-            motion_model_points = self.sensor_network.motion_model.update_points(points, dt)
-
-            for sensor, pt in zip(self.sensor_network.sensors, motion_model_points):
-                sensor.update_position(self.sensor_network.motion_model, dt, pt)
-
+            self.sensor_network.move(dt)
             new_state = TopologicalState(self.sensor_network.sensors, self.boundary)
             state_change = StateChange(self.state, new_state)
 
             if state_change.is_atomic():
-                self.cycle_label.update(state_change)
-                for s in self.sensor_network.sensors:
-                    s.update_old_position()
-                self.state = new_state
+                self.update(state_change)
             elif level + 1 == 25:
                 raise MaxRecursionDepth(state_change)
             else:
@@ -92,6 +81,11 @@ class EvasionPathSimulation:
 
             if level == 0:
                 return
+
+    def update(self, state_change):
+        self.cycle_label.update(state_change)
+        self.sensor_network.update()
+        self.state = state_change.new_state
 
 
 ## Takes output from save_state() to initialize a simulation.

@@ -34,4 +34,13 @@ class SensorNetwork:
             self.sensors.extend([Sensor(pt, None, sensing_radius)
                                  for pt in boundary.generate_interior_points(n_sensors)])
 
+    def move(self, dt):
+        points = [s.old_pos for s in self.sensors]
+        motion_model_points = self.motion_model.update_points(points, dt)
 
+        for sensor, pt in zip(self.sensors, motion_model_points):
+            sensor.update_position(self.motion_model, dt, pt)
+
+    def update(self):
+        for s in self.sensors:
+            s.update_old_position()
