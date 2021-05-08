@@ -25,7 +25,7 @@ filename_base = "SampleAnimation"
 
 unit_square = RectangularDomain(spacing=sensing_radius)
 
-billiard = BilliardMotion(dt=timestep_size, vel=1, boundary=unit_square, n_int_sensors=num_sensors)
+billiard = BilliardMotion(boundary=unit_square)
 
 simulation = EvasionPathSimulation(boundary=unit_square,
                                    motion_model=billiard,
@@ -83,8 +83,8 @@ def animate():
         print("Simulation Complete")
     finally:
         # uncomment below to show plot while computing
-        # plt.show()
-        ani.save(filename_base+'.mp4')
+        plt.show()
+        # ani.save(filename_base+'.mp4')
 
 
 if __name__ == "__main__":

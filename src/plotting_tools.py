@@ -130,10 +130,7 @@ if __name__ == "__main__":
 
     unit_square = RectangularDomain(spacing=sensing_radius)
 
-    brownian_motion = BilliardMotion(dt=timestep_size,
-                                     vel=0.1,
-                                     boundary=unit_square,
-                                     n_int_sensors=num_sensors)
+    brownian_motion = BilliardMotion(boundary=unit_square)
 
     simulation = EvasionPathSimulation(boundary=unit_square,
                                        motion_model=brownian_motion,

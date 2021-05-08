@@ -2,14 +2,14 @@
 import os
 from time_stepping import *
 
-num_sensors: int = 20
-sensing_radius: float = 0.2
+num_sensors: int = 10
+sensing_radius: float = 0.15
 timestep_size: float = 0.01
 
 unit_square: Boundary = RectangularDomain(spacing=sensing_radius)
 
 # noinspection PyTypeChecker
-billiard: MotionModel = BilliardMotion(dt=timestep_size, boundary=unit_square, vel=1, n_int_sensors=num_sensors)
+billiard: MotionModel = BilliardMotion(boundary=unit_square)
 
 output_dir: str = "./output"
 filename_base: str = "data"
