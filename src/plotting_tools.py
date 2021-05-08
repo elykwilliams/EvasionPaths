@@ -42,7 +42,7 @@ def show_domain_boundary(sim):
 
 
 def show_labelled_graph(sim):
-    graph = get_graph(sim)
+    graph = sim.state.graph
     points = [s.position for s in sim.sensor_network]
     nx.draw(graph, points)
     nx.draw_networkx_labels(graph, dict(enumerate(points)))
@@ -64,18 +64,18 @@ def show_sensor_radius(sim):
 
 def show_possible_intruder(sim):
     axis = plt.gca()
-    graph = get_graph(sim)
+    graph = sim.state.graph
     points = [s.position for s in sim.sensor_network]
     cmap = CMap(graph, points)
 
     for cycle_nodes in cmap.boundary_cycle_nodes_ordered():
         xpts = [points[n][0] for n in cycle_nodes]
         ypts = [points[n][1] for n in cycle_nodes]
-        if set(cycle_nodes) == set(cycle2nodes(sim.boundary.alpha_cycle)):
+        if set(cycle_nodes) == set(cycle2nodes(CMap.alpha_cycle(sim.boundary))):
             continue
 
         cycle = nodes2cycle(cycle_nodes, sim.state.boundary_cycles())
-        if cycle == sim.boundary.alpha_cycle:
+        if cycle == CMap.alpha_cycle(sim.boundary):
             axis.fill(xpts, ypts, color='k', alpha=0.2)
 
         if cycle not in sim.cycle_label:

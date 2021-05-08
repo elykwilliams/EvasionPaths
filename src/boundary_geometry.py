@@ -24,12 +24,11 @@ class Boundary(ABC):
     ## Must initialize the boundary points and "alpha_cycle".
     # The points stored are the points on the boundary only.
     def __init__(self) -> None:
-        self.points = self.generate_fence()
-        self.alpha_cycle = self.get_alpha_cycle()
+        self.n_sensors = len(self.generate_fence())
 
     ## length of boundary is number of boundary sensors.
     def __len__(self) -> int:
-        return len(self.points)
+        return self.n_sensors
 
     ## Determine if given point it in domain or not.
     @abstractmethod
@@ -56,13 +55,6 @@ class Boundary(ABC):
         x_pts, y_pts = [], []
         return x_pts, y_pts
 
-    ## construct boundary cycle.
-    # the alpha_cycle is the boundary cycle going counter-closckwise around the outside
-    # of the domain.
-    def get_alpha_cycle(self) -> tuple:
-        a = [str(n + 1) + "," + str(n) for n in range(len(self.points) - 1)] + ["0," + str(len(self.points) - 1)]
-        return tuple(sorted(a))
-
     ## Reflect a point off the boundary.
     # If a sensor leaves the domain, we need to move the sensors back in
     @abstractmethod
@@ -72,7 +64,7 @@ class Boundary(ABC):
     @abstractmethod
     def reflect_velocity(self, old_pt, new_pt):
         vel_angle = np.arctan2(new_pt[1] - old_pt[1], new_pt[0] - old_pt[0])
-        return float(vel_angle)
+        return vel_angle
 
 
 ## a rectangular domain using virtual boundary.

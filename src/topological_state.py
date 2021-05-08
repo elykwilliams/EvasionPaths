@@ -37,14 +37,14 @@ class TopologicalState(object):
         self._simplices[1] = [tuple(simplex) for simplex, _ in simplex_tree.get_skeleton(1) if len(simplex) == 2]
         self._simplices[2] = [tuple(simplex) for simplex, _ in simplex_tree.get_skeleton(2) if len(simplex) == 3]
 
-        graph = nx.Graph()
-        graph.add_nodes_from(self._simplices[0])
-        graph.add_edges_from(self._simplices[1])
+        self.graph = nx.Graph()
+        self.graph.add_nodes_from(self._simplices[0])
+        self.graph.add_edges_from(self._simplices[1])
 
-        self._boundary_cycles = CMap(graph, points).get_boundary_cycles()
-        self._boundary_cycles.remove(boundary.alpha_cycle)
+        self._boundary_cycles = CMap(self.graph, points).get_boundary_cycles()
+        CMap.remove_boundary(boundary, self._boundary_cycles)
 
-        self._connected_nodes = nx.node_connected_component(graph, 0)
+        self._connected_nodes = nx.node_connected_component(self.graph, 0)
 
     ## Check if graph is connected.
     # This is used for flagging when the graph has become disconnected.
