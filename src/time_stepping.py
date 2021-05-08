@@ -48,7 +48,8 @@ class EvasionPathSimulation:
         self.Tend = end_time
         self.time = 0
 
-        self.sensor_network = SensorNetwork(motion_model, boundary, sensing_radius, n_int_sensors, points)
+        self.sensor_network = SensorNetwork(motion_model, boundary, sensing_radius, vel_mag=1,
+                                            n_sensors=n_int_sensors, points=points)
         self.state = TopologicalState(self.sensor_network, self.boundary)
         self.cycle_label = CycleLabelling(self.state)
 

@@ -137,6 +137,7 @@ class CMap:
     def alpha_cycle(boundary):
         a = [f"{(n + 1) % len(boundary)},{n}" for n in range(len(boundary))]
         return tuple(sorted(a))
+
     ## Remove alpha-cycle
     # the alpha_cycle is the boundary cycle going counter-clockwise around the outside
     # of the domain.
