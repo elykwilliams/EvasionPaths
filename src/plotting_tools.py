@@ -15,13 +15,13 @@ def get_graph(sim):
     """ This function is to access the combinatorial map externally primarily
         this function is meant to help with plotting and not to be used internally"""
     from gudhi import AlphaComplex
-    alpha_complex = AlphaComplex(sim.points)
+    alpha_complex = AlphaComplex([s.position for s in sim.sensors])
     simplex_tree = alpha_complex.create_simplex_tree(max_alpha_square=sim.sensing_radius ** 2)
 
     simplices1 = [tuple(simplex) for simplex, _ in simplex_tree.get_skeleton(1) if len(simplex) == 2]
 
     graph = nx.Graph()
-    graph.add_nodes_from(range(len(sim.points)))
+    graph.add_nodes_from(range(len([s.position for s in sim.sensors])))
     graph.add_edges_from(simplices1)
 
     return graph
@@ -29,8 +29,8 @@ def get_graph(sim):
 
 def show_boundary_points(sim):
     axis = plt.gca()
-    xpts = [x for x, _ in sim.boundary.points]
-    ypts = [y for _, y in sim.boundary.points]
+    xpts = [s.position[0] for s in sim.sensors if s.boundary_flag]
+    ypts = [s.position[1] for s in sim.sensors if s.boundary_flag]
     axis.plot(xpts, ypts, "k*")
 
 
@@ -43,32 +43,34 @@ def show_domain_boundary(sim):
 
 def show_labelled_graph(sim):
     graph = get_graph(sim)
-    nx.draw(graph, sim.points)
-    nx.draw_networkx_labels(graph, sim.points)
+    points = [s.position for s in sim.sensors]
+    nx.draw(graph, points)
+    nx.draw_networkx_labels(graph, dict(enumerate(points)))
 
 
 def show_sensor_points(sim):
     axis = plt.gca()
-    xpts = [x for x, _ in sim.points]
-    ypts = [y for _, y in sim.points]
+    xpts = [s.position[0] for s in sim.sensors]
+    ypts = [s.position[1] for s in sim.sensors]
     axis.plot(xpts, ypts, "k*")
     return
 
 
 def show_sensor_radius(sim):
     axis = plt.gca()
-    for pt in sim.points:
+    for pt in [s.position for s in sim.sensors]:
         axis.add_artist(plt.Circle(pt, sim.sensing_radius, color='b', alpha=0.1, clip_on=False))
 
 
 def show_possible_intruder(sim):
     axis = plt.gca()
     graph = get_graph(sim)
-    cmap = CMap(graph, sim.points)
+    points = [s.position for s in sim.sensors]
+    cmap = CMap(graph, points)
 
     for cycle_nodes in cmap.boundary_cycle_nodes_ordered():
-        xpts = [sim.points[n][0] for n in cycle_nodes]
-        ypts = [sim.points[n][1] for n in cycle_nodes]
+        xpts = [points[n][0] for n in cycle_nodes]
+        ypts = [points[n][1] for n in cycle_nodes]
         if set(cycle_nodes) == set(cycle2nodes(sim.boundary.alpha_cycle)):
             continue
 
@@ -89,16 +91,16 @@ def show_possible_intruder(sim):
 def show_alpha_complex(sim):
 
     axis = plt.gca()
-
+    points = [s.position for s in sim.sensors]
     for simplex in sim.state.simplices(2):
-        xpts = [sim.points[n][0] for n in simplex]
-        ypts = [sim.points[n][1] for n in simplex]
+        xpts = [points[n][0] for n in simplex]
+        ypts = [points[n][1] for n in simplex]
         if nodes2cycle(simplex, sim.state.boundary_cycles()) in sim.cycle_label:
             axis.fill(xpts, ypts, color='r', alpha=0.1)
 
     for edge in sim.state.simplices(1):
-        xpts = [sim.points[n][0] for n in edge]
-        ypts = [sim.points[n][1] for n in edge]
+        xpts = [points[n][0] for n in edge]
+        ypts = [points[n][1] for n in edge]
         axis.plot(xpts, ypts, color='r', alpha=0.15)
 
     show_sensor_points(sim)
@@ -114,9 +116,10 @@ def show_combinatorial_map(sim):
     graph = get_graph(sim)
     temp_dict = {edge: edge2dart(edge) for edge in graph.edges}
     temp_dict.update({reversed(edge): edge2dart(tuple(reversed(edge))) for edge in graph.edges})
-    nx.draw(graph, sim.points)
-    nx.draw_networkx_labels(graph, dict(enumerate(sim.points)))
-    nx.draw_networkx_edge_labels(graph, dict(enumerate(sim.points)), temp_dict, label_pos=0.2)
+    points = [s.position for s in sim.sensors]
+    nx.draw(graph, points)
+    nx.draw_networkx_labels(graph, dict(enumerate(points)))
+    nx.draw_networkx_edge_labels(graph, dict(enumerate(points)), temp_dict, label_pos=0.2)
     pass
 
 

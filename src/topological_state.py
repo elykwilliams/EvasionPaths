@@ -27,9 +27,10 @@ class TopologicalState(object):
 
     ## Compute Alpha-complex and combinatorial map and extract simplices and boundary cycles. Also
     # save connectivity information.
-    def __init__(self, points, sensing_radius, boundary):
+    def __init__(self, sensors, boundary):
+        points = [sensor.position for sensor in sensors]
         alpha_complex = AlphaComplex(points)
-        simplex_tree = alpha_complex.create_simplex_tree(max_alpha_square=sensing_radius ** 2)
+        simplex_tree = alpha_complex.create_simplex_tree(max_alpha_square=sensors[0].radius ** 2)
 
         self._simplices = [[], [], []]
         self._simplices[0] = [simplex[0] for simplex, _ in simplex_tree.get_skeleton(0)]
@@ -223,4 +224,3 @@ class InvalidStateChange(Exception):
     def __str__(self) -> str:
         return "Invalid State Change \n\n" \
                + str(self.state_change)
-
