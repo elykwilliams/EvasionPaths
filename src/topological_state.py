@@ -155,7 +155,7 @@ class StateChange(object):
                      len(self.simplices_removed), len(self.cycles_added), len(self.cycles_removed))
 
     ## Determine if the current state transition is atomic.
-    # A transition is considered non-atomic if on of the following are true:
+    # A transition is considered atomic if on of the following are true:
     #
     #       1. The case is not found in the list of possible transitions
     #       2. If a 1-simplex and 2-simplex are added/removed simultaniously, the 1-simplex
