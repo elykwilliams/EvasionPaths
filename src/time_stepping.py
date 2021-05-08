@@ -55,9 +55,11 @@ class EvasionPathSimulation:
     ## Run until no more intruders.
     # exit if max time is set. Returns simulation time.
     def run(self) -> float:
-        while self.cycle_label.has_intruder() and self.Tend < self.time:
+        while self.cycle_label.has_intruder():
             self.do_timestep()
             self.time += self.dt
+            if 0 < self.Tend < self.time:
+                break
         return self.time
 
     ## Do single timestep.
