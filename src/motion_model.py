@@ -192,8 +192,11 @@ class Dorsogna(MotionModel):
         # I just have d(x, y)/dt = (vx, vy), d(vx, vy)/dt = (1, -1)
         dxdt = split_state[2]
         dydt = split_state[3]
-        dvxdt = (1.5 - (0.5 * norm((dxdt, dydt)) ** 2)) * dxdt - gradU[0]
-        dvydt = (1.5 - (0.5 * norm((dxdt, dydt)) ** 2)) * dydt - gradU[1]
+        dvxdt = array(self.n_sensors * [0])
+        dvydt = array(self.n_sensors * [0])
+        for i in range(self.n_sensors):
+            dvxdt[i] = (1.5 - (0.5 * norm((dxdt[i], dydt[i])) ** 2)) * dxdt[i] - gradU[0][i]
+            dvydt[i] = (1.5 - (0.5 * norm((dxdt[i], dydt[i])) ** 2)) * dydt[i] - gradU[1][i]
         return np.concatenate([dxdt, dydt, dvxdt, dvydt])
 
     def update_points(self, old_points, dt) -> list:

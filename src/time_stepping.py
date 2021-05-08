@@ -60,7 +60,7 @@ class EvasionPathSimulation:
             self.time += self.dt
         return self.time
 
-    ## To single timestep.
+    ## Do single timestep.
     # Do recursive adaptive step if non-atomic transition is found.
     def do_timestep(self, level: int = 0) -> None:
 
