@@ -7,24 +7,9 @@
 # ************************************************************
 
 from time_stepping import *
-from motion_model import *
+from combinatorial_map import *
+import networkx as nx
 import matplotlib.pyplot as plt
-
-
-def get_graph(sim):
-    """ This function is to access the combinatorial map externally primarily
-        this function is meant to help with plotting and not to be used internally"""
-    from gudhi import AlphaComplex
-    alpha_complex = AlphaComplex([s.position for s in sim.sensor_network])
-    simplex_tree = alpha_complex.create_simplex_tree(max_alpha_square=sim.sensor_network.sensing_radius ** 2)
-
-    simplices1 = [tuple(simplex) for simplex, _ in simplex_tree.get_skeleton(1) if len(simplex) == 2]
-
-    graph = nx.Graph()
-    graph.add_nodes_from(range(len([s.position for s in sim.sensor_network])))
-    graph.add_edges_from(simplices1)
-
-    return graph
 
 
 def show_boundary_points(sim):
@@ -113,7 +98,7 @@ def show_state(sim):
 
 
 def show_combinatorial_map(sim):
-    graph = get_graph(sim)
+    graph = sim.state.graph
     temp_dict = {edge: edge2dart(edge) for edge in graph.edges}
     temp_dict.update({reversed(edge): edge2dart(tuple(reversed(edge))) for edge in graph.edges})
     points = [s.position for s in sim.sensor_network]
@@ -124,6 +109,9 @@ def show_combinatorial_map(sim):
 
 
 if __name__ == "__main__":
+    from boundary_geometry import RectangularDomain
+    from motion_model import BilliardMotion
+
     num_sensors = 10
     sensing_radius = 0.2
     timestep_size = 0.1
@@ -132,10 +120,10 @@ if __name__ == "__main__":
 
     brownian_motion = BilliardMotion(boundary=unit_square)
 
+    sensor_network = SensorNetwork(brownian_motion, unit_square, sensing_radius, num_sensors)
+
     simulation = EvasionPathSimulation(boundary=unit_square,
-                                       motion_model=brownian_motion,
-                                       n_int_sensors=num_sensors,
-                                       sensing_radius=sensing_radius,
+                                       sensor_network=sensor_network,
                                        dt=timestep_size)
 
     plt.figure(1)

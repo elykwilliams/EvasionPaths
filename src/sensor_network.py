@@ -1,9 +1,6 @@
-import math
 from numpy.linalg import norm
-
-
-def cart2pol(points):
-    return [(norm(p), math.atan2(p[1], p[0])) for p in points]
+from numpy import array
+from utilities import cart2pol
 
 
 class Sensor:
@@ -40,7 +37,7 @@ class SensorNetwork:
 
         # Initialize sensor positions
         if velocities:
-            velocities = cart2pol(velocities)
+            velocities = [cart2pol(v) for v in velocities]
         elif points:
             velocities = (self.motion_model.initial_pvel(vel_mag) for _ in points)
         else:
