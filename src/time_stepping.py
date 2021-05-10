@@ -11,20 +11,7 @@ from cycle_labelling import CycleLabelling
 from topological_state import TopologicalState, StateChange
 from boundary_geometry import Boundary
 from sensor_network import SensorNetwork
-
-
-## Exception indicating that atomic transition not found.
-# This can happen when two or more atomic transitions
-# happen simultaneously. This is sometimes a problem for manufactured
-# simulations. It can also indicate that a sensor has broken free of the
-# virtual boundary and is interfering with the fence boundary cycle.
-# There is a very rare change that a new atomic transition is discovered.
-class MaxRecursionDepth(Exception):
-    def __init__(self, state_change):
-        self.state_change = state_change
-
-    def __str__(self):
-        return f"Max Recursion depth exceeded! \n\n{self.state_change}"
+from utilities import *
 
 
 ## This class provides the main interface for running a simulation.

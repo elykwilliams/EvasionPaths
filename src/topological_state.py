@@ -6,17 +6,10 @@
 # If not, visit: https://opensource.org/licenses/BSD-3-Clause
 # ************************************************************
 
+from utilities import *
 from combinatorial_map import *
 from gudhi.alpha_complex import AlphaComplex
 import networkx as nx
-
-
-def set_difference(list1, list2):
-    return list(set(list1).difference(set(list2)))
-
-
-def is_subset(list1, list2):
-    return set(list1).issubset(set(list2))
 
 
 ## The Topological State is the class used to encapsulate the simplicial, and combinatorial
@@ -212,15 +205,3 @@ class StateChange(object):
             + "Removed Simplices:" + str(self.simplices_removed) + "\n" \
             + "New cycles" + str(self.cycles_added) + "\n" \
             + "Removed Cycles" + str(self.cycles_removed)
-
-
-## Exception indicating non-atomic state change.
-# This exception should be raised when a function that requires an atomic change
-# is given a non-atomic change.
-class InvalidStateChange(Exception):
-    def __init__(self, state_change):
-        self.state_change = state_change
-
-    def __str__(self) -> str:
-        return "Invalid State Change \n\n" \
-               + str(self.state_change)

@@ -6,8 +6,9 @@
 # If not, visit: https://opensource.org/licenses/BSD-3-Clause
 # ************************************************************
 
+from utilities import pol2cart
 import numpy as np
-from numpy import sin, cos, arange, pi, array, arctan2
+from numpy import arange, pi, array, arctan2
 from numpy.linalg import norm
 from abc import ABC, abstractmethod
 
@@ -179,12 +180,12 @@ class CircularDomain(Boundary):
     def generate_interior_points(self, n_int_sensors):
         theta = np.random.uniform(0, 2 * pi, size=n_int_sensors)
         radius = np.random.uniform(0, self.radius, size=n_int_sensors)
-        return [(r*cos(t), r*sin(t)) for r, t in zip(radius, theta)]
+        return [pol2cart(p) for p in zip(radius, theta)]
 
     ## Generate Points to plot domain boundary.
     def domain_boundary_points(self):
-        x_pts = [self.radius*cos(t) for t in arange(0, 2*pi, 0.01)]
-        y_pts = [self.radius*sin(t) for t in arange(0, 2*pi, 0.01)]
+        x_pts = [self.radius*np.cos(t) for t in arange(0, 2*pi, 0.01)]
+        y_pts = [self.radius*np.sin(t) for t in arange(0, 2*pi, 0.01)]
         return x_pts, y_pts
 
     def _get_intersection(self, old_pt, new_pt):
