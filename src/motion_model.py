@@ -132,17 +132,55 @@ class Viscek(BilliardMotion):
                 s1.old_pvel[1] = (mean(sensor_angles) + self.eta()) % (2 * pi)
 
 
-class Dorsogna(MotionModel):
+class ODEMotion(MotionModel, ABC):
+    def __init__(self, boundary):
+        super().__init__(boundary)
+        self.n_sensors = 0
+        self.points = dict()
+        self.velocities = dict()
+
+    @abstractmethod
+    def time_derivative(self, _, state):
+        pass
+
+    def compute_update(self, sensors, dt):
+        self.n_sensors = len(sensors.mobile_sensors)
+        # Put into form ode solver wants [ xs | ys | vxs | vys ]
+        xs = [s.old_pos[0] for s in sensors.mobile_sensors]
+        ys = [s.old_pos[1] for s in sensors.mobile_sensors]
+        vxs = [s.old_pvel[0]*cos(s.old_pvel[1]) for s in sensors.mobile_sensors]
+        vys = [s.old_pvel[0]*sin(s.old_pvel[1]) for s in sensors.mobile_sensors]
+        init_val = xs + ys + vxs + vys
+
+        # Solve with init_val as t=0, solve for values at t+dt
+        new_val = solve_ivp(self.time_derivative, [0, dt], init_val, t_eval=[dt], rtol=1e-8)
+
+        # Convert back from np array
+        new_val = new_val.y.tolist()
+
+        # split state back into position and velocity,
+        split_state = [[y[0] for y in new_val[i:i + self.n_sensors]] for i in range(0, len(new_val), self.n_sensors)]
+
+        # zip into list of tuples
+        self.velocities = dict(zip(sensors, zip(split_state[2], split_state[3])))
+
+        # Reflect any points outside boundary
+        self.points = dict(zip(sensors, zip(split_state[0], split_state[1])))
+
+    def update_position(self, sensor, dt):
+        sensor.pvel = cart2pol(self.velocities[sensor])
+        sensor.position = self.points[sensor]
+        if not self.boundary.in_domain(sensor.position):
+            self.reflect(sensor)
+
+
+class Dorsogna(ODEMotion):
     def __init__(self, boundary, sensing_radius, eta_scale_factor, DO_coeff):
         assert len(DO_coeff) != 4, "Not enough parameters in DO_coeff"
         super().__init__(boundary)
         self.sensing_radius = sensing_radius
         self.eta = eta_scale_factor * sensing_radius
         self.DO_coeff = DO_coeff
-        self.n_sensors = 0
-
-        self.points = dict()
-        self.velocities = dict()
 
     @staticmethod
     def initial_pvel(vel_mag):
@@ -179,33 +217,3 @@ class Dorsogna(MotionModel):
             dvxdt[i] = (1.5 - (0.5 * norm((dxdt[i], dydt[i])) ** 2)) * dxdt[i] - gradU[0][i]
             dvydt[i] = (1.5 - (0.5 * norm((dxdt[i], dydt[i])) ** 2)) * dydt[i] - gradU[1][i]
         return np.concatenate([dxdt, dydt, dvxdt, dvydt])
-
-    def compute_update(self, sensors, dt):
-        self.n_sensors = len(sensors.mobile_sensors)
-        # Put into form ode solver wants [ xs | ys | vxs | vys ]
-        xs = [s.old_pos[0] for s in sensors.mobile_sensors]
-        ys = [s.old_pos[1] for s in sensors.mobile_sensors]
-        vxs = [s.old_pvel[0]*cos(s.old_pvel[1]) for s in sensors.mobile_sensors]
-        vys = [s.old_pvel[0]*sin(s.old_pvel[1]) for s in sensors.mobile_sensors]
-        init_val = xs + ys + vxs + vys
-
-        # Solve with init_val as t=0, solve for values at t+dt
-        new_val = solve_ivp(self.time_derivative, [0, dt], init_val, t_eval=[dt], rtol=1e-8)
-
-        # Convert back from np array
-        new_val = new_val.y.tolist()
-
-        # split state back into position and velocity,
-        split_state = [[y[0] for y in new_val[i:i + self.n_sensors]] for i in range(0, len(new_val), self.n_sensors)]
-
-        # zip into list of tuples
-        self.velocities = dict(zip(sensors, zip(split_state[2], split_state[3])))
-
-        # Reflect any points outside boundary
-        self.points = dict(zip(sensors, zip(split_state[0], split_state[1])))
-
-    def update_position(self, sensor, dt):
-        sensor.pvel = cart2pol([self.velocities[sensor]])
-        sensor.position = self.points[sensor]
-        if not self.boundary.in_domain(sensor.position):
-            self.reflect(sensor)
