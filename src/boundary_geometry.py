@@ -20,7 +20,7 @@ from abc import ABC, abstractmethod
 # the fence (the "alpha_cycle". And finally, it will be the class to
 # generate initial data since it can determine how best go generate
 # random points inside the domain.
-class Boundary(ABC):
+class Domain(ABC):
 
     ## Must initialize the boundary points and "alpha_cycle".
     # The points stored are the points on the boundary only.
@@ -33,7 +33,7 @@ class Boundary(ABC):
 
     ## Determine if given point it in domain or not.
     @abstractmethod
-    def in_domain(self, point: tuple) -> bool:
+    def __contains__(self, item) -> bool:
         return True
 
     ## Generate boundary points in counterclockwise order.
@@ -75,7 +75,7 @@ class Boundary(ABC):
 # and the physical locations of the sensors are places slightly outside of
 # this boundary in a way that still allows interior sensors to form simplices
 # with fence sensors.
-class RectangularDomain(Boundary):
+class RectangularDomain(Domain):
 
     ## Initialize with dimension of desired boundary.
     # Sensor positions will be reflected so that interior sensors stay in the
@@ -96,7 +96,7 @@ class RectangularDomain(Boundary):
         super().__init__()
 
     ## Check if point is in domain.
-    def in_domain(self, point: tuple) -> bool:
+    def __contains__(self, point: tuple) -> bool:
         return self.x_min <= point[0] <= self.x_max \
                and self.y_min <= point[1] <= self.y_max
 
@@ -156,7 +156,7 @@ class RectangularDomain(Boundary):
 # and the physical locations of the sensors are places slightly outside of
 # this boundary in a way that still allows interior sensors to form simplices
 # with fence sensors.
-class CircularDomain(Boundary):
+class CircularDomain(Domain):
     def __init__(self, spacing, radius) -> None:
 
         self.spacing = spacing

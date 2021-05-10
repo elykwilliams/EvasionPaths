@@ -7,7 +7,7 @@
 # ************************************************************
 
 from utilities import cart2pol, pol2cart
-from boundary_geometry import Boundary
+from boundary_geometry import Domain
 
 import numpy as np
 from numpy import array, random
@@ -28,8 +28,8 @@ def dist(s1, s2):
 class MotionModel(ABC):
 
     ## Initialize motion model with boundary.
-    def __init__(self, boundary: Boundary) -> None:
-        self.boundary = boundary
+    def __init__(self, domain: Domain) -> None:
+        self.domain = domain
 
     ## Update position individual point.
     # This function will be called on all points.
@@ -39,7 +39,7 @@ class MotionModel(ABC):
     #   3. check if reflection is needed
     @abstractmethod
     def update_position(self, sensor, dt):
-        if self.boundary.in_domain(sensor.position):
+        if sensor.position not in self.domain:
             self.reflect(sensor)
 
     ## Elastic reflection off boundary wall.
@@ -48,8 +48,8 @@ class MotionModel(ABC):
     # the sensor position to where it should be, and the new
     # velocity angle.
     def reflect(self, sensor):
-        sensor.pvel[1] = self.boundary.reflect_velocity(sensor.old_pos, sensor.position)
-        sensor.position = self.boundary.reflect_point(sensor.old_pos, sensor.position)
+        sensor.pvel[1] = self.domain.reflect_velocity(sensor.old_pos, sensor.position)
+        sensor.position = self.domain.reflect_point(sensor.old_pos, sensor.position)
 
     ## Compute any nonlocal updates.
     # This function should be called before update_position().
@@ -75,8 +75,8 @@ class MotionModel(ABC):
 class BrownianMotion(MotionModel):
 
     ## Initialize boundary with typical velocity.
-    def __init__(self, boundary: Boundary, sigma: float) -> None:
-        super().__init__(boundary)
+    def __init__(self, domain: Domain, sigma: float) -> None:
+        super().__init__(domain)
         self.sigma = sigma
 
     @staticmethod
@@ -89,7 +89,7 @@ class BrownianMotion(MotionModel):
 
     def update_position(self, sensor, dt):
         sensor.position = array(sensor.old_pos) + self.epsilon(dt)
-        if not self.boundary.in_domain(sensor.position):
+        if sensor.position not in self.domain:
             self.reflect(sensor)
 
 
@@ -106,15 +106,15 @@ class BilliardMotion(MotionModel):
     def update_position(self, sensor, dt):
         vel = array(pol2cart(sensor.pvel))
         sensor.position = array(sensor.old_pos) + dt*vel
-        if not self.boundary.in_domain(sensor.position):
+        if sensor.position not in self.domain:
             self.reflect(sensor)
 
 
 ## Implement randomized variant of Billiard motion.
 # Each update, a sensor has a chance of randomly changing direction.
 class RunAndTumble(BilliardMotion):
-    def __init__(self,  boundary: Boundary, dt: float):
-        super().__init__(boundary)
+    def __init__(self, domain: Domain, dt: float):
+        super().__init__(domain)
         self.large_dt = dt
 
     ## Update angles before updating points.
@@ -129,8 +129,8 @@ class RunAndTumble(BilliardMotion):
 
 class Viscek(BilliardMotion):
 
-    def __init__(self, boundary: Boundary, dt: float, sensing_radius: float):
-        super().__init__(boundary)
+    def __init__(self, domain: Domain, dt: float, sensing_radius: float):
+        super().__init__(domain)
         self.large_dt = dt
         self.radius = sensing_radius
 
@@ -151,8 +151,8 @@ class Viscek(BilliardMotion):
 
 
 class ODEMotion(MotionModel, ABC):
-    def __init__(self, boundary):
-        super().__init__(boundary)
+    def __init__(self, domain):
+        super().__init__(domain)
         self.n_sensors = 0
         self.points = dict()
         self.velocities = dict()
@@ -188,14 +188,14 @@ class ODEMotion(MotionModel, ABC):
     def update_position(self, sensor, dt):
         sensor.pvel = cart2pol(self.velocities[sensor])
         sensor.position = self.points[sensor]
-        if not self.boundary.in_domain(sensor.position):
+        if sensor.position not in self.domain:
             self.reflect(sensor)
 
 
 class Dorsogna(ODEMotion):
-    def __init__(self, boundary, sensing_radius, eta_scale_factor, DO_coeff):
+    def __init__(self, domain, sensing_radius, eta_scale_factor, DO_coeff):
         assert len(DO_coeff) != 4, "Not enough parameters in DO_coeff"
-        super().__init__(boundary)
+        super().__init__(domain)
         self.sensing_radius = sensing_radius
         self.eta = eta_scale_factor * sensing_radius
         self.DO_coeff = DO_coeff

@@ -6,7 +6,7 @@ num_sensors: int = 10
 sensing_radius: float = 0.15
 timestep_size: float = 0.01
 
-unit_square: Boundary = RectangularDomain(spacing=sensing_radius)
+unit_square: Domain = RectangularDomain(spacing=sensing_radius)
 
 # noinspection PyTypeChecker
 billiard: MotionModel = BilliardMotion(boundary=unit_square)

@@ -21,7 +21,7 @@ def show_boundary_points(sim):
 
 def show_domain_boundary(sim):
     axis = plt.gca()
-    b = sim.boundary
+    b = sim.sensor_network.motion_model.domain
     xpts, ypts = b.domain_boundary_points()
     axis.plot(xpts, ypts)
 
@@ -56,11 +56,11 @@ def show_possible_intruder(sim):
     for cycle_nodes in cmap.boundary_cycle_nodes_ordered():
         xpts = [points[n][0] for n in cycle_nodes]
         ypts = [points[n][1] for n in cycle_nodes]
-        if set(cycle_nodes) == set(cycle2nodes(CMap.alpha_cycle(sim.boundary))):
+        if set(cycle_nodes) == set(cycle2nodes(CMap.alpha_cycle(sim.sensor_network.motion_model.domain))):
             continue
 
         cycle = nodes2cycle(cycle_nodes, sim.state.boundary_cycles())
-        if cycle == CMap.alpha_cycle(sim.boundary):
+        if cycle == CMap.alpha_cycle(sim.sensor_network.motion_model.domain):
             axis.fill(xpts, ypts, color='k', alpha=0.2)
 
         if cycle not in sim.cycle_label:
@@ -118,12 +118,11 @@ if __name__ == "__main__":
 
     unit_square = RectangularDomain(spacing=sensing_radius)
 
-    brownian_motion = BilliardMotion(boundary=unit_square)
+    brownian_motion = BilliardMotion(domain=unit_square)
 
     sensor_network = SensorNetwork(brownian_motion, unit_square, sensing_radius, num_sensors)
 
-    simulation = EvasionPathSimulation(boundary=unit_square,
-                                       sensor_network=sensor_network,
+    simulation = EvasionPathSimulation(sensor_network=sensor_network,
                                        dt=timestep_size)
 
     plt.figure(1)

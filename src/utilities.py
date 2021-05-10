@@ -42,3 +42,20 @@ class InvalidStateChange(Exception):
     def __str__(self) -> str:
         return "Invalid State Change \n\n" \
                + str(self.state_change)
+
+
+class CycleNotFound(Exception)  :
+    def __init__(self, boundary_cycle):
+        self.b = boundary_cycle
+
+    def __str__(self):
+        return "Attempted to retrieve labelling for " + str(self.b) + ", " \
+                 "but this cycle was not found in the cycle labelling.\n" \
+                 "This most likely has occurred because you are updating " \
+                 "the labelling manually and not using the update() function.\n" \
+                 "\nIf this error has occurred as a result of update(), please create an issue" \
+                 "on github https://github.com/elykwilliams/EvasionPaths/issues"
+
+
+class TimedOutExc(Exception):
+    pass

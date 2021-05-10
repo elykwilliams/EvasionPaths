@@ -25,16 +25,14 @@ filename_base = "SampleAnimation"
 
 unit_square = RectangularDomain(spacing=sensing_radius)
 
-billiard = BilliardMotion(boundary=unit_square)
+billiard = BilliardMotion(domain=unit_square)
 
 sensor_network = SensorNetwork(motion_model=billiard,
-                               boundary=unit_square,
                                sensing_radius=sensing_radius,
                                vel_mag=1,
                                n_sensors=num_sensors)
 
-simulation = EvasionPathSimulation(boundary=unit_square,
-                                   sensor_network=sensor_network,
+simulation = EvasionPathSimulation(sensor_network=sensor_network,
                                    dt=timestep_size)
 
 

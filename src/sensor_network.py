@@ -24,7 +24,7 @@ class Sensor:
 
 
 class SensorNetwork:
-    def __init__(self, motion_model, boundary, sensing_radius, n_sensors=0, vel_mag=None, points=(), velocities=()):
+    def __init__(self, motion_model, domain, sensing_radius, n_sensors=0, vel_mag=None, points=(), velocities=()):
         if velocities:
             assert len(points) == len(velocities), \
                 "len(points) != len(velocities)"
@@ -41,11 +41,11 @@ class SensorNetwork:
         elif points:
             velocities = (self.motion_model.initial_pvel(vel_mag) for _ in points)
         else:
-            points = boundary.generate_interior_points(n_sensors)
+            points = domain.generate_interior_points(n_sensors)
             velocities = (self.motion_model.initial_pvel(vel_mag) for _ in points)
 
         self.mobile_sensors = [Sensor(pt, v, sensing_radius) for pt, v in zip(points, velocities)]
-        self.fence_sensors = [Sensor(pt, (0, 0), sensing_radius, True) for pt in boundary.generate_fence()]
+        self.fence_sensors = [Sensor(pt, (0, 0), sensing_radius, True) for pt in domain.generate_fence()]
 
     def __iter__(self):
         return iter(self.fence_sensors + self.mobile_sensors)

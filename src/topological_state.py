@@ -20,7 +20,7 @@ class TopologicalState(object):
 
     ## Compute Alpha-complex and combinatorial map and extract simplices and boundary cycles. Also
     # save connectivity information.
-    def __init__(self, sensor_network, boundary):
+    def __init__(self, sensor_network):
         points = [sensor.position for sensor in sensor_network]
         alpha_complex = AlphaComplex(points)
         simplex_tree = alpha_complex.create_simplex_tree(max_alpha_square=sensor_network.sensing_radius ** 2)
@@ -35,7 +35,7 @@ class TopologicalState(object):
         self.graph.add_edges_from(self._simplices[1])
 
         self._boundary_cycles = CMap(self.graph, points).get_boundary_cycles()
-        CMap.remove_boundary(boundary, self._boundary_cycles)
+        CMap.remove_boundary(sensor_network.motion_model.domain, self._boundary_cycles)
 
         self._connected_nodes = nx.node_connected_component(self.graph, 0)
 

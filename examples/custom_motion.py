@@ -7,7 +7,6 @@
 # ************************************************************
 
 from matplotlib.animation import FuncAnimation
-from boundary_geometry import *
 from plotting_tools import *
 from motion_model import *
 from time_stepping import *
@@ -20,8 +19,8 @@ import numpy as np
 # that the simulation object should be in the global namespace so that it saves
 # its state (i.e. not passed by value into the update function).
 class GravityMotion(ODEMotion):
-    def __init__(self, boundary, n_sensors, radius, gravity):
-        super().__init__(boundary)
+    def __init__(self, domain, n_sensors, radius, gravity):
+        super().__init__(domain)
         self.n_sensors = n_sensors
         self.sensing_radius = radius
         self.G = gravity
@@ -54,11 +53,11 @@ filename_base = "SampleAnimation"
 
 unit_square = RectangularDomain(spacing=sensing_radius)
 
-motion_model = GravityMotion(boundary=unit_square, radius=sensing_radius, gravity=5, n_sensors=num_sensors)
+motion_model = GravityMotion(domain=unit_square, radius=sensing_radius, gravity=5, n_sensors=num_sensors)
 
 sensor_network = SensorNetwork(motion_model, unit_square, sensing_radius, num_sensors, vel_mag=0.25)
 
-sim = EvasionPathSimulation(boundary=unit_square, sensor_network=sensor_network, dt=timestep_size)
+sim = EvasionPathSimulation(sensor_network=sensor_network, dt=timestep_size)
 
 
 # Update takes the frame number as an argument by default, other arguments

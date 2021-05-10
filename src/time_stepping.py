@@ -9,7 +9,6 @@
 import pickle
 from cycle_labelling import CycleLabelling
 from topological_state import TopologicalState, StateChange
-from boundary_geometry import Boundary
 from sensor_network import SensorNetwork
 from utilities import *
 
@@ -23,16 +22,15 @@ class EvasionPathSimulation:
     ## Initialize
     # If end_time is set to a non-zero value, use sooner of max cutoff time or  cleared
     # domain. Set to 0 to disable.
-    def __init__(self, boundary: Boundary, sensor_network: SensorNetwork, dt: float, end_time: int = 0) -> None:
+    def __init__(self, sensor_network: SensorNetwork, dt: float, end_time: int = 0) -> None:
 
         # time settings
         self.dt = dt
         self.Tend = end_time
         self.time = 0
 
-        self.boundary = boundary
         self.sensor_network = sensor_network
-        self.state = TopologicalState(self.sensor_network, self.boundary)
+        self.state = TopologicalState(self.sensor_network)
         self.cycle_label = CycleLabelling(self.state)
 
     ## Run until no more intruders.
@@ -53,7 +51,7 @@ class EvasionPathSimulation:
 
         for _ in range(2):
             self.sensor_network.move(dt)
-            new_state = TopologicalState(self.sensor_network, self.boundary)
+            new_state = TopologicalState(self.sensor_network)
             state_change = StateChange(self.state, new_state)
 
             if state_change.is_atomic():

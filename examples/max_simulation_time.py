@@ -1,6 +1,7 @@
 # Kyle Williams 3/5/20
 import os
 from time_stepping import *
+from utilities import *
 from topological_state import InvalidStateChange
 from boundary_geometry import RectangularDomain
 from motion_model import BilliardMotion
@@ -17,9 +18,12 @@ timestep_size: float = 0.01
 
 unit_square = RectangularDomain(spacing=sensing_radius)
 
-billiard = BilliardMotion(boundary=unit_square)
+billiard = BilliardMotion(domain=unit_square)
 
-sensor_network = SensorNetwork(billiard, unit_square, sensing_radius, num_sensors, 1)
+sensor_network = SensorNetwork(motion_model=billiard,
+                               sensing_radius=sensing_radius,
+                               n_sensors=num_sensors,
+                               vel_mag=1)
 
 output_dir: str = "./output"
 filename_base: str = "data"
@@ -28,18 +32,13 @@ n_runs: int = 1000
 max_time: int = 10  # time in seconds
 
 
-class TimedOutExc(Exception):
-    pass
-
-
 def handler(signum, frame):
     raise TimedOutExc
 
 
 def simulate() -> float:
 
-    simulation = EvasionPathSimulation(boundary=unit_square,
-                                       sensor_network=sensor_network,
+    simulation = EvasionPathSimulation(sensor_network=sensor_network,
                                        dt=timestep_size)
 
     try:
