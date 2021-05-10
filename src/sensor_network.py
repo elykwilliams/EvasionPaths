@@ -11,7 +11,7 @@ class Sensor:
         self.position = position
         self.old_pos = position
         self.pvel = polar_vel
-        self.old_pvel = self.pvel
+        self.old_pvel = polar_vel
         self.radius = sensing_radius
         self.boundary_flag = boundary_sensor
 
@@ -39,23 +39,16 @@ class SensorNetwork:
         self.sensing_radius = sensing_radius
 
         # Initialize sensor positions
-
-        self.fence_sensors = [Sensor(pt, (0, 0), sensing_radius, True) for pt in boundary.generate_fence()]
-
         if velocities:
-            self.mobile_sensors = [Sensor(pt, v, sensing_radius) for pt, v in zip(points, cart2pol(velocities))]
+            velocities = cart2pol(velocities)
         elif points:
-            self.mobile_sensors = []
-            for pt in points:
-                v = self.motion_model.initial_pvel(vel_mag)
-                sensor = Sensor(pt, v, sensing_radius)
-                self.mobile_sensors.append(sensor)
+            velocities = (self.motion_model.initial_pvel(vel_mag) for _ in points)
         else:
-            self.mobile_sensors = []
-            for pt in boundary.generate_interior_points(n_sensors):
-                v = self.motion_model.initial_pvel(vel_mag)
-                sensor = Sensor(pt, v, sensing_radius)
-                self.mobile_sensors.append(sensor)
+            points = boundary.generate_interior_points(n_sensors)
+            velocities = (self.motion_model.initial_pvel(vel_mag) for _ in points)
+
+        self.mobile_sensors = [Sensor(pt, v, sensing_radius) for pt, v in zip(points, velocities)]
+        self.fence_sensors = [Sensor(pt, (0, 0), sensing_radius, True) for pt in boundary.generate_fence()]
 
     def __iter__(self):
         return iter(self.fence_sensors + self.mobile_sensors)

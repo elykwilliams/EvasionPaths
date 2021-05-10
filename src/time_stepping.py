@@ -5,11 +5,12 @@
 # of the BSD-3 license with this file.
 # If not, visit: https://opensource.org/licenses/BSD-3-Clause
 # ************************************************************
+
 import pickle
-from cycle_labelling import *
-from topological_state import *
-from motion_model import *
-from sensor_network import *
+from cycle_labelling import CycleLabelling
+from topological_state import TopologicalState, StateChange
+from boundary_geometry import Boundary
+from sensor_network import SensorNetwork
 
 
 ## Exception indicating that atomic transition not found.
@@ -23,33 +24,27 @@ class MaxRecursionDepth(Exception):
         self.state_change = state_change
 
     def __str__(self):
-        return "Max Recursion depth exceeded! \n\n" \
-               + str(self.state_change)
+        return f"Max Recursion depth exceeded! \n\n{self.state_change}"
 
 
 ## This class provides the main interface for running a simulation.
 # It provides the ability to preform a single timestep manually, run
-# until there are no possible intruders, or until a max time is reached.
-# evasion_paths provides the name of the transitions per timestep, is_connected
-# is a flag that will be true as long as the graph remains connects.
+# until there are no possible intruders, and/or until a max time is reached.
+# state_change provides the name of the transitions per timestep.
 class EvasionPathSimulation:
 
     ## Initialize
     # If end_time is set to a non-zero value, use sooner of max cutoff time or  cleared
     # domain. Set to 0 to disable.
-    def __init__(self, boundary: Boundary, motion_model: MotionModel,
-                 n_int_sensors: int, sensing_radius: float, dt: float, end_time: int = 0,
-                 points=()) -> None:
-
-        self.boundary = boundary
+    def __init__(self, boundary: Boundary, sensor_network: SensorNetwork, dt: float, end_time: int = 0) -> None:
 
         # time settings
         self.dt = dt
         self.Tend = end_time
         self.time = 0
 
-        self.sensor_network = SensorNetwork(motion_model, boundary, sensing_radius, vel_mag=1,
-                                            n_sensors=n_int_sensors, points=points)
+        self.boundary = boundary
+        self.sensor_network = sensor_network
         self.state = TopologicalState(self.sensor_network, self.boundary)
         self.cycle_label = CycleLabelling(self.state)
 
