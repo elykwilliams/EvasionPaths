@@ -55,22 +55,14 @@ def simulate() -> float:
         simulation.run()
         data = simulation.time
 
-    # Error from two changes happening simultaneously
-    except MaxRecursionDepth as e:
-        data = "Max recursion depth exceeded" + str(e.state_change.case)
-
-    # Error from cycle not found in labelling (this should not happen)
-    except KeyError as e:
-        data = "Key Error" + str(e)
-
-    # Found state change that was unhandled. Can happen when sensor escapes
-    # or otherwise messes up boundary
-    except InvalidStateChange as e:
-        data = "Unhandled State Change" + str(e.state_change.case)
+    # Catch internal errors
+    except EvasionPathError as e:
+        data = str(e)
 
     # Catch all other errors
     except Exception as e:
         data = str(e)
+    # Reset sigalarm
     finally:
         signal.alarm(0)
     return data

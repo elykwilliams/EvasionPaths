@@ -7,6 +7,7 @@
 # ************************************************************
 
 from plotting_tools import *
+from utilities import *
 from motion_model import ODEMotion
 from time_stepping import EvasionPathSimulation
 from boundary_geometry import RectangularDomain

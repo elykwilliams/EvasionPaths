@@ -15,14 +15,14 @@ import pickle
 
 
 ## This class provides the main interface for running a simulation.
-# It provides the ability to preform a single timestep manually, run
+# It provides the ability to preform a single timestep manually, as well as run
 # until there are no possible intruders, and/or until a max time is reached.
 # state_change provides the name of the transitions per timestep.
 class EvasionPathSimulation:
 
-    ## Initialize
-    # If end_time is set to a non-zero value, use sooner of max cutoff time or  cleared
-    # domain. Set to 0 to disable.
+    ## Initialize from a given sensor_network.
+    # If end_time is set to a non-zero value, use minimum of max cutoff time and cleared
+    # domain. Set Tend = 0 to run until no possible intruder.
     def __init__(self, sensor_network: SensorNetwork, dt: float, end_time: int = 0) -> None:
 
         # time settings
@@ -45,7 +45,9 @@ class EvasionPathSimulation:
         return self.time
 
     ## Do single timestep.
-    # Do recursive adaptive step if non-atomic transition is found.
+    # Will attempt to move sensors forward and test if atomic topological change happens.
+    # If change is non-atomic, split time step in half and solve recursively.
+    # Once an atomic change is found, update sensor network position, and update labelling.
     def do_timestep(self, level: int = 0) -> None:
 
         dt = self.dt * 2 ** -level

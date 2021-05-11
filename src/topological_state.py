@@ -13,7 +13,7 @@ import networkx as nx
 
 
 ## The Topological State is the class used to encapsulate the simplicial, and combinatorial
-# information. For a given set of points (and parameters), this class will provide access to the
+# information of a sensor network. For a given sensor network), this class will provide access to the
 # simplices of the alpha complex and the boundary cycles of the combinatorial map, as well as some
 # minimal connectivity information about the underlying graph.
 class TopologicalState(object):

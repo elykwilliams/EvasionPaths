@@ -46,18 +46,9 @@ def simulate() -> float:
     try:
         data = simulation.run()
 
-    # Error from two changes happening simultaneously
-    except MaxRecursionDepth as e:
-        data = f"Max recursion depth exceeded {e.state_change.case}"
-
-    # Error from cycle not found in labelling (this should not happen)
-    except KeyError as e:
-        data = f"Key Error: {e}"
-
-    # Found state change that was unhandled. Can happen when sensor escapes
-    # or otherwise messes up boundary
-    except InvalidStateChange as e:
-        data = f"Unhandled State Change {e.state_change.case}"
+    # Catch internal errors
+    except EvasionPathError as e:
+        data = str(e)
 
     # Catch all other errors
     except Exception as e:
