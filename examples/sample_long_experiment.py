@@ -1,9 +1,17 @@
-# Kyle Williams 3/5/20
-import os
+# ************************************************************
+# Copyright (c) 2021, Kyle Williams - All Rights Reserved.
+# You may use, distribute and modify this code under the
+# terms of the BSD-3 license. You should have received a copy
+# of the BSD-3 license with this file.
+# If not, visit: https://opensource.org/licenses/BSD-3-Clause
+# ************************************************************
+
 from time_stepping import *
 from boundary_geometry import RectangularDomain
 from motion_model import BilliardMotion
+
 from joblib import Parallel, delayed
+import os
 
 ## When running a simulation that will run for a long time, care must be taken to
 # make sure that the simulation to not exit out in the middle, and that if there are

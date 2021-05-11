@@ -1,8 +1,16 @@
-# Kyle Williams 3/5/20
-import os
+# ************************************************************
+# Copyright (c) 2021, Kyle Williams - All Rights Reserved.
+# You may use, distribute and modify this code under the
+# terms of the BSD-3 license. You should have received a copy
+# of the BSD-3 license with this file.
+# If not, visit: https://opensource.org/licenses/BSD-3-Clause
+# ************************************************************
+
 from time_stepping import *
 from boundary_geometry import RectangularDomain
 from motion_model import BilliardMotion
+
+import os
 
 num_sensors: int = 20
 sensing_radius: float = 0.2

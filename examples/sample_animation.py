@@ -1,15 +1,17 @@
 # ************************************************************
-# Copyright (c) 2020, Kyle Williams - All Rights Reserved.
+# Copyright (c) 2021, Kyle Williams - All Rights Reserved.
 # You may use, distribute and modify this code under the
 # terms of the BSD-3 license. You should have received a copy
 # of the BSD-3 license with this file.
 # If not, visit: https://opensource.org/licenses/BSD-3-Clause
 # ************************************************************
 
-from matplotlib.animation import FuncAnimation
 from plotting_tools import *
-from motion_model import *
 from time_stepping import *
+from motion_model import BilliardMotion
+from boundary_geometry import RectangularDomain
+
+from matplotlib.animation import FuncAnimation
 
 ## This is a sample script to show how to create animations using matplotlib.
 # In creating an animaiton, the timestepping must be done manually, and plotted
