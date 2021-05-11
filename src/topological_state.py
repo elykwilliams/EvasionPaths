@@ -148,7 +148,7 @@ class StateChange(object):
                      len(self.simplices_removed), len(self.cycles_added), len(self.cycles_removed))
 
     ## Determine if the current state transition is atomic.
-    # A transition is considered atomic if on of the following are true:
+    # A transition is considered atomic if one of the following are true:
     #
     #       1. The case is not found in the list of possible transitions
     #       2. If a 1-simplex and 2-simplex are added/removed simultaniously, the 1-simplex
@@ -198,10 +198,10 @@ class StateChange(object):
     ## Allow class to be printable.
     # Used mostly for debugging
     def __str__(self) -> str:
-        return "State Change:" + str(self.case) + "\n" \
-            + "New edges:" + str(self.edges_added) + "\n" \
-            + "Removed edges:" + str(self.edges_removed) + "\n" \
-            + "New Simplices:" + str(self.simplices_added) + "\n" \
-            + "Removed Simplices:" + str(self.simplices_removed) + "\n" \
-            + "New cycles" + str(self.cycles_added) + "\n" \
-            + "Removed Cycles" + str(self.cycles_removed)
+        return f"State Change: {self.case}\n" \
+            + f"New edges: {self.edges_added}\n" \
+            + f"Removed edges: {self.edges_removed}\n" \
+            + f"New Simplices: {self.simplices_added}\n" \
+            + f"Removed Simplices: {self.simplices_removed}\n" \
+            + f"New cycles {self.cycles_added}\n" \
+            + f"Removed Cycles {self.cycles_removed}"

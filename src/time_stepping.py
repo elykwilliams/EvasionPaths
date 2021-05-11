@@ -6,11 +6,12 @@
 # If not, visit: https://opensource.org/licenses/BSD-3-Clause
 # ************************************************************
 
-import pickle
 from cycle_labelling import CycleLabelling
 from topological_state import TopologicalState, StateChange
 from sensor_network import SensorNetwork
 from utilities import *
+
+import pickle
 
 
 ## This class provides the main interface for running a simulation.

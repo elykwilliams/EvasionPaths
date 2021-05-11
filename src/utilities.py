@@ -11,18 +11,22 @@ from numpy import cos, sin
 from math import atan2
 
 
-def cart2pol(p):
+## Convert Cartesian coordinates to polar.
+def cart2pol(p: list) -> list:
     return [norm(p), atan2(p[1], p[0])]
 
 
-def pol2cart(p):
+## Convert Polar coordinates to cartesian.
+def pol2cart(p: list) -> list:
     return [p[0]*cos(p[1]), p[0]*sin(p[1])]
 
 
+## Compute the set theoretic difference between two lists.
 def set_difference(list1, list2):
     return list(set(list1).difference(set(list2)))
 
 
+## Determine if list is subset list.
 def is_subset(list1, list2):
     return set(list1).issubset(set(list2))
 
@@ -48,22 +52,32 @@ class InvalidStateChange(Exception):
         self.state_change = state_change
 
     def __str__(self) -> str:
-        return "Invalid State Change \n\n" \
-               + str(self.state_change)
+        return f"Invalid State Change \n\n{self.state_change}"
 
 
-class CycleNotFound(Exception):
+## Exception indicating that missing boundary cycle.
+# This exception should be raised when an boundary cycle that should be in
+# the cycle labelling is not.
+class CycleNotFound(KeyError):
     def __init__(self, boundary_cycle):
         self.b = boundary_cycle
 
     def __str__(self):
-        return "Attempted to retrieve labelling for " + str(self.b) + ", " \
+        return f"Attempted to retrieve labelling for {self.b}, " \
                  "but this cycle was not found in the cycle labelling.\n" \
                  "This most likely has occurred because you are updating " \
-                 "the labelling manually and not using the update() function.\n" \
-                 "\nIf this error has occurred as a result of update(), please create an issue" \
-                 "on github https://github.com/elykwilliams/EvasionPaths/issues"
+                 "the boundary cycle labelling manually and not using the update() function."
 
 
+## Exception to be raised by SIGALERT.
+# Use this exception when you only allow a simulation to run for a fixed amount of time.
 class TimedOutExc(Exception):
+    pass
+
+
+## Exception to be raised if simulation is over.
+# When creating animations, we specify the number frames to show. If the simulation
+# finishes before the given number of frames, throw this exception to exit out of the
+# animation loop.
+class SimulationOver(Exception):
     pass

@@ -39,11 +39,6 @@ simulation = EvasionPathSimulation(sensor_network=sensor_network,
                                    dt=timestep_size)
 
 
-# raise exception if simulation is over to kill animation.
-class SimulationOver(Exception):
-    pass
-
-
 # Update takes the frame number as an argument by default, other arguments
 # can be added by specifying fargs= ... in the FuncAnimation parameters
 def update(_):
