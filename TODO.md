@@ -3,6 +3,7 @@
  - Add sensor_tools
  - Add examples of custom_sensor_network
  - Better Messages
+ - Install using pip/venv 
 
 # Documentation:
  - Write MainPage

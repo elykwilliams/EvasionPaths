@@ -2,11 +2,13 @@
 
 This repository implements the algorithm described in _[Evasion paths in mobile sensor networks](https://arxiv.org/pdf/1308.3536.pdf)_.
 
+See our results _[Efficient Evader Detection in Mobile Sensor Networks](https://arxiv.org/abs/2101.09813)_ 
 # System Requirements
-This repository uses python modules that are easiest to install using [Anaconda](https://www.anaconda.com/)
+This repository uses python modules that are easiest to install using [Anaconda](https://www.anaconda.com/).
+Installation using pip/venv is being tested. 
 
 # Clone Repository
-To download this repository, use the following 
+To download this repository from the command line, use the following 
 
 `git clone https://www.github.com/elykwilliams/evasion-paths.git`
 
