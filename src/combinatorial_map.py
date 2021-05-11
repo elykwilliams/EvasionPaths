@@ -133,6 +133,18 @@ class CMap:
     def get_boundary_cycles(self) -> list:
         return [tuple(sorted(cycle)) for cycle in self._boundary_cycles]
 
+    @staticmethod
+    def alpha_cycle(domain):
+        a = [f"{(n + 1) % len(domain)},{n}" for n in range(len(domain))]
+        return tuple(sorted(a))
+
+    ## Remove alpha-cycle
+    # the alpha_cycle is the boundary cycle going counter-clockwise around the outside
+    # of the domain.
+    @staticmethod
+    def remove_boundary(domain, boundary_cycles):
+        return boundary_cycles.remove(CMap.alpha_cycle(domain))
+
 
 ## Get Rotational Data from points.
 # This function is used to compute the rotational data from point data if not explicitly given.

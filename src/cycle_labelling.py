@@ -8,6 +8,7 @@
 
 
 from topological_state import *
+from utilities import *
 
 
 ## The CycleLabelling class manages the time dependant labelling of boundary cycles.
@@ -235,16 +236,3 @@ class CycleLabelling:
                             connected_simplices)
 
         return StateChange.case2name[state_change.case]
-
-
-class CycleNotFound:
-    def __init__(self, boundary_cycle):
-        self.b = boundary_cycle
-
-    def __str__(self):
-        return "Attempted to retrieve labelling for " + str(self.b) + ", " \
-                 "but this cycle was not found in the cycle labelling.\n" \
-                 "This most likely has occurred because you are updating " \
-                 "the labelling manually and not using the update() function.\n" \
-                 "\nIf this error has occurred as a result of update(), please create an issue" \
-                 "on github https://github.com/elykwilliams/EvasionPaths/issues"

@@ -25,12 +25,15 @@ filename_base = "SampleAnimation"
 
 unit_square = RectangularDomain(spacing=sensing_radius)
 
-billiard = BilliardMotion(dt=timestep_size, vel=1, boundary=unit_square, n_int_sensors=num_sensors)
+billiard = BilliardMotion(domain=unit_square)
 
-simulation = EvasionPathSimulation(boundary=unit_square,
-                                   motion_model=billiard,
-                                   n_int_sensors=num_sensors,
-                                   sensing_radius=sensing_radius,
+sensor_network = SensorNetwork(motion_model=billiard,
+                               domain=unit_square,
+                               sensing_radius=sensing_radius,
+                               vel_mag=1,
+                               n_sensors=num_sensors)
+
+simulation = EvasionPathSimulation(sensor_network=sensor_network,
                                    dt=timestep_size)
 
 
@@ -42,7 +45,6 @@ class SimulationOver(Exception):
 # Update takes the frame number as an argument by default, other arguments
 # can be added by specifying fargs= ... in the FuncAnimation parameters
 def update(_):
-
     # Check is simulation is over
     if not simulation.cycle_label.has_intruder():
         raise SimulationOver
@@ -63,27 +65,27 @@ def update(_):
     show_state(simulation)
 
     # log the steps that were taken
-    with open(filename_base+".log", "a+") as file:
+    with open(filename_base + ".log", "a+") as file:
         file.write("{0:5.2f} \n".format(simulation.time))
 
 
 # Animation driver
 def animate():
-
     # Number of time steps
     n_steps = 250
 
     # milliseconds per frame in resulting mp4 file
-    ms_per_frame = 5000*timestep_size
+    ms_per_frame = 5000 * timestep_size
 
     fig = plt.figure(1)
+    ani = None
     try:
         ani = FuncAnimation(fig, update, interval=ms_per_frame, frames=n_steps)
     except SimulationOver:
         print("Simulation Complete")
     finally:
         # uncomment below to show plot while computing
-        # plt.show()
+        plt.show()
         ani.save(filename_base+'.mp4')
 
 

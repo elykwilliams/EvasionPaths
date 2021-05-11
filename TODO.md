@@ -1,4 +1,9 @@
  
+# Features:
+ - Add sensor_tools
+ - Add examples of custom_sensor_network
+ - Better Messages
+
 # Documentation:
  - Write MainPage
  - Document Examples
@@ -9,7 +14,6 @@
  
  # Future Development:
  - Allow for fully disconnected graph ("power on")
- - Compute alpha complex fully in parallel
  - AlphaComplex with variable radii
  - Decaying sensing
  - Work towards fully distributed algorithm

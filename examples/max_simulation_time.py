@@ -1,43 +1,45 @@
 # Kyle Williams 3/5/20
 import os
 from time_stepping import *
+from utilities import *
+from topological_state import InvalidStateChange
+from boundary_geometry import RectangularDomain
+from motion_model import BilliardMotion
 from joblib import Parallel, delayed
 import signal
 
 ## In cases where it is unknown whether a simulation will terminate or not, you may
 # want to set a timer on the simulation so it won't run longer that a set amount of time.
-# This example shows how to do that.
+# This example shows how to do that on a linux machine. This script does not work on windows.
 
 num_sensors: int = 20
 sensing_radius: float = 0.2
 timestep_size: float = 0.01
 
-unit_square: Boundary = RectangularDomain(spacing=sensing_radius)
+unit_square = RectangularDomain(spacing=sensing_radius)
 
-# noinspection PyTypeChecker
-billiard: MotionModel = BilliardMotion(dt=timestep_size, boundary=unit_square, vel=1, n_int_sensors=num_sensors)
+billiard = BilliardMotion(domain=unit_square)
+
+sensor_network = SensorNetwork(motion_model=billiard,
+                               domain=unit_square,
+                               sensing_radius=sensing_radius,
+                               n_sensors=num_sensors,
+                               vel_mag=1)
 
 output_dir: str = "./output"
 filename_base: str = "data"
 
 n_runs: int = 1000
-max_time: int = 600  # time in seconds
-
-class TimedOutExc(Exception):
-    pass
+max_time: int = 10  # time in seconds
 
 
-def handler(signum, frame):
+def handler(*_):
     raise TimedOutExc
 
 
 def simulate() -> float:
 
-    simulation = EvasionPathSimulation(boundary=unit_square,
-                                       motion_model=billiard,
-                                       n_int_sensors=num_sensors,
-                                       sensing_radius=sensing_radius,
-                                       dt=timestep_size)
+    simulation = EvasionPathSimulation(sensor_network=sensor_network, dt=timestep_size)
 
     try:
         signal.signal(signal.SIGALRM, handler)

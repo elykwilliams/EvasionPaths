@@ -1,6 +1,8 @@
 # Kyle Williams 3/5/20
 import os
 from time_stepping import *
+from boundary_geometry import RectangularDomain
+from motion_model import BilliardMotion
 from joblib import Parallel, delayed
 
 ## When running a simulation that will run for a long time, care must be taken to
@@ -11,10 +13,17 @@ num_sensors: int = 20
 sensing_radius: float = 0.2
 timestep_size: float = 0.01
 
-unit_square: Boundary = RectangularDomain(spacing=sensing_radius)
+unit_square = RectangularDomain(spacing=sensing_radius)
 
 # noinspection PyTypeChecker
-billiard: MotionModel = BilliardMotion(dt=timestep_size, boundary=unit_square, vel=1, n_int_sensors=num_sensors)
+billiard = BilliardMotion(domain=unit_square)
+
+sensor_network = SensorNetwork(motion_model=billiard,
+                               domain=unit_square,
+                               sensing_radius=sensing_radius,
+                               n_sensors=num_sensors,
+                               vel_mag=1)
+
 
 output_dir: str = "./output"
 filename_base: str = "data"
@@ -24,27 +33,23 @@ n_runs: int = 10
 
 def simulate() -> float:
 
-    simulation = EvasionPathSimulation(boundary=unit_square,
-                                       motion_model=billiard,
-                                       n_int_sensors=num_sensors,
-                                       sensing_radius=sensing_radius,
-                                       dt=timestep_size)
+    simulation = EvasionPathSimulation(sensor_network=sensor_network, dt=timestep_size)
 
     try:
         data = simulation.run()
 
     # Error from two changes happening simultaneously
     except MaxRecursionDepth as e:
-        data = "Max recursion depth exceeded" + str(e.state_change.case)
+        data = f"Max recursion depth exceeded {e.state_change.case}"
 
     # Error from cycle not found in labelling (this should not happen)
     except KeyError as e:
-        data = "Key Error" + str(e)
+        data = f"Key Error: {e}"
 
     # Found state change that was unhandled. Can happen when sensor escapes
     # or otherwise messes up boundary
     except InvalidStateChange as e:
-        data = "Unhandled State Change" + str(e.state_change.case)
+        data = f"Unhandled State Change {e.state_change.case}"
 
     # Catch all other errors
     except Exception as e:

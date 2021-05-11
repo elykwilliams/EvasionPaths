@@ -6,17 +6,10 @@
 # If not, visit: https://opensource.org/licenses/BSD-3-Clause
 # ************************************************************
 
+from utilities import *
 from combinatorial_map import *
 from gudhi.alpha_complex import AlphaComplex
 import networkx as nx
-
-
-def set_difference(list1, list2):
-    return list(set(list1).difference(set(list2)))
-
-
-def is_subset(list1, list2):
-    return set(list1).issubset(set(list2))
 
 
 ## The Topological State is the class used to encapsulate the simplicial, and combinatorial
@@ -27,23 +20,24 @@ class TopologicalState(object):
 
     ## Compute Alpha-complex and combinatorial map and extract simplices and boundary cycles. Also
     # save connectivity information.
-    def __init__(self, points, sensing_radius, boundary):
+    def __init__(self, sensor_network):
+        points = [sensor.position for sensor in sensor_network]
         alpha_complex = AlphaComplex(points)
-        simplex_tree = alpha_complex.create_simplex_tree(max_alpha_square=sensing_radius ** 2)
+        simplex_tree = alpha_complex.create_simplex_tree(max_alpha_square=sensor_network.sensing_radius ** 2)
 
         self._simplices = [[], [], []]
         self._simplices[0] = [simplex[0] for simplex, _ in simplex_tree.get_skeleton(0)]
         self._simplices[1] = [tuple(simplex) for simplex, _ in simplex_tree.get_skeleton(1) if len(simplex) == 2]
         self._simplices[2] = [tuple(simplex) for simplex, _ in simplex_tree.get_skeleton(2) if len(simplex) == 3]
 
-        graph = nx.Graph()
-        graph.add_nodes_from(self._simplices[0])
-        graph.add_edges_from(self._simplices[1])
+        self.graph = nx.Graph()
+        self.graph.add_nodes_from(self._simplices[0])
+        self.graph.add_edges_from(self._simplices[1])
 
-        self._boundary_cycles = CMap(graph, points).get_boundary_cycles()
-        self._boundary_cycles.remove(boundary.alpha_cycle)
+        self._boundary_cycles = CMap(self.graph, points).get_boundary_cycles()
+        CMap.remove_boundary(sensor_network.motion_model.domain, self._boundary_cycles)
 
-        self._connected_nodes = nx.node_connected_component(graph, 0)
+        self._connected_nodes = nx.node_connected_component(self.graph, 0)
 
     ## Check if graph is connected.
     # This is used for flagging when the graph has become disconnected.
@@ -154,7 +148,7 @@ class StateChange(object):
                      len(self.simplices_removed), len(self.cycles_added), len(self.cycles_removed))
 
     ## Determine if the current state transition is atomic.
-    # A transition is considered non-atomic if on of the following are true:
+    # A transition is considered atomic if on of the following are true:
     #
     #       1. The case is not found in the list of possible transitions
     #       2. If a 1-simplex and 2-simplex are added/removed simultaniously, the 1-simplex
@@ -211,16 +205,3 @@ class StateChange(object):
             + "Removed Simplices:" + str(self.simplices_removed) + "\n" \
             + "New cycles" + str(self.cycles_added) + "\n" \
             + "Removed Cycles" + str(self.cycles_removed)
-
-
-## Exception indicating non-atomic state change.
-# This exception should be raised when a function that requires an atomic change
-# is given a non-atomic change.
-class InvalidStateChange(Exception):
-    def __init__(self, state_change):
-        self.state_change = state_change
-
-    def __str__(self) -> str:
-        return "Invalid State Change \n\n" \
-               + str(self.state_change)
-

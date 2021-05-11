@@ -6,12 +6,19 @@
 # If not, visit: https://opensource.org/licenses/BSD-3-Clause
 # ************************************************************
 
-from boundary_geometry import *
-from numpy import sqrt, random, sin, cos, pi, mean
+from utilities import cart2pol, pol2cart
+from boundary_geometry import Domain
+
+import numpy as np
+from numpy import array, random
 from numpy.linalg import norm
-from numpy import array
 from scipy.integrate import solve_ivp
 from abc import ABC, abstractmethod
+
+
+## Compute distance between two sensors.
+def dist(s1, s2):
+    return norm(array(s1.old_pos) - array(s2.old_pos))
 
 
 ## This class provides the basic interface for a model of motion.
@@ -20,34 +27,46 @@ from abc import ABC, abstractmethod
 # boundary, motion models and boundaries must be compatible.
 class MotionModel(ABC):
 
-    ## Initialize motion model with boundary and time-scale
-    def __init__(self, dt: float, boundary: Boundary) -> None:
-        self.dt = dt
-        self.boundary = boundary
-        self.n_sensors = None
+    ## Initialize motion model with boundary.
+    def __init__(self, domain: Domain) -> None:
+        self.domain = domain
 
-    ## Update an individual point.
+    ## Update position individual point.
     # This function will be called on all points.
-    # reflection should be separate. The index is the position
-    # in the set of ALL points, and can be useful in looking up
-    # sensor specific data. Will return new position or sensor.
+    # Implementations should do the following:
+    #   1. move sensor
+    #   2. update velocity
+    #   3. check if reflection is needed
     @abstractmethod
-    def update_point(self, pt: tuple, sensor_id: int) -> tuple:
-        return pt
+    def update_position(self, sensor, dt):
+        if sensor.position not in self.domain:
+            self.reflect(sensor)
 
+    ## Elastic reflection off boundary wall.
+    # This function should not need to be over written unless
+    # an inelastic collision is needed. This function adjusts
+    # the sensor position to where it should be, and the new
+    # velocity angle.
+    def reflect(self, sensor):
+        sensor.pvel[1] = self.domain.reflect_velocity(sensor.old_pos, sensor.position)
+        sensor.position = self.domain.reflect_point(sensor.old_pos, sensor.position)
+
+    ## Compute any nonlocal updates.
+    # This function should be called before update_position().
+    # It should compute any updates needed so that update_position()
+    # is a strictly local function. For example: If there any equations
+    # to be solved, points and velocities should be pre-computed here,
+    # then update the sensors when update_position is called.
+    def compute_update(self, all_sensors, dt):
+        pass
+
+    ## Initialize sensor velocity.
+    # Velocity is stored in polar form. vel_mag is a parameter that
+    # can be used to indicate a scale of magnitude.
+    @staticmethod
     @abstractmethod
-    def reflect(self, old_pt, new_pt, sensor_id):
-        self.boundary.reflect_velocity(old_pt, new_pt)
-        return self.boundary.reflect_point(old_pt, new_pt)
-
-    ## Update all non-fence points.
-    # If a point is not in the domain, reflect. It is sometimes
-    # necessary to override this class method since this method is
-    # called only once per time-step.
-    def update_points(self, old_points: list, dt: float) -> list:
-        self.dt = dt
-        return self.boundary.points \
-            + [self.update_point(pt, n) for n, pt in enumerate(old_points) if n >= len(self.boundary)]
+    def initial_pvel(vel_mag):
+        return None
 
 
 ## Provide random motion for rectangular domain.
@@ -56,21 +75,22 @@ class MotionModel(ABC):
 class BrownianMotion(MotionModel):
 
     ## Initialize boundary with typical velocity.
-    def __init__(self, dt: float, boundary: Boundary, sigma: float) -> None:
-        super().__init__(dt, boundary)
+    def __init__(self, domain: Domain, sigma: float) -> None:
+        super().__init__(domain)
         self.sigma = sigma
 
+    @staticmethod
+    def initial_pvel(vel_mag):
+        return None
+
     ## Random function.
-    def epsilon(self) -> float:
-        return self.sigma * sqrt(self.dt) * random.normal(0, 1)
+    def epsilon(self, dt) -> float:
+        return self.sigma * np.sqrt(dt) * random.normal(0, 1, 2)
 
-    ## Update each coordinate with brownian model.
-    def update_point(self, old_pt: tuple, sensor_id) -> tuple:
-        new_pt = old_pt[0] + self.epsilon(), old_pt[1] + self.epsilon()
-        return new_pt if self.boundary.in_domain(new_pt) else self.reflect(old_pt, new_pt, sensor_id)
-
-    def reflect(self, old_pt, new_pt, sensor_id):
-        return self.boundary.reflect_point(old_pt, new_pt)
+    def update_position(self, sensor, dt):
+        sensor.position = array(sensor.old_pos) + self.epsilon(dt)
+        if sensor.position not in self.domain:
+            self.reflect(sensor)
 
 
 ## Implement Billiard Motion for Rectangular Domain.
@@ -78,115 +98,132 @@ class BrownianMotion(MotionModel):
 # Points will move a distance of vel*dt each update.
 class BilliardMotion(MotionModel):
 
-    ## Initialize Boundary with additional velocity and number of sensors.
-    # The number of sensors is required to know how to initialize the velocity
-    # angles.
-    def __init__(self, dt: float, boundary: Boundary, vel: float, n_int_sensors: int) -> None:
-        super().__init__(dt, boundary)
-        self.vel = vel
-        self.vel_angle = random.uniform(0, 2 * pi, n_int_sensors + len(boundary)).tolist()
-        self.n_sensors = n_int_sensors  # used in point-wise simulation initialization
+    @staticmethod
+    def initial_pvel(vel_mag):
+        return array([vel_mag, random.uniform(0, 2*np.pi)])
 
     ## Update point using x = x + v*dt.
-    def update_point(self, pt: tuple, sensor_id: int) -> tuple:
-        theta = self.vel_angle[sensor_id]
-        new_pt = (pt[0] + self.dt * self.vel * np.cos(theta)), (pt[1] + self.dt * self.vel * np.sin(theta))
-        return new_pt if self.boundary.in_domain(new_pt) else self.reflect(pt, new_pt, sensor_id)
-
-    def reflect(self, old_pt, new_pt, sensor_id):
-        self.vel_angle[sensor_id] = self.boundary.reflect_velocity(old_pt, new_pt)
-        return self.boundary.reflect_point(old_pt, new_pt)
+    def update_position(self, sensor, dt):
+        vel = array(pol2cart(sensor.pvel))
+        sensor.position = array(sensor.old_pos) + dt*vel
+        if sensor.position not in self.domain:
+            self.reflect(sensor)
 
 
 ## Implement randomized variant of Billiard motion.
 # Each update, a sensor has a chance of randomly changing direction.
 class RunAndTumble(BilliardMotion):
+    def __init__(self, domain: Domain, dt: float):
+        super().__init__(domain)
+        self.large_dt = dt
 
     ## Update angles before updating points.
     # Each update every point has a 1 : 5 chance of having its velocity
     # angle changed. Then update as normal.
-    def update_point(self, pt: tuple, sensor_id: int) -> tuple:
-        if random.randint(0, 5) == 4:
-            self.vel_angle[sensor_id] = random.uniform(0, 2 * pi)
-        return super().update_point(pt, sensor_id)
+    def compute_update(self, all_sensors, dt):
+        if self.large_dt == dt:
+            for sensor in all_sensors.mobile_sensors:
+                if random.randint(0, 5) == 4:
+                    sensor.old_pvel[1] = random.uniform(0, 2 * np.pi)
 
 
 class Viscek(BilliardMotion):
 
-    def __init__(self, dt, boundary: Boundary, n_int_sensors, sensing_radius):
-        super().__init__(dt=0, boundary=boundary, vel=1, n_int_sensors=n_int_sensors)
-        self.radius = sensing_radius
+    def __init__(self, domain: Domain, dt: float, sensing_radius: float):
+        super().__init__(domain)
         self.large_dt = dt
+        self.radius = sensing_radius
 
+    ## Noise function.
+    # Velocity can vary by as much as pi/12 in either direction.
     @staticmethod
-    def dist(pt1, pt2):
-        return norm(array(pt1) - array(pt2))
+    def eta():
+        return (np.pi / 12) * random.uniform(-1, 1)
 
-    def eta(self):
-        return (pi / 12) * random.uniform(-1, 1)
-
-    def update_points(self, old_points: list, dt: float) -> list:
-        self.dt = dt
-        offset = len(self.boundary)
-
-        new_points = self.boundary.points \
-                     + [self.update_point(pt, offset + n) for n, pt in enumerate(old_points[offset:])]
-
-        if self.dt != self.large_dt:
-            return new_points
-
-        for i, pti in enumerate(old_points[offset:]):
-            index_list = [j for j, ptj in enumerate(old_points[offset:]) if self.dist(pti, ptj) < self.radius]
-
-            if index_list:
-                self.vel_angle[i + offset] = float(
-                    mean([self.vel_angle[j + offset] for j in index_list]) + self.eta()) % (2 * pi)
-
-        return new_points
+    ## Average velocity angles at each timestep.
+    # This function will set the velocity angle to be the average 
+    # of the velocity angle of sensors nearby, plus some noise.
+    def compute_update(self, sensors, dt):
+        if dt == self.large_dt:
+            for s1 in sensors.mobile_sensors:
+                sensor_angles = [s2.old_vel_angle for s2 in sensors.mobile_sensors if dist(s1, s2) < self.radius]
+                s1.old_pvel[1] = (np.mean(sensor_angles) + self.eta()) % (2 * np.pi)
 
 
-class Dorsogna(MotionModel):
-    def __init__(self, dt, boundary, max_vel, n_int_sensors, sensing_radius, eta_scale_factor, DO_coeff):
-        super().__init__(dt, boundary)
-        self.velocities = np.random.uniform(-max_vel, max_vel, (n_int_sensors, 2))
-        self.n_sensors = n_int_sensors
-        self.boundary = boundary
+class ODEMotion(MotionModel, ABC):
+    def __init__(self, domain):
+        super().__init__(domain)
+        self.n_sensors = 0
+        self.points = dict()
+        self.velocities = dict()
+
+    @abstractmethod
+    def time_derivative(self, t, state):
+        pass
+
+    def compute_update(self, sensors, dt):
+        self.n_sensors = len(sensors.mobile_sensors)
+        # Put into form ode solver wants [ xs | ys | vxs | vys ]
+        xs = [s.old_pos[0] for s in sensors.mobile_sensors]
+        ys = [s.old_pos[1] for s in sensors.mobile_sensors]
+        vxs = [pol2cart(s.old_pvel)[0] for s in sensors.mobile_sensors]
+        vys = [pol2cart(s.old_pvel)[1] for s in sensors.mobile_sensors]
+        init_val = xs + ys + vxs + vys
+
+        # Solve with init_val as t=0, solve for values at t+dt
+        new_val = solve_ivp(self.time_derivative, [0, dt], init_val, t_eval=[dt], rtol=1e-8)
+
+        # Convert back from np array
+        new_val = new_val.y
+
+        # split state back into position and velocity,
+        split_state = [[y[0] for y in new_val[i:i + self.n_sensors]] for i in range(0, len(new_val), self.n_sensors)]
+
+        # zip into list of tuples
+        self.velocities = dict(zip(sensors.mobile_sensors, zip(split_state[2], split_state[3])))
+
+        # Reflect any points outside boundary
+        self.points = dict(zip(sensors.mobile_sensors, zip(split_state[0], split_state[1])))
+
+    def update_position(self, sensor, dt):
+        sensor.pvel = cart2pol(self.velocities[sensor])
+        sensor.position = self.points[sensor]
+        if sensor.position not in self.domain:
+            self.reflect(sensor)
+
+
+class Dorsogna(ODEMotion):
+    def __init__(self, domain, sensing_radius, eta_scale_factor, coeff):
+        assert len(coeff) != 4, "Not enough parameters in DO_coeff"
+        super().__init__(domain)
         self.sensing_radius = sensing_radius
         self.eta = eta_scale_factor * sensing_radius
-        if len(DO_coeff) != 4:
-            raise ValueError("Not enough parameters in DO_coeff")
-        self.DO_coeff = DO_coeff
+        self.DO_coeff = coeff
 
-    def update_point(self, pt: tuple, index: int) -> tuple:
-        # Not used
-        return pt
-
-    def reflect(self, old_pt, new_pt, index) -> tuple:
-        norm_v = norm(self.velocities[index])
-        theta = self.boundary.reflect_velocity(old_pt, new_pt)
-        self.velocities[index] = (norm_v * cos(theta), norm_v * sin(theta))
-        return self.boundary.reflect_point(old_pt, new_pt)
+    @staticmethod
+    def initial_pvel(vel_mag):
+        return cart2pol(np.random.uniform(-vel_mag, vel_mag, 2))
 
     def gradient(self, xs, ys):
-        gradUx, gradUy = [0.0] * self.n_sensors, [0.0] * self.n_sensors
+        grad_x, grad_y = np.zeros(self.n_sensors), np.zeros(self.n_sensors)
 
-        for i in range(0, self.n_sensors):
+        for i in range(self.n_sensors):
             for j in range(self.n_sensors):
                 r = norm((xs[i] - xs[j], ys[i] - ys[j]))
-                if 0.0 < r < 2 * self.sensing_radius:
+                if r < 2 * self.sensing_radius and i != j:
                     attract_term = (self.DO_coeff[0] * np.exp(-r / self.DO_coeff[1]) / (self.DO_coeff[1] * r))
                     repel_term = (self.DO_coeff[2] * np.exp(-r / self.DO_coeff[3]) / (self.DO_coeff[3] * r))
 
-                    gradUx[i] += (xs[i] - xs[j]) * attract_term - (xs[i] - xs[j]) * repel_term
-                    gradUy[i] += (ys[i] - ys[j]) * attract_term - (ys[i] - ys[j]) * repel_term
+                    grad_x[i] += (xs[i] - xs[j]) * attract_term - (xs[i] - xs[j]) * repel_term
+                    grad_y[i] += (ys[i] - ys[j]) * attract_term - (ys[i] - ys[j]) * repel_term
 
-        return array(gradUx), array(gradUy)
+        return array(grad_x), array(grad_y)
 
     def time_derivative(self, _, state):
         # ode solver gives us np array in the form [xvals | yvals | vxvals | vyvals]
         # split into individual np array
         split_state = [state[i:i + self.n_sensors] for i in range(0, len(state), self.n_sensors)]
-        gradU = self.gradient(split_state[0], split_state[1])
+        grad = self.gradient(split_state[0], split_state[1])
 
         # Need to compute time derivative of each,
         # I just have d(x, y)/dt = (vx, vy), d(vx, vy)/dt = (1, -1)
@@ -195,36 +232,6 @@ class Dorsogna(MotionModel):
         dvxdt = array(self.n_sensors * [0])
         dvydt = array(self.n_sensors * [0])
         for i in range(self.n_sensors):
-            dvxdt[i] = (1.5 - (0.5 * norm((dxdt[i], dydt[i])) ** 2)) * dxdt[i] - gradU[0][i]
-            dvydt[i] = (1.5 - (0.5 * norm((dxdt[i], dydt[i])) ** 2)) * dydt[i] - gradU[1][i]
+            dvxdt[i] = (1.5 - (0.5 * norm((dxdt[i], dydt[i])) ** 2)) * dxdt[i] - grad[0][i]
+            dvydt[i] = (1.5 - (0.5 * norm((dxdt[i], dydt[i])) ** 2)) * dydt[i] - grad[1][i]
         return np.concatenate([dxdt, dydt, dvxdt, dvydt])
-
-    def update_points(self, old_points, dt) -> list:
-        self.dt = dt
-        # Remove boundary points, and put into form ode solver wants
-        xs = [old_points[i][0] for i in range(len(self.boundary), len(old_points))]
-        ys = [old_points[i][1] for i in range(len(self.boundary), len(old_points))]
-        vxs = [self.velocities[i][0] for i in range(self.n_sensors)]
-        vys = [self.velocities[i][1] for i in range(self.n_sensors)]
-        init_val = xs + ys + vxs + vys
-
-        # Solve with init_val as t=0, solve for values at t+dt
-        new_val = solve_ivp(self.time_derivative, [0, self.dt], init_val, t_eval=[self.dt], rtol=1e-8)
-
-        # Convert back from np array
-        new_val = new_val.y.tolist()
-
-        # split state back into position and velocity,
-        split_state = [[y[0] for y in new_val[i:i + self.n_sensors]]
-                       for i in range(0, len(new_val), self.n_sensors)]
-
-        # zip into list of tuples
-        self.velocities = list(zip(split_state[2], split_state[3]))
-
-        # Reflect any points outside boundary
-        points = list(zip(split_state[0], split_state[1]))
-        for n, pt in enumerate(points):
-            if not self.boundary.in_domain(pt):
-                points[n] = self.reflect(old_points[n + len(self.boundary)], pt, n)
-
-        return old_points[0:len(self.boundary)] + points

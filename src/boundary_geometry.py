@@ -5,10 +5,10 @@
 # of the BSD-3 license with this file.
 # If not, visit: https://opensource.org/licenses/BSD-3-Clause
 # ************************************************************
-import math
 
+from utilities import pol2cart
 import numpy as np
-from numpy import sin, cos, arange, pi, array, arctan2
+from numpy import arange, pi, array, arctan2
 from numpy.linalg import norm
 from abc import ABC, abstractmethod
 
@@ -20,28 +20,27 @@ from abc import ABC, abstractmethod
 # the fence (the "alpha_cycle". And finally, it will be the class to
 # generate initial data since it can determine how best go generate
 # random points inside the domain.
-class Boundary(ABC):
+class Domain(ABC):
 
     ## Must initialize the boundary points and "alpha_cycle".
     # The points stored are the points on the boundary only.
     def __init__(self) -> None:
-        self.points = self.generate_boundary_points()
-        self.alpha_cycle = self.get_alpha_cycle()
+        self.n_sensors = len(self.generate_fence())
 
     ## length of boundary is number of boundary sensors.
     def __len__(self) -> int:
-        return len(self.points)
+        return self.n_sensors
 
     ## Determine if given point it in domain or not.
     @abstractmethod
-    def in_domain(self, point: tuple) -> bool:
+    def __contains__(self, item) -> bool:
         return True
 
     ## Generate boundary points in counterclockwise order.
     # Points must be generated in counterclockwise order so that the
     # alpha_cycle can be easily computed.
     @abstractmethod
-    def generate_boundary_points(self):
+    def generate_fence(self):
         return []
 
     ## Generate n_int sensors randomly inside the domain.
@@ -57,18 +56,6 @@ class Boundary(ABC):
         x_pts, y_pts = [], []
         return x_pts, y_pts
 
-    ## Return list of all points.
-    # Boundary points must come first and be non-empty.
-    def generate_points(self, n_int_sensors: int) -> list:
-        return self.points + self.generate_interior_points(n_int_sensors)
-
-    ## construct boundary cycle.
-    # the alpha_cycle is the boundary cycle going counter-closckwise around the outside
-    # of the domain.
-    def get_alpha_cycle(self) -> tuple:
-        a = [str(n + 1) + "," + str(n) for n in range(len(self.points) - 1)] + ["0," + str(len(self.points) - 1)]
-        return tuple(sorted(a))
-
     ## Reflect a point off the boundary.
     # If a sensor leaves the domain, we need to move the sensors back in
     @abstractmethod
@@ -78,7 +65,7 @@ class Boundary(ABC):
     @abstractmethod
     def reflect_velocity(self, old_pt, new_pt):
         vel_angle = np.arctan2(new_pt[1] - old_pt[1], new_pt[0] - old_pt[0])
-        return float(vel_angle)
+        return vel_angle
 
 
 ## a rectangular domain using virtual boundary.
@@ -88,7 +75,7 @@ class Boundary(ABC):
 # and the physical locations of the sensors are places slightly outside of
 # this boundary in a way that still allows interior sensors to form simplices
 # with fence sensors.
-class RectangularDomain(Boundary):
+class RectangularDomain(Domain):
 
     ## Initialize with dimension of desired boundary.
     # Sensor positions will be reflected so that interior sensors stay in the
@@ -102,25 +89,25 @@ class RectangularDomain(Boundary):
         self.spacing = spacing
 
         # Initialize fence boundary
-        self.dx = self.spacing * math.sin(np.pi / 6)  # virtual boundary width
+        self.dx = self.spacing * np.sin(np.pi / 6)  # virtual boundary width
         self.vx_min, self.vx_max = self.x_min - self.dx, self.x_max + self.dx
         self.vy_min, self.vy_max = self.y_min - self.dx, self.y_max + self.dx
 
         super().__init__()
 
     ## Check if point is in domain.
-    def in_domain(self, point: tuple) -> bool:
+    def __contains__(self, point: tuple) -> bool:
         return self.x_min <= point[0] <= self.x_max \
                and self.y_min <= point[1] <= self.y_max
 
     ## Generate points in counter-clockwise order.
-    def generate_boundary_points(self) -> list:
+    def generate_fence(self) -> list:
         points = []
-        points.extend([(float(x), self.vy_min) for x in np.arange(self.vx_min, 0.999*self.vx_max, self.spacing)])  # bottom
-        points.extend([(self.vx_max, float(y)) for y in np.arange(self.vy_min, 0.999*self.vx_max, self.spacing)])  # right
-        points.extend([(self.x_max - float(x), self.vy_max)
+        points.extend([(x, self.vy_min) for x in np.arange(self.vx_min, 0.999*self.vx_max, self.spacing)])  # bottom
+        points.extend([(self.vx_max, y) for y in np.arange(self.vy_min, 0.999*self.vx_max, self.spacing)])  # right
+        points.extend([(self.x_max - x, self.vy_max)
                        for x in np.arange(self.vx_min, 0.999*self.vx_max, self.spacing)])  # top
-        points.extend([(self.vx_min, self.y_max - float(y))
+        points.extend([(self.vx_min, self.y_max - y)
                        for y in np.arange(self.vy_min, 0.999*self.vy_max, self.spacing)])  # left
         return points
 
@@ -159,7 +146,7 @@ class RectangularDomain(Boundary):
             vel_angle = np.pi - vel_angle
         if new_pt[1] <= self.y_min or new_pt[1] >= self.y_max:
             vel_angle = - vel_angle
-        return float(vel_angle) % (2 * math.pi)
+        return float(vel_angle) % (2 * np.pi)
 
 
 ## a circular domain using virtual boundary.
@@ -169,7 +156,7 @@ class RectangularDomain(Boundary):
 # and the physical locations of the sensors are places slightly outside of
 # this boundary in a way that still allows interior sensors to form simplices
 # with fence sensors.
-class CircularDomain(Boundary):
+class CircularDomain(Domain):
     def __init__(self, spacing, radius) -> None:
 
         self.spacing = spacing
@@ -182,23 +169,23 @@ class CircularDomain(Boundary):
         super().__init__()
 
     ## Check if point is in domain.
-    def in_domain(self, point: tuple) -> bool:
+    def __contains__(self, point: tuple) -> bool:
         return norm(point) < self.radius
 
     ## Generate points in counter-clockwise order.
-    def generate_boundary_points(self) -> list:
-        return [(self.v_rad*math.cos(t), self.v_rad*math.sin(t)) for t in arange(0, 2 * pi, self.spacing)]
+    def generate_fence(self) -> list:
+        return [(self.v_rad*np.cos(t), self.v_rad*np.sin(t)) for t in arange(0, 2 * pi, self.spacing)]
 
     ## Generate points distributed randomly (uniformly) in the interior.
     def generate_interior_points(self, n_int_sensors):
         theta = np.random.uniform(0, 2 * pi, size=n_int_sensors)
         radius = np.random.uniform(0, self.radius, size=n_int_sensors)
-        return [(r*cos(t), r*sin(t)) for r, t in zip(radius, theta)]
+        return [pol2cart(p) for p in zip(radius, theta)]
 
     ## Generate Points to plot domain boundary.
     def domain_boundary_points(self):
-        x_pts = [self.radius*cos(t) for t in arange(0, 2*pi, 0.01)]
-        y_pts = [self.radius*sin(t) for t in arange(0, 2*pi, 0.01)]
+        x_pts = [self.radius*np.cos(t) for t in arange(0, 2*pi, 0.01)]
+        y_pts = [self.radius*np.sin(t) for t in arange(0, 2*pi, 0.01)]
         return x_pts, y_pts
 
     def _get_intersection(self, old_pt, new_pt):
