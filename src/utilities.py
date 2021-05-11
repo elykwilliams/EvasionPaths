@@ -44,7 +44,7 @@ class InvalidStateChange(Exception):
                + str(self.state_change)
 
 
-class CycleNotFound(Exception)  :
+class CycleNotFound(Exception):
     def __init__(self, boundary_cycle):
         self.b = boundary_cycle
 

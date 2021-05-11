@@ -169,7 +169,7 @@ class CircularDomain(Domain):
         super().__init__()
 
     ## Check if point is in domain.
-    def in_domain(self, point: tuple) -> bool:
+    def __contains__(self, point: tuple) -> bool:
         return norm(point) < self.radius
 
     ## Generate points in counter-clockwise order.

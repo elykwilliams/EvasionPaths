@@ -6,11 +6,13 @@
 # If not, visit: https://opensource.org/licenses/BSD-3-Clause
 # ************************************************************
 
-from matplotlib.animation import FuncAnimation
 from plotting_tools import *
-from motion_model import *
-from time_stepping import *
+from motion_model import ODEMotion
+from time_stepping import EvasionPathSimulation
+from boundary_geometry import RectangularDomain
+
 import numpy as np
+from matplotlib.animation import FuncAnimation
 
 
 ## This is a sample script to show how to create animations using matplotlib.
@@ -29,7 +31,7 @@ class GravityMotion(ODEMotion):
     def initial_pvel(vel_mag):
         return cart2pol(np.random.uniform(-vel_mag, vel_mag, 2))
 
-    def gradient(self, xs, ys):
+    def gradient(self, *_):
         return np.zeros(self.n_sensors), self.G*np.ones(self.n_sensors)
 
     def time_derivative(self, _, state):
@@ -38,9 +40,8 @@ class GravityMotion(ODEMotion):
         split_state = [state[i:i + self.n_sensors] for i in range(0, len(state), self.n_sensors)]
 
         # Need to compute time derivative of each,
-        # I just have d(x, y)/dt = (vx, vy), d(vx, vy)/dt = (1, -1)
-        dxdt = split_state[2]
-        dydt = split_state[3]
+        # I just have d(x, y)/dt = (vx, vy), d(vx, vy)/dt = (0, G)
+        dxdt, dydt = split_state[2], split_state[3]
         dvxdt, dvydt = self.gradient(split_state[0], split_state[1])
         return np.concatenate([dxdt, dydt, -dvxdt, -dvydt])
 
@@ -93,7 +94,7 @@ def animate():
     ms_per_frame = 2000*timestep_size
 
     fig = plt.figure(1)
-    ani = FuncAnimation(fig, update, interval=ms_per_frame, frames=n_steps)
+    FuncAnimation(fig, update, interval=ms_per_frame, frames=n_steps)
     plt.show()
 
     # See sample_animation.py for how to save animation

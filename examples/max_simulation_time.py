@@ -21,6 +21,7 @@ unit_square = RectangularDomain(spacing=sensing_radius)
 billiard = BilliardMotion(domain=unit_square)
 
 sensor_network = SensorNetwork(motion_model=billiard,
+                               domain=unit_square,
                                sensing_radius=sensing_radius,
                                n_sensors=num_sensors,
                                vel_mag=1)
@@ -32,14 +33,13 @@ n_runs: int = 1000
 max_time: int = 10  # time in seconds
 
 
-def handler(signum, frame):
+def handler(*_):
     raise TimedOutExc
 
 
 def simulate() -> float:
 
-    simulation = EvasionPathSimulation(sensor_network=sensor_network,
-                                       dt=timestep_size)
+    simulation = EvasionPathSimulation(sensor_network=sensor_network, dt=timestep_size)
 
     try:
         signal.signal(signal.SIGALRM, handler)

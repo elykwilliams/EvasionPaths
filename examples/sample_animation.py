@@ -28,6 +28,7 @@ unit_square = RectangularDomain(spacing=sensing_radius)
 billiard = BilliardMotion(domain=unit_square)
 
 sensor_network = SensorNetwork(motion_model=billiard,
+                               domain=unit_square,
                                sensing_radius=sensing_radius,
                                vel_mag=1,
                                n_sensors=num_sensors)
@@ -77,6 +78,7 @@ def animate():
     ms_per_frame = 5000 * timestep_size
 
     fig = plt.figure(1)
+    ani = None
     try:
         ani = FuncAnimation(fig, update, interval=ms_per_frame, frames=n_steps)
     except SimulationOver:
@@ -84,7 +86,7 @@ def animate():
     finally:
         # uncomment below to show plot while computing
         plt.show()
-        # ani.save(filename_base+'.mp4')
+        ani.save(filename_base+'.mp4')
 
 
 if __name__ == "__main__":

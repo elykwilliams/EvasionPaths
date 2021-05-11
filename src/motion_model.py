@@ -174,7 +174,7 @@ class ODEMotion(MotionModel, ABC):
         new_val = solve_ivp(self.time_derivative, [0, dt], init_val, t_eval=[dt], rtol=1e-8)
 
         # Convert back from np array
-        new_val = new_val.y.tolist()
+        new_val = new_val.y
 
         # split state back into position and velocity,
         split_state = [[y[0] for y in new_val[i:i + self.n_sensors]] for i in range(0, len(new_val), self.n_sensors)]
@@ -193,19 +193,19 @@ class ODEMotion(MotionModel, ABC):
 
 
 class Dorsogna(ODEMotion):
-    def __init__(self, domain, sensing_radius, eta_scale_factor, DO_coeff):
-        assert len(DO_coeff) != 4, "Not enough parameters in DO_coeff"
+    def __init__(self, domain, sensing_radius, eta_scale_factor, coeff):
+        assert len(coeff) != 4, "Not enough parameters in DO_coeff"
         super().__init__(domain)
         self.sensing_radius = sensing_radius
         self.eta = eta_scale_factor * sensing_radius
-        self.DO_coeff = DO_coeff
+        self.DO_coeff = coeff
 
     @staticmethod
     def initial_pvel(vel_mag):
         return cart2pol(np.random.uniform(-vel_mag, vel_mag, 2))
 
     def gradient(self, xs, ys):
-        gradUx, gradUy = np.zeros(self.n_sensors), np.zeros(self.n_sensors)
+        grad_x, grad_y = np.zeros(self.n_sensors), np.zeros(self.n_sensors)
 
         for i in range(self.n_sensors):
             for j in range(self.n_sensors):
@@ -214,16 +214,16 @@ class Dorsogna(ODEMotion):
                     attract_term = (self.DO_coeff[0] * np.exp(-r / self.DO_coeff[1]) / (self.DO_coeff[1] * r))
                     repel_term = (self.DO_coeff[2] * np.exp(-r / self.DO_coeff[3]) / (self.DO_coeff[3] * r))
 
-                    gradUx[i] += (xs[i] - xs[j]) * attract_term - (xs[i] - xs[j]) * repel_term
-                    gradUy[i] += (ys[i] - ys[j]) * attract_term - (ys[i] - ys[j]) * repel_term
+                    grad_x[i] += (xs[i] - xs[j]) * attract_term - (xs[i] - xs[j]) * repel_term
+                    grad_y[i] += (ys[i] - ys[j]) * attract_term - (ys[i] - ys[j]) * repel_term
 
-        return array(gradUx), array(gradUy)
+        return array(grad_x), array(grad_y)
 
     def time_derivative(self, _, state):
         # ode solver gives us np array in the form [xvals | yvals | vxvals | vyvals]
         # split into individual np array
         split_state = [state[i:i + self.n_sensors] for i in range(0, len(state), self.n_sensors)]
-        gradU = self.gradient(split_state[0], split_state[1])
+        grad = self.gradient(split_state[0], split_state[1])
 
         # Need to compute time derivative of each,
         # I just have d(x, y)/dt = (vx, vy), d(vx, vy)/dt = (1, -1)
@@ -232,6 +232,6 @@ class Dorsogna(ODEMotion):
         dvxdt = array(self.n_sensors * [0])
         dvydt = array(self.n_sensors * [0])
         for i in range(self.n_sensors):
-            dvxdt[i] = (1.5 - (0.5 * norm((dxdt[i], dydt[i])) ** 2)) * dxdt[i] - gradU[0][i]
-            dvydt[i] = (1.5 - (0.5 * norm((dxdt[i], dydt[i])) ** 2)) * dydt[i] - gradU[1][i]
+            dvxdt[i] = (1.5 - (0.5 * norm((dxdt[i], dydt[i])) ** 2)) * dxdt[i] - grad[0][i]
+            dvydt[i] = (1.5 - (0.5 * norm((dxdt[i], dydt[i])) ** 2)) * dydt[i] - grad[1][i]
         return np.concatenate([dxdt, dydt, dvxdt, dvydt])
