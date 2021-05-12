@@ -12,8 +12,6 @@ from numpy import arange, pi, array, arctan2
 from numpy.linalg import norm
 from abc import ABC, abstractmethod
 
-# TODO Refactor domain.spacing
-
 
 ## Specify domain geometry.
 # The domain class handles all issues relating to the
@@ -29,7 +27,8 @@ class Domain(ABC):
 
     ## Initialize Domain.
     # stores number of fence sensors.
-    def __init__(self) -> None:
+    def __init__(self, spacing: float) -> None:
+        self.spacing = spacing
         self.n_sensors = len(self.generate_fence())
 
     ## length of boundary is number of fence sensors.
@@ -84,25 +83,23 @@ class Domain(ABC):
 # this boundary in a way that still allows interior sensors to form simplices
 # with fence sensors.
 class RectangularDomain(Domain):
-    # Todo remove default value from spacing
 
     ## Initialize with dimension of desired boundary.
     # Sensor positions will be reflected so that interior sensors stay in the
     # specified domain. Default to the unit square with spacing of 0.2. Spacing
-    # should be less that 2*sensing_radius.
-    def __init__(self, spacing: float = 0.2,  # default of 0.2, with unit square
+    # should be less that 2*sensing_radius. Defaults to unit square
+    def __init__(self, spacing: float,
                  x_min: float = 0, x_max: float = 1,
                  y_min: float = 0, y_max: float = 1) -> None:
         self.x_max, self.y_max = x_max, y_max
         self.x_min, self.y_min = x_min, y_min
-        self.spacing = spacing
 
         # Initialize fence position
-        self.dx = self.spacing * np.sin(np.pi / 6)  # virtual boundary width
+        self.dx = spacing * np.sin(np.pi / 6)  # virtual boundary width
         self.vx_min, self.vx_max = self.x_min - self.dx, self.x_max + self.dx
         self.vy_min, self.vy_max = self.y_min - self.dx, self.y_max + self.dx
 
-        super().__init__()
+        super().__init__(spacing)
 
     ## Check if point is in domain.
     def __contains__(self, point: tuple) -> bool:
@@ -168,14 +165,13 @@ class RectangularDomain(Domain):
 class CircularDomain(Domain):
     def __init__(self, spacing, radius) -> None:
 
-        self.spacing = spacing
         self.radius = radius
 
         # Initialize fence
-        self.dx = self.spacing
+        self.dx = spacing
         self.v_rad = self.radius + self.dx
 
-        super().__init__()
+        super().__init__(spacing)
 
     ## Check if point is in domain.
     def __contains__(self, point: tuple) -> bool:
