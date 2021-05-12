@@ -12,6 +12,8 @@ from numpy import arange, pi, array, arctan2
 from numpy.linalg import norm
 from abc import ABC, abstractmethod
 
+# TODO Check documentation for correctness
+
 
 ## Provide abstract base of features that a boundary must satisfy.
 # The boundary class generates the positions of the boundary sensors,

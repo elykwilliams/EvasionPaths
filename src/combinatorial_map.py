@@ -133,6 +133,8 @@ class CMap:
     def get_boundary_cycles(self) -> list:
         return [tuple(sorted(cycle)) for cycle in self._boundary_cycles]
 
+    # TODO Add documentation
+    # TODO get alpha cycle from motion_model.fence sensors
     @staticmethod
     def alpha_cycle(domain):
         a = [f"{(n + 1) % len(domain)},{n}" for n in range(len(domain))]
