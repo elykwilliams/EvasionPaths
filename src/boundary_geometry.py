@@ -12,24 +12,27 @@ from numpy import arange, pi, array, arctan2
 from numpy.linalg import norm
 from abc import ABC, abstractmethod
 
-# TODO Check documentation for correctness
+# TODO Refactor domain.spacing
 
 
-## Provide abstract base of features that a boundary must satisfy.
-# The boundary class generates the positions of the boundary sensors,
-# a way of specifying if a given point is in or out of the boundary.
-# It will also know the boundary cycle associated with the outside of
-# the fence (the "alpha_cycle". And finally, it will be the class to
-# generate initial data since it can determine how best go generate
-# random points inside the domain.
+## Specify domain geometry.
+# The domain class handles all issues relating to the
+# domain geometry. It should be unaware of sensors and
+# operate with strictly geometric objects. A user defined
+# domain should
+# - Initialize fence sensors
+# - Determine if a point is in the domain
+# - generate sensor location inside the domain
+# - provide boundary points for plotting
+# - reflect position and velocity off boundary in elastic collision.
 class Domain(ABC):
 
-    ## Must initialize the boundary points and "alpha_cycle".
-    # The points stored are the points on the boundary only.
+    ## Initialize Domain.
+    # stores number of fence sensors.
     def __init__(self) -> None:
         self.n_sensors = len(self.generate_fence())
 
-    ## length of boundary is number of boundary sensors.
+    ## length of boundary is number of fence sensors.
     def __len__(self) -> int:
         return self.n_sensors
 
@@ -39,7 +42,7 @@ class Domain(ABC):
         return True
 
     ## Generate boundary points in counterclockwise order.
-    # Points must be generated in counterclockwise order so that the
+    # WARNING: Points must be generated in counterclockwise order so that the
     # alpha_cycle can be easily computed.
     @abstractmethod
     def generate_fence(self):
@@ -59,18 +62,21 @@ class Domain(ABC):
         return x_pts, y_pts
 
     ## Reflect a point off the boundary.
-    # If a sensor leaves the domain, we need to move the sensors back in
+    # Should be elastic collision
     @abstractmethod
     def reflect_point(self, old_pt, new_pt):
         return new_pt
 
+    ## Reflect a velocity off the boundary.
+    # Should be elastic collision. Leave velocity magnitude as is,
+    # and compute reflected angle.
     @abstractmethod
     def reflect_velocity(self, old_pt, new_pt):
         vel_angle = np.arctan2(new_pt[1] - old_pt[1], new_pt[0] - old_pt[0])
         return vel_angle
 
 
-## a rectangular domain using virtual boundary.
+## A rectangular domain.
 # This domain implements a physical boundary separate from the fence so that
 # sensors don't get too close and mess up the associated boundary cycle.
 # The input parameters specify the dimension of the desired virtual boundary
@@ -78,6 +84,7 @@ class Domain(ABC):
 # this boundary in a way that still allows interior sensors to form simplices
 # with fence sensors.
 class RectangularDomain(Domain):
+    # Todo remove default value from spacing
 
     ## Initialize with dimension of desired boundary.
     # Sensor positions will be reflected so that interior sensors stay in the
@@ -90,7 +97,7 @@ class RectangularDomain(Domain):
         self.x_min, self.y_min = x_min, y_min
         self.spacing = spacing
 
-        # Initialize fence boundary
+        # Initialize fence position
         self.dx = self.spacing * np.sin(np.pi / 6)  # virtual boundary width
         self.vx_min, self.vx_max = self.x_min - self.dx, self.x_max + self.dx
         self.vy_min, self.vy_max = self.y_min - self.dx, self.y_max + self.dx
@@ -102,7 +109,7 @@ class RectangularDomain(Domain):
         return self.x_min <= point[0] <= self.x_max \
                and self.y_min <= point[1] <= self.y_max
 
-    ## Generate points in counter-clockwise order.
+    ## Generate fence in counter-clockwise order.
     def generate_fence(self) -> list:
         points = []
         points.extend([(x, self.vy_min) for x in np.arange(self.vx_min, 0.999*self.vx_max, self.spacing)])  # bottom
@@ -113,19 +120,19 @@ class RectangularDomain(Domain):
                        for y in np.arange(self.vy_min, 0.999*self.vy_max, self.spacing)])  # left
         return points
 
-    ## Generate points distributed randomly (uniformly) in the interior.
+    ## Generate points distributed (uniformly) randomly in the interior.
     def generate_interior_points(self, n_int_sensors: int) -> list:
         rand_x = np.random.uniform(self.x_min, self.x_max, size=n_int_sensors)
         rand_y = np.random.uniform(self.y_min, self.y_max, size=n_int_sensors)
         return list(zip(rand_x, rand_y))
 
-    ## Generate Points to plot domain boundary.
+    ## Generate points to plot domain boundary.
     def domain_boundary_points(self):
         x_pts = [self.x_min, self.x_min, self.x_max, self.x_max, self.x_min]
         y_pts = [self.y_min, self.y_max, self.y_max, self.y_min, self.y_min]
         return x_pts, y_pts
 
-    ## reflect position if outside of domain.
+    ## Reflect position of point outside of domain.
     def reflect_point(self, old_pt, new_pt):
         pt = new_pt
         if new_pt[0] <= self.x_min:
@@ -151,7 +158,7 @@ class RectangularDomain(Domain):
         return float(vel_angle) % (2 * np.pi)
 
 
-## a circular domain using virtual boundary.
+## A circular domain.
 # This domain implements a physical boundary separate from the fence so that
 # sensors don't get too close and mess up the associated boundary cycle.
 # The input parameters specify the dimension of the desired virtual boundary
@@ -164,7 +171,7 @@ class CircularDomain(Domain):
         self.spacing = spacing
         self.radius = radius
 
-        # Initialize fence boundary
+        # Initialize fence
         self.dx = self.spacing
         self.v_rad = self.radius + self.dx
 
@@ -190,6 +197,8 @@ class CircularDomain(Domain):
         y_pts = [self.radius*np.sin(t) for t in arange(0, 2*pi, 0.01)]
         return x_pts, y_pts
 
+    ## Compute trajectory intersection with boundary.
+    # For internal use.
     def _get_intersection(self, old_pt, new_pt):
         d = new_pt - old_pt
         x0 = old_pt
