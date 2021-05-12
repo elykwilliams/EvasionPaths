@@ -88,6 +88,8 @@ class SensorNetwork:
         self.fence_sensors = [Sensor(pt, (0, 0), sensing_radius, True) for pt in motion_model.domain.generate_fence()]
 
     ## Iterate through all sensors.
+    # WARNING: fence sensors must come first in order to compute
+    # alpha-cycle.
     def __iter__(self):
         return iter(self.fence_sensors + self.mobile_sensors)
 

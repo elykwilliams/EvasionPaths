@@ -133,7 +133,11 @@ class CMap:
     def get_boundary_cycles(self) -> list:
         return [tuple(sorted(cycle)) for cycle in self._boundary_cycles]
 
-    # TODO Add documentation
+    ## Construct alpha cycle.
+    # The alpha cycle is the boundary cycle consisting of the fence sensors
+    # around the outside of the domain. The fence sensors are guaranteed to
+    # be in counter-clockwise order. Additionally when iterating through all
+    # sensors, fence sensors are guaranteed to come first so the numbering here works.
     # TODO get alpha cycle from motion_model.fence sensors
     @staticmethod
     def alpha_cycle(domain):
