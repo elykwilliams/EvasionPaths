@@ -24,12 +24,12 @@ def pol2cart(p: list) -> list:
 
 
 ## Compute the set theoretic difference between two lists.
-def set_difference(list1, list2):
+def set_difference(list1: list, list2: list) -> list:
     return list(set(list1).difference(set(list2)))
 
 
 ## Determine if list is subset list.
-def is_subset(list1, list2):
+def is_subset(list1: list, list2: list) -> bool:
     return set(list1).issubset(set(list2))
 
 
