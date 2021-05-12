@@ -86,6 +86,15 @@ class CycleNotFound(EvasionPathError):
                  "the boundary cycle labelling manually and not using the update() function."
 
 
+## Exception to be used when simulation unable to initialize.
+class InitializationError(EvasionPathError):
+    def __init__(self, msg):
+        self.msg = msg
+
+    def __str__(self):
+        return f"{self.message}Unable to initialize for the following reason:\n{self.msg}"
+
+
 ## Exception to be raised by SIGALERT.
 # Use this exception when you only allow a simulation to run for a fixed amount of time.
 class TimedOutExc(Exception):

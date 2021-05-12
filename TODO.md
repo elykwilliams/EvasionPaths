@@ -9,7 +9,7 @@
  - Use consistent list/tuple/array
 
 # Documentation:
- - Write MainPage
+ - Write MainPage/update doxygen
  - Document Examples
     
 # Structural:

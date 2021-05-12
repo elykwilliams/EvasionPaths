@@ -78,9 +78,11 @@ class EvasionPathSimulation:
 #          do not send pickle files over a network.
 # Load a previously saved simulation.
 def load_state(filename: str) -> EvasionPathSimulation:
-    assert filename, "Error: Output filename not specified"
-    with open(filename, "rb") as file:
-        return pickle.load(file)
+    try:
+        with open(filename, "rb") as file:
+            return pickle.load(file)
+    except Exception as e:
+        raise InitializationError(f"Unable to open file: {filename}\n{e}")
 
 
 ## Dumps current state to be resumed later.
@@ -88,6 +90,8 @@ def load_state(filename: str) -> EvasionPathSimulation:
 # This is useful for saving a random initial state for testing or
 # for saving an incomplete simulation to restart later.
 def save_state(simulation, filename: str) -> None:
-    assert filename, "Error: Output filename not specified"
-    with open(filename, "wb") as file:
-        pickle.dump(simulation, file)
+    try:
+        with open(filename, "wb") as file:
+            pickle.dump(simulation, file)
+    except Exception as e:
+        raise IOError(f"Unable to open file: {filename}\n{e}")
