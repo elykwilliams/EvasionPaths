@@ -50,7 +50,12 @@ class MaxRecursionDepth(EvasionPathError):
         self.state_change = state_change
 
     def __str__(self):
-        return f"{self.message}Max Recursion depth exceeded! \n\n{self.state_change}."
+        return f"{self.message}Max Recursion depth exceeded! \n\n{self.state_change}.\n\n" \
+               f"This exception was raised because the adaptive timestep was unable to resolve" \
+               f"a small enough time step so that the topological change is atomic. This may be " \
+               f"because your timestep was too large. It can also often be likely in manufactured " \
+               f"simulations. It could also indicate that a sensor has left the domain and is " \
+               f"interacting with the fence sensors."
 
 
 ## Exception indicating non-atomic state change.
