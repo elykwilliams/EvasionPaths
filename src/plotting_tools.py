@@ -6,8 +6,8 @@
 # If not, visit: https://opensource.org/licenses/BSD-3-Clause
 # ************************************************************
 
-from time_stepping import *
 from combinatorial_map import *
+
 import networkx as nx
 import matplotlib.pyplot as plt
 
@@ -128,19 +128,17 @@ def show_combinatorial_map(sim):
 if __name__ == "__main__":
     from boundary_geometry import RectangularDomain
     from motion_model import BilliardMotion
+    from time_stepping import EvasionPathSimulation
+    from sensor_network import SensorNetwork
 
     num_sensors = 10
     sensing_radius = 0.2
     timestep_size = 0.1
 
     unit_square = RectangularDomain(spacing=sensing_radius)
-
     brownian_motion = BilliardMotion(domain=unit_square)
-
     sensor_network = SensorNetwork(brownian_motion, unit_square, sensing_radius, num_sensors)
-
-    simulation = EvasionPathSimulation(sensor_network=sensor_network,
-                                       dt=timestep_size)
+    simulation = EvasionPathSimulation(sensor_network=sensor_network, dt=timestep_size)
 
     plt.figure(1)
     show_boundary_points(simulation)
