@@ -5,7 +5,6 @@
  - Simplify plotting tools 
  - viseck/DO don't need radius member, use from sensor_network
  - ODE motion doesn't need n_sensors
- - compute cmap alpha cycle from fence sensors
 
 # Features:
  - Add sensor_tools

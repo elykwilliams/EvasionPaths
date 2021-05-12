@@ -29,11 +29,6 @@ class Domain(ABC):
     # stores number of fence sensors.
     def __init__(self, spacing: float) -> None:
         self.spacing = spacing
-        self.n_sensors = len(self.generate_fence())
-
-    ## length of boundary is number of fence sensors.
-    def __len__(self) -> int:
-        return self.n_sensors
 
     ## Determine if given point it in domain or not.
     @abstractmethod

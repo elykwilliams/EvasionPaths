@@ -35,7 +35,7 @@ class TopologicalState(object):
         self.graph.add_edges_from(self._simplices[1])
 
         self._boundary_cycles = CMap(self.graph, points).get_boundary_cycles()
-        CMap.remove_boundary(sensor_network.motion_model.domain, self._boundary_cycles)
+        self._boundary_cycles.remove(alpha_cycle(sensor_network.fence_sensors))
 
         self._connected_nodes = nx.node_connected_component(self.graph, 0)
 
