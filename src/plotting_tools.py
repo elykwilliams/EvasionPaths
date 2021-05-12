@@ -15,6 +15,7 @@ import matplotlib.pyplot as plt
 ## Show fence sensors.
 # Note that fence sensors are places slightly outside
 # of the actual domain.
+# TODO accept SensorNetwork
 def show_boundary_points(sim):
     axis = plt.gca()
     xpts = [sensor.position[0] for sensor in sim.sensor_network if sensor.boundary_flag]
@@ -26,6 +27,7 @@ def show_boundary_points(sim):
 # Note that fence sensors are places slightly outside
 # of the actual domain. The points used to plt the domain
 # are not use in simulation.
+# TODO accept Domain
 def show_domain_boundary(sim):
     axis = plt.gca()
     b = sim.sensor_network.motion_model.domain
@@ -34,6 +36,7 @@ def show_domain_boundary(sim):
 
 
 ## Show Sensor Network graph.
+# TODO accept simulation or SensorNetwork
 def show_labelled_graph(sim):
     graph = sim.state.graph
     points = [s.position for s in sim.sensor_network]
@@ -42,6 +45,7 @@ def show_labelled_graph(sim):
 
 
 ## Display sensors.
+# TODO accept SensorNetwork
 def show_sensor_points(sim):
     axis = plt.gca()
     xpts = [s.position[0] for s in sim.sensor_network]
@@ -51,6 +55,7 @@ def show_sensor_points(sim):
 
 
 ## Display sensing disks.
+# TODO accept SensorNetwork
 def show_sensor_radius(sim):
     axis = plt.gca()
     for pt in [s.position for s in sim.sensor_network]:
@@ -86,6 +91,7 @@ def show_possible_intruder(sim):
 
 ## Display AlphaComplex.
 # Shows 0, 1, and 2 simplices.
+# TODO accept SensorNetwork or simulation
 def show_alpha_complex(sim):
 
     axis = plt.gca()

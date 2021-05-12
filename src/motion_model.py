@@ -17,6 +17,7 @@ from abc import ABC, abstractmethod
 
 
 ## Compute distance between two sensors.
+# TODO move to sensor tools
 def dist(s1, s2):
     return norm(array(s1.old_pos) - array(s2.old_pos))
 
@@ -79,6 +80,7 @@ class BrownianMotion(MotionModel):
         super().__init__(domain)
         self.sigma = sigma
 
+    # TODO document
     @staticmethod
     def initial_pvel(vel_mag):
         return None
@@ -87,6 +89,7 @@ class BrownianMotion(MotionModel):
     def epsilon(self, dt) -> float:
         return self.sigma * np.sqrt(dt) * random.normal(0, 1, 2)
 
+    # TODO Document
     def update_position(self, sensor, dt):
         sensor.position = array(sensor.old_pos) + self.epsilon(dt)
         if sensor.position not in self.domain:
@@ -98,6 +101,7 @@ class BrownianMotion(MotionModel):
 # Points will move a distance of vel*dt each update.
 class BilliardMotion(MotionModel):
 
+    # TODO Document
     @staticmethod
     def initial_pvel(vel_mag):
         return array([vel_mag, random.uniform(0, 2*np.pi)])
@@ -127,6 +131,8 @@ class RunAndTumble(BilliardMotion):
                     sensor.old_pvel[1] = random.uniform(0, 2 * np.pi)
 
 
+# TODO Document
+# TODO use sensors.fence sensors not domain
 class Viscek(BilliardMotion):
 
     def __init__(self, domain: Domain, dt: float, sensing_radius: float):
@@ -150,6 +156,8 @@ class Viscek(BilliardMotion):
                 s1.old_pvel[1] = (np.mean(sensor_angles) + self.eta()) % (2 * np.pi)
 
 
+# TODO Document
+# TODO use sensors.fence sensors not domain
 class ODEMotion(MotionModel, ABC):
     def __init__(self, domain):
         super().__init__(domain)
@@ -192,6 +200,7 @@ class ODEMotion(MotionModel, ABC):
             self.reflect(sensor)
 
 
+# TODO Document
 class Dorsogna(ODEMotion):
     def __init__(self, domain, sensing_radius, eta_scale_factor, coeff):
         assert len(coeff) != 4, "Not enough parameters in DO_coeff"
