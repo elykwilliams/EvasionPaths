@@ -179,7 +179,7 @@ class CircularDomain(Domain):
 
     ## Generate points in counter-clockwise order.
     def generate_fence(self) -> list:
-        return [(self.v_rad*np.cos(t), self.v_rad*np.sin(t)) for t in arange(0, 2 * pi, self.spacing)]
+        return [pol2cart([self.v_rad, t]) for t in arange(0, 2 * pi, self.spacing)]
 
     ## Generate points distributed randomly (uniformly) in the interior.
     def generate_interior_points(self, n_int_sensors):
