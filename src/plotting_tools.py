@@ -18,8 +18,8 @@ import matplotlib.pyplot as plt
 # TODO accept SensorNetwork
 def show_boundary_points(sim):
     axis = plt.gca()
-    xpts = [sensor.position[0] for sensor in sim.sensor_network if sensor.boundary_flag]
-    ypts = [sensor.position[1] for sensor in sim.sensor_network if sensor.boundary_flag]
+    xpts = [s.position[0] for s in sim.sensor_network.fence_sensors]
+    ypts = [s.position[1] for s in sim.sensor_network.fence_sensors]
     axis.plot(xpts, ypts, "k*")
 
 
