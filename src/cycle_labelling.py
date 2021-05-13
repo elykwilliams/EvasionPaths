@@ -10,8 +10,6 @@
 from topological_state import *
 from utilities import *
 
-# TODO Finish documentation
-
 
 ## The CycleLabelling class manages the time dependant labelling of boundary cycles.
 # The labelling adopts the following convention:
@@ -78,7 +76,7 @@ class CycleLabelling:
 
     ## Protected access to cycle labelling.
     # The cycle labelling should be read only, and all updates managed internally.
-    def __getitem__(self, item):
+    def __getitem__(self, item) -> bool:
         try:
             value = self._cycle_label[item]
         except KeyError:
@@ -86,42 +84,75 @@ class CycleLabelling:
         return value
 
     ## Check if any boundary cycles have an intruder.
-    def has_intruder(self):
+    def has_intruder(self) -> bool:
         return any(self._cycle_label.values())
 
+    ## Remove given boundary cycles from labelling.
+    # Note that cycle_list should be an iterable list and not a
+    # single boundary cycle.
     def _delete_all(self, cycle_list):
         for cycle in cycle_list:
             del self._cycle_label[cycle]
 
+    ## Add edge.
+    # When an edge is added, one boundary cycle is split into two
+    # the two new boundary cycles are added, and the old boundary
+    # cycle is removed.
+    # Note that both parameters should be lists of boundary cycles.
     def _add_1simplex(self, removed_cycles, added_cycles):
         for cycle in added_cycles:
             self._cycle_label[cycle] = self._cycle_label[removed_cycles[0]]
         self._delete_all(removed_cycles)
 
+    ## Remove edge.
+    # When an edge is removed, two boundary cycles join into one.
+    # The two old boundary cycles are removed, and the new boundary
+    # cycle is added.
+    # Note that both parameters should be lists of boundary cycles.
     def _remove_1simplex(self, removed_cycles, added_cycles):
-        assert(len(added_cycles) == 1)
-
         self._cycle_label[added_cycles[0]] = any([self._cycle_label[s] for s in removed_cycles])
         self._delete_all(removed_cycles)
 
+    ## Mark boundary cycle as a 2-simplex.
     def _add_2simplex(self, added_simplex):
+        # TODO fix interface
         self._cycle_label[added_simplex] = False
 
+    ## Add 2-simplex + edge.
+    # Need to add edge first so that added simple is in labelling.
+    # removed_cycles and added_cycles should be lists of boundary cycles
+    # added_simplex is the boundary cycle of the added simplex.
     def _add_simplex_pair(self, removed_cycles, added_cycles, added_simplex):
+        # TODO fix interface
         self._add_1simplex(removed_cycles, added_cycles)
         self._add_2simplex(added_simplex)
 
+    ## Remove edge and 2-simplex.
+    # This is the same logic as removing just an edge.
+    # removed_cycles and added_cycles should be lists of boundary cycles
     def _remove_simplex_pair(self, removed_cycles, added_cycles):
         self._remove_1simplex(removed_cycles, added_cycles)
 
+    ## Delauny filp.
+    # add 2 new simplices, remove two old simplices.
+    # removed_cycles and added_cycles should be lists of boundary cycles
     def _delaunay_flip(self, removed_cycles, added_cycles):
         for cycle in added_cycles:
             self._add_2simplex(cycle)
         self._delete_all(removed_cycles)
 
+    ## Disconnect graph component - power-down model.
+    # This can only happen through the removal of an edge.
+    # should be removing all cycles that have become disconnected
+    # the enclosing cycle is the connected boundary cycle which
+    # encloses the removed cycles.
     def _disconnect(self, removed_cycles, enclosing_cycle):
+        # TODO fix interface
         self._remove_1simplex(removed_cycles, [enclosing_cycle])
 
+    ## Reconnect graph component.
+    # This can only happen through the addition of an edge. Then,
+    # adjust all 2-simplices.
     def _reconnect(self, added_cycles, enclosing_cycle, connected_simplices):
         self._add_1simplex([enclosing_cycle], added_cycles)
         for cycle in connected_simplices:
@@ -133,16 +164,16 @@ class CycleLabelling:
     # error, and at worst, give incorrect results.
     #
     # Updates are ignored if they involve updates to any cycles that were not
-    # previously in the labelling or disconnected. The one exception being the
+    # previously in the labelling (i.e. disconnected). The one exception being the
     # case of a reconnection, in which case at least one of the cycles must be
     # disconnected (the cycle to be reconnected).
     def ignore_state_change(self, state_change):
-        # No Change
+        # No Change, or two isolated sensors becoming connected/disconnected
         if state_change.case == (0, 0, 0, 0, 0, 0) \
                 or state_change.case == (1, 0, 0, 0, 1, 0) \
                 or state_change.case == (0, 1, 0, 0, 0, 1):
             return True
-        # one or both old-cycle is disconnected
+        # one or both old-cycle(s) were already disconnected
         if state_change.case == (1, 0, 0, 0, 2, 1) \
                 or state_change.case == (1, 0, 1, 0, 2, 1) \
                 or state_change.case == (0, 1, 0, 0, 2, 1) \
@@ -150,12 +181,13 @@ class CycleLabelling:
                 or state_change.case == (0, 1, 0, 0, 1, 2) \
                 or state_change.case == (0, 1, 0, 1, 1, 2) \
                 or state_change.case == (1, 1, 2, 2, 2, 2):
-            return any([cell not in self._cycle_label for cell in state_change.cycles_removed])
-        # simplex-cycle is disconnected
+            return any([cycle not in self._cycle_label for cycle in state_change.cycles_removed])
+        # disconnected cycle become 2-simplex, can't use above logic since no
+        # cycles were removed.
         elif state_change.case == (0, 0, 1, 0, 0, 0):
             simplex = state_change.simplices_added[0]
             return not state_change.new_state.is_connected_simplex(simplex)
-        # enclosing-cycle is disconnected
+        # two disconnected components connecting/disconnecting
         elif state_change.case == (1, 0, 0, 0, 1, 2) \
                 or state_change.case == (1, 0, 0, 0, 1, 1):
             return all([cycle not in self._cycle_label for cycle in state_change.cycles_removed])
@@ -165,6 +197,7 @@ class CycleLabelling:
     # Get cycles associated with any added simplices, and determine the enclosing
     # boundary cycle in the case of a disconnect or reconnect.
     def update(self, state_change):
+        # TODO Consistent return values/is return value used?
         if not state_change.is_atomic():
             raise InvalidStateChange(state_change)
 
@@ -203,13 +236,16 @@ class CycleLabelling:
         elif state_change.case == (1, 1, 2, 2, 2, 2):
             self._delaunay_flip(state_change.cycles_removed, state_change.cycles_added)
 
-        # Disconnect
+        # cycle becoming disconnected resulting in inside and outside cycles
+        # also isolated sensor becoming disconnected so only outer cycle
         elif state_change.case == (0, 1, 0, 0, 2, 1) or state_change.case == (0, 1, 0, 0, 1, 1):
+            # Outer cycle will be the one that is connected
             enclosing_cycle = state_change.cycles_added[0]
             if not state_change.new_state.is_connected_cycle(enclosing_cycle) \
                     and len(state_change.cycles_added) != 1:
                 enclosing_cycle = state_change.cycles_added[1]
 
+            # cycles that have labelling but are not connected need to be removed
             disconnected_cycles = []
             for cycle in state_change.new_state.boundary_cycles():
                 if not state_change.new_state.is_connected_cycle(cycle) and cycle in self._cycle_label:
@@ -217,17 +253,22 @@ class CycleLabelling:
 
             self._disconnect(state_change.cycles_removed + disconnected_cycles, enclosing_cycle)
 
-        # Reconnect
+        # cycle becoming reconnected resulting form inside and outside cycles joining by edge
+        # also isolated sensor becoming connected so no inner cycle
         elif state_change.case == (1, 0, 0, 0, 1, 2) or state_change.case == (1, 0, 0, 0, 1, 1):
+            # the outer cycle is the one which is connected
             enclosing_cycle = state_change.cycles_removed[0]
             if enclosing_cycle not in self._cycle_label and len(state_change.cycles_removed) != 1:
                 enclosing_cycle = state_change.cycles_removed[1]
 
+            # new cycles with no label should be added
             reconnected_cycles = []
             for cycle in state_change.new_state.boundary_cycles():
                 if state_change.new_state.is_connected_cycle(cycle) and cycle not in self._cycle_label:
                     reconnected_cycles.append(cycle)
 
+            # get boundary cycles for all connected simplices to be marked as clear
+            # not just new ones
             connected_simplices = []
             for simplex in state_change.new_state.simplices(2):
                 if state_change.new_state.is_connected_simplex(simplex):
