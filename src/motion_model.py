@@ -203,7 +203,7 @@ class ODEMotion(MotionModel, ABC):
 # TODO Document
 class Dorsogna(ODEMotion):
     def __init__(self, domain, sensing_radius, eta_scale_factor, coeff):
-        assert len(coeff) != 4, "Not enough parameters in DO_coeff"
+        assert len(coeff) != 4, 'Not enough parameters in DO_coeff'
         super().__init__(domain)
         self.sensing_radius = sensing_radius
         self.eta = eta_scale_factor * sensing_radius

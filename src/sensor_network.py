@@ -34,14 +34,14 @@ class Sensor:
     # old_pos and old_vel should not be updated incase they are needed
     # to recompute with smaller timestep.
     def move(self, motion_model, dt):
-        assert not self.boundary_flag, "Boundary sensors cannot be updated"
+        assert not self.boundary_flag, 'Boundary sensors cannot be updated'
         motion_model.update_position(self, dt)
 
     ## Update sensor current state.
     # This function updates the values on which the new position are computed,
     # It should not be called until ready to move to next timestep.
     def update(self):
-        assert not self.boundary_flag, "Boundary sensors cannot be updated"
+        assert not self.boundary_flag, 'Boundary sensors cannot be updated'
         self.old_pos = self.position
         self.old_pvel = self.pvel
 
@@ -68,12 +68,12 @@ class SensorNetwork:
         assert (
             not velocities
             or len(points) == len(velocities),
-            "len(points) != len(velocities)"
+            'len(points) != len(velocities)'
         )
         assert (
             not (n_sensors and points)
             or len(points) == n_sensors,
-            "The number points specified is different than the number of points provided"
+            'The number points specified is different than the number of points provided'
         )
         self.motion_model = motion_model
         self.sensing_radius = sensing_radius

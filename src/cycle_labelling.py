@@ -51,7 +51,7 @@ class CycleLabelling:
     #       All connected 2-simplices are labelled as FALSE
     #       Any disconnected cycle has no label.
     #
-    # Using the current "forgetful" model, any cycle the becomes disconnected will be removed from
+    # Using the current 'forgetful' model, any cycle the becomes disconnected will be removed from
     # the labelling, and added back when it becomes reconnected.
     def __init__(self, state: TopologicalState) -> None:
         self._cycle_label = dict()
@@ -65,7 +65,7 @@ class CycleLabelling:
     ## Allow cycle labelling to be printable.
     # Used mostly for debugging
     def __str__(self):
-        return "".join([f"{key}:{val}\n" for key, val in self._cycle_label.items()])
+        return ''.join([f'{key}:{val}\n' for key, val in self._cycle_label.items()])
 
     ## Check if cycle has a label.
     def __contains__(self, item):
@@ -207,7 +207,7 @@ class CycleLabelling:
             raise InvalidStateChange(state_change)
 
         if self.ignore_state_change(state_change):
-            return ""
+            return ''
 
         # Add 1-Simplex
         elif state_change.case == (1, 0, 0, 0, 2, 1):

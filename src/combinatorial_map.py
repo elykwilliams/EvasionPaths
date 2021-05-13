@@ -14,12 +14,12 @@ from networkx import Graph
 # order of vertices is important. To get the dart in the other
 # direction swap order of nodes or use alpha function.
 def edge2dart(edge: tuple) -> str:
-    return ",".join(map(str, edge))
+    return ','.join(map(str, edge))
 
 
 ## Get edge corresponding to given dart.
 def dart2edge(dart: str) -> tuple:
-    return tuple(map(int, dart.split(",")))
+    return tuple(map(int, dart.split(',')))
 
 
 ## Get node numbers associated with given boundary cycle.
@@ -141,7 +141,7 @@ class CMap:
 # sensors, fence sensors are guaranteed to come first so the numbering here works.
 def alpha_cycle(fence_sensors):
     n_sensors = len(fence_sensors)
-    a = [f"{(n + 1) % n_sensors},{n}" for n in range(n_sensors)]
+    a = [f'{(n + 1) % n_sensors},{n}' for n in range(n_sensors)]
     return tuple(sorted(a))
 
 

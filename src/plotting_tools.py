@@ -20,7 +20,7 @@ def show_boundary_points(sim):
     axis = plt.gca()
     xpts = [s.position[0] for s in sim.sensor_network.fence_sensors]
     ypts = [s.position[1] for s in sim.sensor_network.fence_sensors]
-    axis.plot(xpts, ypts, "k*")
+    axis.plot(xpts, ypts, 'k*')
 
 
 ## Outline domain.
@@ -50,7 +50,7 @@ def show_sensor_points(sim):
     axis = plt.gca()
     xpts = [s.position[0] for s in sim.sensor_network]
     ypts = [s.position[1] for s in sim.sensor_network]
-    axis.plot(xpts, ypts, "k*")
+    axis.plot(xpts, ypts, 'k*')
     return
 
 
@@ -134,7 +134,7 @@ def show_combinatorial_map(sim):
     pass
 
 
-if __name__ == "__main__":
+if __name__ == '__main__':
     from boundary_geometry import RectangularDomain
     from motion_model import BilliardMotion
     from time_stepping import EvasionPathSimulation

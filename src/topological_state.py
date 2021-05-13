@@ -85,7 +85,7 @@ class TopologicalState(object):
     # cycle label should be updated.
     def simplex2cycle(self, simplex):
         if len(simplex) != 3 or not self.is_connected_simplex(simplex):
-            raise ValueError("Invalid simplex, cannot guarantee unique cycle")
+            raise ValueError('Invalid simplex, cannot guarantee unique cycle')
         return nodes2cycle(simplex, self._boundary_cycles)
 
 
@@ -117,17 +117,17 @@ class StateChange(object):
     # (#1-simplices added, #1-simpleices removed, #2-simplices added, #2-simplices removed, #boundary cycles added,
     # #boundary cycles removed)
     case2name = {
-        (0, 0, 0, 0, 0, 0): "",
-        (1, 0, 0, 0, 2, 1): "Add 1-Simplex",
-        (1, 0, 0, 0, 1, 0): "Add 1-Simplex",
-        (0, 1, 0, 0, 1, 2): "Remove 1-Simplex",
-        (0, 1, 0, 0, 0, 1): "Remove 1-Simplex",
-        (0, 0, 1, 0, 0, 0): "Add 2-Simplex",
-        (0, 0, 0, 1, 0, 0): "Remove 2-Simplex",
-        (1, 0, 1, 0, 2, 1): "Add 1-Simplex and 2-Simplex",
-        (0, 1, 0, 1, 1, 2): "Remove 1-Simplex and 2-Simplex",
-        (1, 1, 2, 2, 2, 2): "Delauney Flip",
-        (0, 1, 0, 0, 2, 1): "Disconnect",
+        (0, 0, 0, 0, 0, 0): '',
+        (1, 0, 0, 0, 2, 1): 'Add 1-Simplex',
+        (1, 0, 0, 0, 1, 0): 'Add 1-Simplex',
+        (0, 1, 0, 0, 1, 2): 'Remove 1-Simplex',
+        (0, 1, 0, 0, 0, 1): 'Remove 1-Simplex',
+        (0, 0, 1, 0, 0, 0): 'Add 2-Simplex',
+        (0, 0, 0, 1, 0, 0): 'Remove 2-Simplex',
+        (1, 0, 1, 0, 2, 1): 'Add 1-Simplex and 2-Simplex',
+        (0, 1, 0, 1, 1, 2): 'Remove 1-Simplex and 2-Simplex',
+        (1, 1, 2, 2, 2, 2): 'Delauney Flip',
+        (0, 1, 0, 0, 2, 1): 'Disconnect',
         (0, 1, 0, 0, 1, 1): "Disconnect",
         (1, 0, 0, 0, 1, 2): "Reconnect",
         (1, 0, 0, 0, 1, 1): "Reconnect"

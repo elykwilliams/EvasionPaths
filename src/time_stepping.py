@@ -79,10 +79,10 @@ class EvasionPathSimulation:
 # Load a previously saved simulation.
 def load_state(filename: str) -> EvasionPathSimulation:
     try:
-        with open(filename, "rb") as file:
+        with open(filename, 'rb') as file:
             return pickle.load(file)
     except Exception as e:
-        raise InitializationError(f"Unable to open file: {filename}\n{e}")
+        raise InitializationError(f'Unable to open file: {filename}\n{e}')
 
 
 ## Dumps current state to be resumed later.
@@ -91,7 +91,7 @@ def load_state(filename: str) -> EvasionPathSimulation:
 # for saving an incomplete simulation to restart later.
 def save_state(simulation, filename: str) -> None:
     try:
-        with open(filename, "wb") as file:
+        with open(filename, 'wb') as file:
             pickle.dump(simulation, file)
     except Exception as e:
-        raise IOError(f"Unable to open file: {filename}\n{e}")
+        raise IOError(f'Unable to open file: {filename}\n{e}')

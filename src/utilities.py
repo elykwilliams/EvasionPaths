@@ -37,7 +37,7 @@ def is_subset(list1: list, list2: list) -> bool:
 # All errors relating to an evasion path simulation should be derived from this class.
 # User scripts should only need to catch this class.
 class EvasionPathError(Exception, ABC):
-    message = f"Error! An internal error has been detected.\n\n"
+    message = f'Error! An internal error has been detected.\n\n'
 
 
 ## Exception indicating that atomic transition not found.
@@ -51,12 +51,12 @@ class MaxRecursionDepth(EvasionPathError):
 
     def __str__(self):
         return (
-            f"{self.message}Max Recursion depth exceeded!\n\n{self.state_change}.\n\n"
-            f"This exception was raised because the adaptive timestep was unable to resolve" 
-            f"a small enough time step so that the topological change is atomic. This may be " 
-            f"because your timestep was too large. It can also often be likely in manufactured " 
-            f"simulations. It could also indicate that a sensor has left the domain and is " 
-            f"interacting with the fence sensors."
+            f'{self.message}Max Recursion depth exceeded!\n\n{self.state_change}.\n\n'
+            f'This exception was raised because the adaptive timestep was unable to resolve' 
+            f'a small enough time step so that the topological change is atomic. This may be ' 
+            f'because your timestep was too large. It can also often be likely in manufactured ' 
+            f'simulations. It could also indicate that a sensor has left the domain and is ' 
+            f'interacting with the fence sensors.'
         )
 
 
@@ -69,10 +69,10 @@ class InvalidStateChange(EvasionPathError):
 
     def __str__(self) -> str:
         return (
-            f"{self.message}Invalid State Change\n\n{self.state_change}.\n"
-            "This exception occurs when a function that requires an atomic change"
-            "is given a non-atomic change. All exceptions of this sort should be handled "
-            "internally."
+            f'{self.message}Invalid State Change\n\n{self.state_change}.\n'
+            'This exception occurs when a function that requires an atomic change'
+            'is given a non-atomic change. All exceptions of this sort should be handled '
+            'internally.'
         )
 
 
@@ -85,10 +85,10 @@ class CycleNotFound(EvasionPathError):
 
     def __str__(self):
         return (
-            f"{self.message}Attempted to retrieve labelling for {self.b}, "
-            "but this cycle was not found in the cycle labelling.\n"
-            "This most likely has occurred because you are updating "
-            "the boundary cycle labelling manually and not using the update() function."
+            f'{self.message}Attempted to retrieve labelling for {self.b}, '
+            'but this cycle was not found in the cycle labelling.\n'
+            'This most likely has occurred because you are updating '
+            'the boundary cycle labelling manually and not using the update() function.'
         )
 
 
