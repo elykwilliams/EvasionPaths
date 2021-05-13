@@ -8,6 +8,7 @@
 
 from time_stepping import *
 from combinatorial_map import *
+
 import networkx as nx
 import matplotlib.pyplot as plt
 
@@ -69,19 +70,24 @@ def show_possible_intruder(sim):
     points = [s.position for s in sim.sensor_network]
     cmap = CMap(graph, points)
 
+    # get boundary cycles with nodes in correct order
     for cycle_nodes in cmap.boundary_cycle_nodes_ordered():
+
         xpts = [points[n][0] for n in cycle_nodes]
         ypts = [points[n][1] for n in cycle_nodes]
         if set(cycle_nodes) == set(cycle2nodes(CMap.alpha_cycle(sim.sensor_network.motion_model.domain))):
             continue
 
+        # Exclude alpha-cycle
         cycle = nodes2cycle(cycle_nodes, sim.state.boundary_cycles())
         if cycle == CMap.alpha_cycle(sim.sensor_network.motion_model.domain):
             axis.fill(xpts, ypts, color='k', alpha=0.2)
 
+        # skip disconnected cycles
         if cycle not in sim.cycle_label:
             continue
 
+        # fill contaminated cycles transparent black
         if sim.cycle_label[nodes2cycle(cycle_nodes, sim.state.boundary_cycles())]:
             axis.fill(xpts, ypts, color='k', alpha=0.2)
         else:
@@ -134,15 +140,15 @@ def show_combinatorial_map(sim):
 if __name__ == "__main__":
     from boundary_geometry import RectangularDomain
     from motion_model import BilliardMotion
+    from time_stepping import EvasionPathSimulation
+    from sensor_network import SensorNetwork
 
     num_sensors = 10
     sensing_radius = 0.2
     timestep_size = 0.1
 
     unit_square = RectangularDomain(spacing=sensing_radius)
-
     brownian_motion = BilliardMotion(domain=unit_square)
-
     sensor_network = SensorNetwork(brownian_motion, unit_square, sensing_radius, num_sensors)
 
     simulation = EvasionPathSimulation(sensor_network=sensor_network,
