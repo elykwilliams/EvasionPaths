@@ -67,10 +67,7 @@ class CycleLabelling:
     ## Allow cycle labelling to be printable.
     # Used mostly for debugging
     def __str__(self):
-        res = ""
-        for key, val in self._cycle_label.items():
-            res += str(key) + ": " + str(val) + "\n"
-        return res
+        return "".join([f"{key}:{val}\n" for key, val in self._cycle_label.items()])
 
     ## Check if cycle has a label.
     def __contains__(self, item):
