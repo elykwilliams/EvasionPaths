@@ -178,7 +178,7 @@ class CycleLabelling:
                 or state_change.case == (0, 1, 0, 0, 1, 2) \
                 or state_change.case == (0, 1, 0, 1, 1, 2) \
                 or state_change.case == (1, 1, 2, 2, 2, 2):
-            return any([cycle not in self._cycle_label for cycle in state_change.cycles_removed])
+            return any([cycle not in self for cycle in state_change.cycles_removed])
         # disconnected cycle become 2-simplex, can't use above logic since no
         # cycles were removed.
         elif state_change.case == (0, 0, 1, 0, 0, 0):
@@ -187,7 +187,7 @@ class CycleLabelling:
         # two disconnected components connecting/disconnecting
         elif state_change.case == (1, 0, 0, 0, 1, 2) \
                 or state_change.case == (1, 0, 0, 0, 1, 1):
-            return all([cycle not in self._cycle_label for cycle in state_change.cycles_removed])
+            return all([cycle not in self for cycle in state_change.cycles_removed])
         return False
 
     ## Update according to rules give.
@@ -245,7 +245,7 @@ class CycleLabelling:
             # cycles that have labelling but are not connected need to be removed
             disconnected_cycles = []
             for cycle in state_change.new_state.boundary_cycles():
-                if not state_change.new_state.is_connected_cycle(cycle) and cycle in self._cycle_label:
+                if not state_change.new_state.is_connected_cycle(cycle) and cycle in self:
                     disconnected_cycles.append(cycle)
 
             self._disconnect(state_change.cycles_removed + disconnected_cycles, enclosing_cycle)
@@ -255,13 +255,13 @@ class CycleLabelling:
         elif state_change.case == (1, 0, 0, 0, 1, 2) or state_change.case == (1, 0, 0, 0, 1, 1):
             # the outer cycle is the one which is connected
             enclosing_cycle = state_change.cycles_removed[0]
-            if enclosing_cycle not in self._cycle_label and len(state_change.cycles_removed) != 1:
+            if enclosing_cycle not in self and len(state_change.cycles_removed) != 1:
                 enclosing_cycle = state_change.cycles_removed[1]
 
             # new cycles with no label should be added
             reconnected_cycles = []
             for cycle in state_change.new_state.boundary_cycles():
-                if state_change.new_state.is_connected_cycle(cycle) and cycle not in self._cycle_label:
+                if state_change.new_state.is_connected_cycle(cycle) and cycle not in self:
                     reconnected_cycles.append(cycle)
 
             # get boundary cycles for all connected simplices to be marked as clear
