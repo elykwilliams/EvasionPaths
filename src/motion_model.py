@@ -185,7 +185,7 @@ class ODEMotion(MotionModel, ABC):
         new_val = new_val.y
 
         # split state back into position and velocity,
-        split_state = [[y[0] for y in new_val[i:i + self.n_sensors]] for i in range(0, len(new_val), self.n_sensors)]
+        split_state = [[y[0] for y in new_val[i * self.n_sensors:(i + 1) * self.n_sensors]] for i in range(4)]
 
         # zip into list of tuples
         self.velocities = dict(zip(sensors.mobile_sensors, zip(split_state[2], split_state[3])))
@@ -226,21 +226,21 @@ class Dorsogna(ODEMotion):
                     grad_x[i] += (xs[i] - xs[j]) * attract_term - (xs[i] - xs[j]) * repel_term
                     grad_y[i] += (ys[i] - ys[j]) * attract_term - (ys[i] - ys[j]) * repel_term
 
-        return array(grad_x), array(grad_y)
+        return {'x': array(grad_x), 'y': array(grad_y)}
 
     def time_derivative(self, _, state):
         # ode solver gives us np array in the form [xvals | yvals | vxvals | vyvals]
         # split into individual np array
-        split_state = [state[i:i + self.n_sensors] for i in range(0, len(state), self.n_sensors)]
-        grad = self.gradient(split_state[0], split_state[1])
+        n = len(state) // 4
+        xs, ys, *v = (state[i*n:(i+1)*n] for i in range(4))
+        grad = self.gradient(xs, ys)
 
-        # Need to compute time derivative of each,
-        # I just have d(x, y)/dt = (vx, vy), d(vx, vy)/dt = (1, -1)
-        dxdt = split_state[2]
-        dydt = split_state[3]
-        dvxdt = array(self.n_sensors * [0])
-        dvydt = array(self.n_sensors * [0])
-        for i in range(self.n_sensors):
-            dvxdt[i] = (1.5 - (0.5 * norm((dxdt[i], dydt[i])) ** 2)) * dxdt[i] - grad[0][i]
-            dvydt[i] = (1.5 - (0.5 * norm((dxdt[i], dydt[i])) ** 2)) * dydt[i] - grad[1][i]
-        return np.concatenate([dxdt, dydt, dvxdt, dvydt])
+        # Need to compute time derivative of each, we obviously have dxdt, dydt = vx, vy
+        # use following for dvdt, coor is 'x' or 'y'
+        v = dict(zip('xy', v))
+
+        def accelerate(sensor, dim):
+            return (1.5 - (0.5 * norm((v['x'][sensor], v['y'][sensor])) ** 2)) * v[dim][sensor] - grad[dim][sensor]
+
+        dvdt = {dim: [accelerate(sensor, dim) for sensor in range(self.n_sensors)] for dim in 'xy'}
+        return np.concatenate([v['x'], v['y'], dvdt['x'], dvdt['y']])

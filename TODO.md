@@ -1,10 +1,7 @@
  
 # Style
- - remove domain from sensor network initialization
  - Use consistent list/tuple/array
  - Simplify plotting tools 
- - viseck/DO don't need radius member, use from sensor_network
- - ODE motion doesn't need n_sensors
 
 # Features:
  - Add sensor_tools
@@ -12,13 +9,16 @@
  - add optional setting to enforce connected graph vs power-off
 
 # Documentation:
- - Write MainPage/update doxygen
- - Document Examples
+ - Migrate to pdoc for documentation
+ - Setup documentation git action
+ - Document Examples and tutorials
+ - src documentation move to google format
     
 # Testing
  - Better error Messages
  - Add logging
  - Add unit tests
+ - Setup git action Continuous integration
 
 # Structural:
  - Install using pip/venv 
