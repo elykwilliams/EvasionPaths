@@ -98,8 +98,10 @@ class RectangularDomain(Domain):
 
     ## Check if point is in domain.
     def __contains__(self, point: tuple) -> bool:
-        return self.x_min <= point[0] <= self.x_max \
-               and self.y_min <= point[1] <= self.y_max
+        return (
+                self.x_min <= point[0] <= self.x_max
+                and self.y_min <= point[1] <= self.y_max
+        )
 
     ## Generate fence in counter-clockwise order.
     def generate_fence(self) -> list:

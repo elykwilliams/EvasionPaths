@@ -166,27 +166,35 @@ class CycleLabelling:
     # disconnected (the cycle to be reconnected).
     def ignore_state_change(self, state_change):
         # No Change, or two isolated sensors becoming connected/disconnected
-        if state_change.case == (0, 0, 0, 0, 0, 0) \
-                or state_change.case == (1, 0, 0, 0, 1, 0) \
-                or state_change.case == (0, 1, 0, 0, 0, 1):
+        if (
+                state_change.case == (0, 0, 0, 0, 0, 0)
+                or state_change.case == (1, 0, 0, 0, 1, 0)
+                or state_change.case == (0, 1, 0, 0, 0, 1)
+        ):
             return True
         # one or both old-cycle(s) were already disconnected
-        if state_change.case == (1, 0, 0, 0, 2, 1) \
-                or state_change.case == (1, 0, 1, 0, 2, 1) \
-                or state_change.case == (0, 1, 0, 0, 2, 1) \
-                or state_change.case == (0, 1, 0, 0, 1, 1) \
-                or state_change.case == (0, 1, 0, 0, 1, 2) \
-                or state_change.case == (0, 1, 0, 1, 1, 2) \
-                or state_change.case == (1, 1, 2, 2, 2, 2):
+        if (
+                state_change.case == (1, 0, 0, 0, 2, 1)
+                or state_change.case == (1, 0, 1, 0, 2, 1)
+                or state_change.case == (0, 1, 0, 0, 2, 1)
+                or state_change.case == (0, 1, 0, 0, 1, 1)
+                or state_change.case == (0, 1, 0, 0, 1, 2)
+                or state_change.case == (0, 1, 0, 1, 1, 2)
+                or state_change.case == (1, 1, 2, 2, 2, 2)
+        ):
             return any([cycle not in self for cycle in state_change.cycles_removed])
+
         # disconnected cycle become 2-simplex, can't use above logic since no
         # cycles were removed.
         elif state_change.case == (0, 0, 1, 0, 0, 0):
             simplex = state_change.simplices_added[0]
             return not state_change.new_state.is_connected_simplex(simplex)
+
         # two disconnected components connecting/disconnecting
-        elif state_change.case == (1, 0, 0, 0, 1, 2) \
-                or state_change.case == (1, 0, 0, 0, 1, 1):
+        elif (
+                state_change.case == (1, 0, 0, 0, 1, 2)
+                or state_change.case == (1, 0, 0, 0, 1, 1)
+        ):
             return all([cycle not in self for cycle in state_change.cycles_removed])
         return False
 
@@ -238,8 +246,8 @@ class CycleLabelling:
         elif state_change.case == (0, 1, 0, 0, 2, 1) or state_change.case == (0, 1, 0, 0, 1, 1):
             # Outer cycle will be the one that is connected
             enclosing_cycle = state_change.cycles_added[0]
-            if not state_change.new_state.is_connected_cycle(enclosing_cycle) \
-                    and len(state_change.cycles_added) != 1:
+            if (not state_change.new_state.is_connected_cycle(enclosing_cycle)
+                    and len(state_change.cycles_added) != 1):
                 enclosing_cycle = state_change.cycles_added[1]
 
             # cycles that have labelling but are not connected need to be removed

@@ -198,10 +198,12 @@ class StateChange(object):
     ## Allow class to be printable.
     # Used mostly for debugging
     def __str__(self) -> str:
-        return f"State Change: {self.case}\n" \
-            + f"New edges: {self.edges_added}\n" \
-            + f"Removed edges: {self.edges_removed}\n" \
-            + f"New Simplices: {self.simplices_added}\n" \
-            + f"Removed Simplices: {self.simplices_removed}\n" \
-            + f"New cycles {self.cycles_added}\n" \
-            + f"Removed Cycles {self.cycles_removed}"
+        return (
+            f"State Change: {self.case}\n" 
+            f"New edges: {self.edges_added}\n" 
+            f"Removed edges: {self.edges_removed}\n" 
+            f"New Simplices: {self.simplices_added}\n" 
+            f"Removed Simplices: {self.simplices_removed}\n" 
+            f"New cycles {self.cycles_added}\n" 
+            f"Removed Cycles {self.cycles_removed}"
+        )
