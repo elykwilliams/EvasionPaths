@@ -1,29 +1,32 @@
  
 # Style
- - remove domain from sensor network initialization
  - Use consistent list/tuple/array
- - Simplify plotting tools 
- - viseck/DO don't need radius member, use from sensor_network
- - ODE motion doesn't need n_sensors
- - compute cmap alpha cycle from fence sensors
+ - Simplify plotting tools interface
+ - make cycle labelling interface consistent 
 
 # Features:
- - Add sensor_tools
  - Add examples of custom_sensor_network
  - add optional setting to enforce connected graph vs power-off
 
+ - integrate support for dynamical systems packages (pydstool, pydy)
+ - Add sensor_tools 
+ - support time-series data (pandas)
+
 # Documentation:
- - Write MainPage
- - Document Examples
+ - Migrate to pdoc for documentation
+ - Setup documentation git action
+ - Document Examples and tutorials
+ - src documentation move to google format
     
 # Testing
  - Better error Messages
  - Add logging
  - Add unit tests
+ - Setup git action Continuous integration
 
 # Structural:
  - Install using pip/venv 
- - config file?
+ - config file
 
  # Summer Development:
  - Allow for fully disconnected graph ("power on")

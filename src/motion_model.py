@@ -64,6 +64,7 @@ class MotionModel(ABC):
     ## Initialize sensor velocity.
     # Velocity is stored in polar form. vel_mag is a parameter that
     # can be used to indicate a scale of magnitude.
+    # generates a tuple (rho, theta)
     @staticmethod
     @abstractmethod
     def initial_pvel(vel_mag):
@@ -89,16 +90,18 @@ class BrownianMotion(MotionModel):
     def epsilon(self, dt) -> float:
         return self.sigma * np.sqrt(dt) * random.normal(0, 1, 2)
 
-    # TODO Document
+    ## Update a given sensors velocity.
     def update_position(self, sensor, dt):
+        # TODO go back to stateless function
         sensor.position = array(sensor.old_pos) + self.epsilon(dt)
         if sensor.position not in self.domain:
             self.reflect(sensor)
 
 
 ## Implement Billiard Motion for Rectangular Domain.
-# All sensors will have same velocity bit will have random angles.
-# Points will move a distance of vel*dt each update.
+# All sensors will have same velocity magnitude but
+# will have random initial angles.
+# Points will move with a displacement of vel*dt each update.
 class BilliardMotion(MotionModel):
 
     # TODO Document
@@ -107,6 +110,8 @@ class BilliardMotion(MotionModel):
         return array([vel_mag, random.uniform(0, 2*np.pi)])
 
     ## Update point using x = x + v*dt.
+    # if sensor leaves domain, reflect angle to sensor
+    # remains in domain.
     def update_position(self, sensor, dt):
         vel = array(pol2cart(sensor.pvel))
         sensor.position = array(sensor.old_pos) + dt*vel
@@ -131,10 +136,19 @@ class RunAndTumble(BilliardMotion):
                     sensor.old_pvel[1] = random.uniform(0, 2 * np.pi)
 
 
-# TODO Document
-# TODO use sensors.fence sensors not domain
+## The Viscek Model of Motion.
+# This model is a variation of billiard motion where sensor's
+# velocity is averaged with the neighboring sensor's velocity.
+# Optional noise can be added to the system.
+# The averaging is only done on the top level time-step,
+# substeps the motion is simply billiard motion.
+# TODO find reference
 class Viscek(BilliardMotion):
 
+    ## Initialize motion model.
+    # averaging will be done in increments of dt.
+    # radius is the radius of sensors that will be averaged.
+    # This is typically the same as the sensing radius.
     def __init__(self, domain: Domain, dt: float, sensing_radius: float):
         super().__init__(domain)
         self.large_dt = dt
@@ -156,19 +170,31 @@ class Viscek(BilliardMotion):
                 s1.old_pvel[1] = (np.mean(sensor_angles) + self.eta()) % (2 * np.pi)
 
 
-# TODO Document
-# TODO use sensors.fence sensors not domain
+## Differential equation based motion model.
+# Update sensor positions according to differential equation.
+# Uses scipy solve_ivp to solve possibly nonlinear differential equations.
+# This will solve the equation dx/dt = f(t, x) on the interval [0, dt] and return the
+# solution at time dt with a tolerance to 1e-8.
+# This class is setup to compute and store positions/velocities for all sensors
+# in compute_update() and then return those values when requested in update().
 class ODEMotion(MotionModel, ABC):
+
+    ## Initialize motion model.
+    # Points/velocities: sensors -> tuple()
     def __init__(self, domain):
         super().__init__(domain)
         self.n_sensors = 0
         self.points = dict()
         self.velocities = dict()
 
+    ## The right hand side function f(t, x).
     @abstractmethod
     def time_derivative(self, t, state):
         pass
 
+    ## Solve dx/dt = f(t, x) with x(t0) = old_pos.
+    # Compute value x(t0 + dt) at each mobile sensor, store for later.
+    # differential equation does not take fence sensors into account.
     def compute_update(self, sensors, dt):
         self.n_sensors = len(sensors.mobile_sensors)
         # Put into form ode solver wants [ xs | ys | vxs | vys ]
@@ -184,24 +210,36 @@ class ODEMotion(MotionModel, ABC):
         # Convert back from np array
         new_val = new_val.y
 
+        # TODO unpack into xs, ys, v, change y variable to meaningful name
         # split state back into position and velocity,
         split_state = [[y[0] for y in new_val[i:i + self.n_sensors]] for i in range(0, len(new_val), self.n_sensors)]
 
         # zip into list of tuples
         self.velocities = dict(zip(sensors.mobile_sensors, zip(split_state[2], split_state[3])))
-
-        # Reflect any points outside boundary
         self.points = dict(zip(sensors.mobile_sensors, zip(split_state[0], split_state[1])))
 
+    ## Retrieve precomputed position and velocity for given sensor.
+    # This function is called *after* compute_update() has been called.
+    # it will simply retrieve the precomputed position and velocities.
     def update_position(self, sensor, dt):
+        # TODO Make stateless
         sensor.pvel = cart2pol(self.velocities[sensor])
         sensor.position = self.points[sensor]
         if sensor.position not in self.domain:
             self.reflect(sensor)
 
 
-# TODO Document
+## Motion using the D'Orsogna model of motion.
+# TODO find reference
+# The idea behind this model is for sensors to have some
+# sort of potential so that when sensors are far away from each
+# other they attract, but when they are close together they repel.
 class Dorsogna(ODEMotion):
+
+    ## Initialize parameters.
+    # eta_scale_factor is not used, it was previously used to implement a partition of
+    # unity so that the gradient was Cinfinty but still went to 0 outside a given radius.
+    # TODO rename and document coeff parameters, give sample values
     def __init__(self, domain, sensing_radius, eta_scale_factor, coeff):
         assert len(coeff) != 4, "Not enough parameters in DO_coeff"
         super().__init__(domain)
@@ -213,6 +251,9 @@ class Dorsogna(ODEMotion):
     def initial_pvel(vel_mag):
         return cart2pol(np.random.uniform(-vel_mag, vel_mag, 2))
 
+    ## Sensor "potential" function.
+    # Designed to attract at large scales and repel at small scales.
+    # only interacts with neighbor sensors.
     def gradient(self, xs, ys):
         grad_x, grad_y = np.zeros(self.n_sensors), np.zeros(self.n_sensors)
 
@@ -228,6 +269,11 @@ class Dorsogna(ODEMotion):
 
         return array(grad_x), array(grad_y)
 
+    ## The right hand side function f(t, x).
+    # we have the system
+    #       dx_i/dt = v_i, dx_i/dt = (1.5 - (1/2 || v_i ||**2 v_i) ) - grad(i)
+    # ode solver gives us np array in the form [xvals | yvals | vxvals | vyvals]
+    # return to solver in the same format.
     def time_derivative(self, _, state):
         # ode solver gives us np array in the form [xvals | yvals | vxvals | vyvals]
         # split into individual np array
