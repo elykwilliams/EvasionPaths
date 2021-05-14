@@ -200,12 +200,11 @@ class CycleLabelling:
     # Get cycles associated with any added simplices, and determine the enclosing
     # boundary cycle in the case of a disconnect or reconnect.
     def update(self, state_change):
-        # TODO Consistent return values/is return value used?
         if not state_change.is_atomic():
             raise InvalidStateChange(state_change)
 
         if self.ignore_state_change(state_change):
-            return ''
+            return
 
         # Add 1-Simplex
         elif state_change.case == (1, 0, 0, 0, 2, 1):
@@ -223,7 +222,7 @@ class CycleLabelling:
 
         # Remove 2-Simplex
         elif state_change.case == (0, 0, 0, 1, 0, 0):
-            return ""
+            return
 
         # 1-Simplex 2-Simplex Pair Added
         elif state_change.case == (1, 0, 1, 0, 2, 1):
@@ -282,4 +281,3 @@ class CycleLabelling:
                             connected_simplices,
                             enclosing_cycle)
 
-        return StateChange.case2name[state_change.case]
