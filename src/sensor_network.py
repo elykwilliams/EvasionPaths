@@ -36,7 +36,7 @@ class Sensor:
     # to recompute with smaller timestep.
     def move(self, motion_model, dt):
         assert not self.boundary_flag, 'Boundary sensors cannot be updated'
-        motion_model.update_position(self, dt)
+        self.position, self.pvel = motion_model.update_position(self, dt)
 
     ## Update sensor current state.
     # This function updates the values on which the new position are computed,

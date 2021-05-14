@@ -34,17 +34,19 @@ class MotionModel(ABC):
     #   3. check if reflection is needed
     @abstractmethod
     def update_position(self, sensor, dt):
-        if sensor.position not in self.domain:
-            self.reflect(sensor)
+        pass
 
     ## Elastic reflection off boundary wall.
     # This function should not need to be over written unless
     # an inelastic collision is needed. This function adjusts
-    # the sensor position to where it should be, and the new
-    # velocity angle.
-    def reflect(self, sensor):
-        sensor.pvel[1] = self.domain.reflect_velocity(sensor.old_pos, sensor.position)
-        sensor.position = self.domain.reflect_point(sensor.old_pos, sensor.position)
+    # the sensor position to where it should be, as well as the new
+    # velocity angle. This will only be updated IF NEEDED.
+    def reflect(self, sensor, new_pos):
+        if new_pos not in self.domain:
+            new_angle = self.domain.reflect_velocity(sensor.old_pos, new_pos)
+            new_pos = self.domain.reflect_point(sensor.old_pos, new_pos)
+            return new_pos, (sensor.pvel[0], new_angle)
+        return new_pos, sensor.pvel
 
     ## Compute any nonlocal updates.
     # This function should be called before update_position().
@@ -80,10 +82,8 @@ class BrownianMotion(MotionModel):
 
     ## Update a given sensors velocity.
     def update_position(self, sensor, dt):
-        # TODO go back to stateless function
-        sensor.position = array(sensor.old_pos) + self.epsilon(dt)
-        if sensor.position not in self.domain:
-            self.reflect(sensor)
+        new_pos = array(sensor.old_pos) + self.epsilon(dt)
+        return self.reflect(sensor, new_pos)
 
 
 ## Implement Billiard Motion for Rectangular Domain.
@@ -97,9 +97,8 @@ class BilliardMotion(MotionModel):
     # remains in domain.
     def update_position(self, sensor, dt):
         vel = array(pol2cart(sensor.pvel))
-        sensor.position = array(sensor.old_pos) + dt*vel
-        if sensor.position not in self.domain:
-            self.reflect(sensor)
+        new_pos = array(sensor.old_pos) + dt*vel
+        return self.reflect(sensor, new_pos)
 
 
 ## Implement randomized variant of Billiard motion.
@@ -204,11 +203,8 @@ class ODEMotion(MotionModel, ABC):
     # This function is called *after* compute_update() has been called.
     # it will simply retrieve the precomputed position and velocities.
     def update_position(self, sensor, dt):
-        # TODO Make stateless
-        sensor.pvel = cart2pol(self.velocities[sensor])
-        sensor.position = self.points[sensor]
-        if sensor.position not in self.domain:
-            self.reflect(sensor)
+        new_pos, new_angle = self.reflect(sensor, self.points[sensor])
+        return new_pos, (cart2pol(self.velocities[sensor]), new_angle)
 
 
 ## Motion using the D'Orsogna model of motion.
