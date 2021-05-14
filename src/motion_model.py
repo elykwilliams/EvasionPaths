@@ -194,18 +194,17 @@ class ODEMotion(MotionModel, ABC):
         init_val = xs + ys + vxs + vys
 
         # Solve with init_val as t=0, solve for values at t+dt
-        new_val = solve_ivp(self.time_derivative, [0, dt], init_val, t_eval=[dt], rtol=1e-8)
+        solution = solve_ivp(self.time_derivative, [0, dt], init_val, t_eval=[dt], rtol=1e-8)
 
         # Convert back from np array
-        new_val = new_val.y
+        solution = solution.y[:, 0]
 
-        # TODO unpack into xs, ys, v, change y variable to meaningful name
         # split state back into position and velocity,
-        split_state = [[y[0] for y in new_val[i * self.n_sensors:(i + 1) * self.n_sensors]] for i in range(4)]
+        xs, ys, v = [[val for val in solution[i * self.n_sensors:(i + 1) * self.n_sensors]] for i in range(4)]
 
         # zip into list of tuples
-        self.velocities = dict(zip(sensors.mobile_sensors, zip(split_state[2], split_state[3])))
-        self.points = dict(zip(sensors.mobile_sensors, zip(split_state[0], split_state[1])))
+        self.velocities = dict(zip(sensors.mobile_sensors, zip(*v)))
+        self.points = dict(zip(sensors.mobile_sensors, zip(xs, ys)))
 
     ## Retrieve precomputed position and velocity for given sensor.
     # This function is called *after* compute_update() has been called.
