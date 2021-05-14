@@ -15,11 +15,11 @@ import matplotlib.pyplot as plt
 ## Show fence sensors.
 # Note that fence sensors are places slightly outside
 # of the actual domain.
-# TODO accept SensorNetwork
-def show_boundary_points(sim):
+# TODO style: group axis
+def show_boundary_points(sensors):
     axis = plt.gca()
-    xpts = [s.position[0] for s in sim.sensor_network.fence_sensors]
-    ypts = [s.position[1] for s in sim.sensor_network.fence_sensors]
+    xpts = [s.position[0] for s in sensors.fence_sensors]
+    ypts = [s.position[1] for s in sensors.fence_sensors]
     axis.plot(xpts, ypts, 'k*')
 
 
@@ -27,16 +27,14 @@ def show_boundary_points(sim):
 # Note that fence sensors are places slightly outside
 # of the actual domain. The points used to plt the domain
 # are not use in simulation.
-# TODO accept Domain
-def show_domain_boundary(sim):
+# TODO style: group axis
+def show_domain_boundary(domain):
     axis = plt.gca()
-    b = sim.sensor_network.motion_model.domain
-    xpts, ypts = b.domain_boundary_points()
+    xpts, ypts = domain.domain_boundary_points()
     axis.plot(xpts, ypts)
 
 
 ## Show Sensor Network graph.
-# TODO accept simulation or SensorNetwork
 def show_labelled_graph(sim):
     graph = sim.state.graph
     points = [s.position for s in sim.sensor_network]
@@ -45,21 +43,20 @@ def show_labelled_graph(sim):
 
 
 ## Display sensors.
-# TODO accept SensorNetwork
-def show_sensor_points(sim):
+# TODO style: group axis
+def show_sensor_points(sensors):
     axis = plt.gca()
-    xpts = [s.position[0] for s in sim.sensor_network]
-    ypts = [s.position[1] for s in sim.sensor_network]
+    xpts = [s.position[0] for s in sensors]
+    ypts = [s.position[1] for s in sensors]
     axis.plot(xpts, ypts, 'k*')
     return
 
 
 ## Display sensing disks.
-# TODO accept SensorNetwork
-def show_sensor_radius(sim):
+def show_sensor_radius(sensors):
     axis = plt.gca()
-    for pt in [s.position for s in sim.sensor_network]:
-        axis.add_artist(plt.Circle(pt, sim.sensor_network.sensing_radius, color='b', alpha=0.1, clip_on=False))
+    for pt in [s.position for s in sensors]:
+        axis.add_artist(plt.Circle(pt, sensors.sensing_radius, color='b', alpha=0.1, clip_on=False))
 
 
 ## Shade holes in AlphaComplex with possible intruder.
@@ -89,12 +86,12 @@ def show_possible_intruder(sim):
             axis.fill(xpts, ypts, color='k', alpha=0.2)
         else:
             pass
-    show_sensor_points(sim)
+    show_sensor_points(sim.sensor_network)
 
 
 ## Display AlphaComplex.
 # Shows 0, 1, and 2 simplices.
-# TODO accept SensorNetwork or simulation
+# TODO feat: accept SensorNetwork or simulation
 def show_alpha_complex(sim):
 
     axis = plt.gca()
@@ -110,7 +107,7 @@ def show_alpha_complex(sim):
         ypts = [points[n][1] for n in edge]
         axis.plot(xpts, ypts, color='r', alpha=0.15)
 
-    show_sensor_points(sim)
+    show_sensor_points(sim.sensor_network)
 
 
 ## Full display.
@@ -118,7 +115,7 @@ def show_alpha_complex(sim):
 # all on the same figure.
 def show_state(sim):
     show_possible_intruder(sim)
-    show_sensor_radius(sim)
+    show_sensor_radius(sim.sensor_network)
     show_alpha_complex(sim)
 
 
@@ -150,15 +147,15 @@ if __name__ == '__main__':
     simulation = EvasionPathSimulation(sensor_network=sensor_network, dt=timestep_size)
 
     plt.figure(1)
-    show_boundary_points(simulation)
-    show_domain_boundary(simulation)
+    show_boundary_points(simulation.sensor_network)
+    show_domain_boundary(simulation.sensor_network.motion_model.domain)
 
     plt.figure(2)
     show_labelled_graph(simulation)
 
     plt.figure(3)
-    show_sensor_points(simulation)
-    show_sensor_radius(simulation)
+    show_sensor_points(simulation.sensor_network)
+    show_sensor_radius(simulation.sensor_network)
 
     plt.figure(4)
     show_alpha_complex(simulation)
