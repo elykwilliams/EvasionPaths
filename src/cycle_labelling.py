@@ -111,18 +111,19 @@ class CycleLabelling:
         self._delete_all(removed_cycles)
 
     ## Mark boundary cycle as a 2-simplex.
-    def _add_2simplex(self, added_simplex):
-        # TODO fix interface
-        self._cycle_label[added_simplex] = False
+    # added_simplices should be a list of boundary cycles corresponding to
+    # the new 2-simplices
+    def _add_2simplex(self, added_simplices):
+        for simplex in added_simplices:
+            self._cycle_label[simplex] = False
 
     ## Add 2-simplex + edge.
     # Need to add edge first so that added simple is in labelling.
     # removed_cycles and added_cycles should be lists of boundary cycles
     # added_simplex is the boundary cycle of the added simplex.
-    def _add_simplex_pair(self, removed_cycles, added_cycles, added_simplex):
-        # TODO fix interface
+    def _add_simplex_pair(self, removed_cycles, added_cycles, added_simplices):
         self._add_1simplex(removed_cycles, added_cycles)
-        self._add_2simplex(added_simplex)
+        self._add_2simplex(added_simplices)
 
     ## Remove edge and 2-simplex.
     # This is the same logic as removing just an edge.
@@ -134,8 +135,7 @@ class CycleLabelling:
     # add 2 new simplices, remove two old simplices.
     # removed_cycles and added_cycles should be lists of boundary cycles
     def _delaunay_flip(self, removed_cycles, added_cycles):
-        for cycle in added_cycles:
-            self._add_2simplex(cycle)
+        self._add_2simplex(added_cycles)
         self._delete_all(removed_cycles)
 
     ## Disconnect graph component - power-down model.
@@ -144,16 +144,14 @@ class CycleLabelling:
     # the enclosing cycle is the connected boundary cycle which
     # encloses the removed cycles.
     def _disconnect(self, removed_cycles, enclosing_cycle):
-        # TODO fix interface
         self._remove_1simplex(removed_cycles, [enclosing_cycle])
 
     ## Reconnect graph component.
     # This can only happen through the addition of an edge. Then,
     # adjust all 2-simplices.
-    def _reconnect(self, added_cycles, enclosing_cycle, connected_simplices):
+    def _reconnect(self, added_cycles, connected_simplices, enclosing_cycle):
         self._add_1simplex([enclosing_cycle], added_cycles)
-        for cycle in connected_simplices:
-            self._add_2simplex(cycle)
+        self._add_2simplex(connected_simplices)
 
     ## Ignore state changes that involve disconnected boundary cycles.
     # Using the forgetful model, we must be careful to not operate on
@@ -220,8 +218,8 @@ class CycleLabelling:
         # Add 2-Simplex
         elif state_change.case == (0, 0, 1, 0, 0, 0):
             simplex = state_change.simplices_added[0]
-            added_simplex = state_change.new_state.simplex2cycle(simplex)
-            self._add_2simplex(added_simplex)
+            added_simplices = [state_change.new_state.simplex2cycle(simplex)]
+            self._add_2simplex(added_simplices)
 
         # Remove 2-Simplex
         elif state_change.case == (0, 0, 0, 1, 0, 0):
@@ -230,8 +228,8 @@ class CycleLabelling:
         # 1-Simplex 2-Simplex Pair Added
         elif state_change.case == (1, 0, 1, 0, 2, 1):
             simplex = state_change.simplices_added[0]
-            added_simplex = state_change.new_state.simplex2cycle(simplex)
-            self._add_simplex_pair(state_change.cycles_removed, state_change.cycles_added, added_simplex)
+            added_simplices = [state_change.new_state.simplex2cycle(simplex)]
+            self._add_simplex_pair(state_change.cycles_removed, state_change.cycles_added, added_simplices)
 
         # 1-Simplex 2-Simplex Pair Removed
         elif state_change.case == (0, 1, 0, 1, 1, 2):
@@ -280,7 +278,8 @@ class CycleLabelling:
                     simplex_cycle = state_change.new_state.simplex2cycle(simplex)
                     connected_simplices.append(simplex_cycle)
 
-            self._reconnect(state_change.cycles_added + reconnected_cycles, enclosing_cycle,
-                            connected_simplices)
+            self._reconnect(state_change.cycles_added + reconnected_cycles,
+                            connected_simplices,
+                            enclosing_cycle)
 
         return StateChange.case2name[state_change.case]
