@@ -16,12 +16,6 @@ from scipy.integrate import solve_ivp
 from abc import ABC, abstractmethod
 
 
-## Compute distance between two sensors.
-# TODO move to sensor tools
-def dist(s1, s2):
-    return norm(array(s1.old_pos) - array(s2.old_pos))
-
-
 ## This class provides the basic interface for a model of motion.
 # it should do two things, update the point positions, and reflect
 # points off of the boundary. Because the reflection depends on the
@@ -155,7 +149,7 @@ class Viscek(BilliardMotion):
     def compute_update(self, sensors, dt):
         if dt == self.large_dt:
             for s1 in sensors.mobile_sensors:
-                sensor_angles = [s2.old_vel_angle for s2 in sensors.mobile_sensors if dist(s1, s2) < self.radius]
+                sensor_angles = [s2.old_vel_angle for s2 in sensors.mobile_sensors if s1.dist(s2) < self.radius]
                 s1.old_pvel[1] = (np.mean(sensor_angles) + self.eta()) % (2 * np.pi)
 
 

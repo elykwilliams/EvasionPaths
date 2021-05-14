@@ -7,6 +7,7 @@
 # ************************************************************
 
 from utilities import *
+from numpy import array
 
 
 ## This class contains all information local to a sensor.
@@ -44,6 +45,10 @@ class Sensor:
         assert not self.boundary_flag, 'Boundary sensors cannot be updated'
         self.old_pos = self.position
         self.old_pvel = self.pvel
+
+    ## Compute distance between two sensors.
+    def dist(self, s2):
+        return norm(array(self.old_pos) - array(s2.old_pos))
 
 
 ## This class represents a collection of sensors.
