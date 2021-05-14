@@ -1,12 +1,19 @@
  
+# Bugs
+ - Bug was introduced: sample_animation errors out for small radius after some time. Need to fix with better try catch
+
 # Style
  - Use consistent list/tuple/array
- - Simplify plotting tools 
+ - Simplify plotting tools interface
+ - make cycle labelling interface consistent 
 
 # Features:
- - Add sensor_tools
  - Add examples of custom_sensor_network
  - add optional setting to enforce connected graph vs power-off
+
+ - integrate support for dynamical systems packages (pydstool, pydy)
+ - Add sensor_tools 
+ - support time-series data (pandas)
 
 # Documentation:
  - Migrate to pdoc for documentation
@@ -22,7 +29,7 @@
 
 # Structural:
  - Install using pip/venv 
- - config file?
+ - config file
 
  # Summer Development:
  - Allow for fully disconnected graph ("power on")
