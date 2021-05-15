@@ -1,9 +1,8 @@
 *.gif
 *.mp4
 output
-doc
 experiments
-
+.env
 
 ## Core latex/pdflatex auxiliary files:
 *.aux
