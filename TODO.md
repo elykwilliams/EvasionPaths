@@ -1,18 +1,13 @@
  
-# Bugs
- - Bug was introduced: sample_animation errors out for small radius after some time. Need to fix with better try catch
 
 # Style
- - Use consistent list/tuple/array
- - Simplify plotting tools interface
- - make cycle labelling interface consistent 
+ - Use consistent list/tuple/array 
 
 # Features:
- - Add examples of custom_sensor_network
  - add optional setting to enforce connected graph vs power-off
 
  - integrate support for dynamical systems packages (pydstool, pydy)
- - Add sensor_tools 
+ - Add sensor_tools (maybe)
  - support time-series data (pandas)
 
 # Documentation:
@@ -20,6 +15,7 @@
  - Setup documentation git action
  - Document Examples and tutorials
  - src documentation move to google format
+ - Add examples of custom_sensor_network
     
 # Testing
  - Better error Messages
@@ -29,7 +25,8 @@
 
 # Structural:
  - Install using pip/venv 
- - config file
+ - config file: maybe not needed?
+ - refactor MotionModel into DataStream 
 
  # Summer Development:
  - Allow for fully disconnected graph ("power on")
