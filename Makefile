@@ -1,7 +1,7 @@
 SHELL := /bin/bash
 .ONESHELL:
 
-VENV := .env
+VENV := env
 PYTHON := ${VENV}/bin/python3
 PIP := ${VENV}/bin/pip3
 
@@ -22,7 +22,9 @@ install: env    ## Install dependencies and package
 
 .PHONY: update
 update:         ## Get recent updates and reinstall
-	git pull --rebase origin master:master
+	git stash
+	git pull --rebase
+	git stash pop
 	make install
 
 
@@ -37,7 +39,9 @@ conda-install:  conda-env       ## Install package
 
 .PHONY: conda-update
 conda-update:   ## Get recent updates and reinstall
-	git pull --rebase origin master:master
+	git stash
+	git pull --rebase
+	git stash pop
 	conda activate EvasionPaths-env
 	make conda-install
 

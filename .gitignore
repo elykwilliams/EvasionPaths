@@ -2,7 +2,7 @@
 *.mp4
 output
 experiments
-.env
+env
 
 ## Core latex/pdflatex auxiliary files:
 *.aux
