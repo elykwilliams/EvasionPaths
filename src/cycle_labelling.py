@@ -58,8 +58,7 @@ class CycleLabelling:
 
         for cycle in state.boundary_cycles():
             self._cycle_label[cycle] = True
-        for cycle in [state.simplex2cycle(s) for s in state.simplices(2) if state.is_connected_simplex(s)]:
-            self._add_2simplex(cycle)
+        self._add_2simplex([state.simplex2cycle(s) for s in state.simplices(2) if state.is_connected_simplex(s)])
         self._delete_all([cycle for cycle in self._cycle_label.keys() if not state.is_connected_cycle(cycle)])
 
     ## Allow cycle labelling to be printable.
