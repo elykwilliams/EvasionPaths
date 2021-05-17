@@ -280,3 +280,22 @@ class CycleLabelling:
                             connected_simplices,
                             enclosing_cycle)
 
+
+from treelib import Tree
+
+
+class CycleLabellingTree:
+
+    ## Initialize all boundary cycles as True, simplices as False.
+    # TODO Allow initially disconnected boundary cycles.
+    # This can be adjusted by looking at the connected components in
+    # topology and extracting the connected boundary cycles.
+    def __init__(self, topology) -> None:
+        self.tree = Tree()
+        self.tree.create_node(str(topology.alpha_cycle), topology.alpha_cycle, data=False)
+
+        for cycle in topology.boundary_cycles:
+            self.tree.create_node(tag=str(cycle), identifier=cycle, parent=topology.alpha_cycle, data=True)
+
+        for cycle in topology.simplices2:
+            self.tree[cycle].data = False
