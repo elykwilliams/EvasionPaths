@@ -7,6 +7,7 @@
 # ************************************************************
 
 from math import atan2
+
 from networkx import Graph
 
 
@@ -139,6 +140,8 @@ class CMap:
 # around the outside of the domain. The fence sensors are guaranteed to
 # be in counter-clockwise order. Additionally when iterating through all
 # sensors, fence sensors are guaranteed to come first so the numbering here works.
+# This function is here because topological state should not need to know about the
+# representation of a boundary cycle.
 def alpha_cycle(fence_sensors):
     n_sensors = len(fence_sensors)
     a = [f'{(n + 1) % n_sensors},{n}' for n in range(n_sensors)]
