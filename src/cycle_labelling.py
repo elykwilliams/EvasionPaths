@@ -7,6 +7,9 @@
 # ************************************************************
 
 
+import treelib.exceptions
+from treelib import Tree
+
 from topological_state import *
 from utilities import *
 
@@ -54,10 +57,7 @@ class CycleLabelling:
     # Using the current 'forgetful' model, any cycle the becomes disconnected will be removed from
     # the labelling, and added back when it becomes reconnected.
     def __init__(self, state: TopologicalState) -> None:
-        self._cycle_label = dict()
-
-        for cycle in state.boundary_cycles():
-            self._cycle_label[cycle] = True
+        self._cycle_label = {cycle: True for cycle in state.boundary_cycles()}
         self._add_2simplex([state.simplex2cycle(s) for s in state.simplices(2) if state.is_connected_simplex(s)])
         self._delete_all([cycle for cycle in self._cycle_label.keys() if not state.is_connected_cycle(cycle)])
 
@@ -281,21 +281,66 @@ class CycleLabelling:
                             enclosing_cycle)
 
 
-from treelib import Tree
-
-
 class CycleLabellingTree:
 
     ## Initialize all boundary cycles as True, simplices as False.
-    # TODO Allow initially disconnected boundary cycles.
+    # TODO Allow initially disconnected boundary cycles, or skip disconnected cycles
     # This can be adjusted by looking at the connected components in
     # topology and extracting the connected boundary cycles.
-    def __init__(self, topology) -> None:
-        self.tree = Tree()
-        self.tree.create_node(str(topology.alpha_cycle), topology.alpha_cycle, data=False)
+    def __init__(self, topology, method="power-down") -> None:
+        self._tree = Tree()
 
-        for cycle in topology.boundary_cycles:
-            self.tree.create_node(tag=str(cycle), identifier=cycle, parent=topology.alpha_cycle, data=True)
+        self.add_new_cycle(topology.alpha_cycle, parent=None)
+        self.set_false(topology.alpha_cycle)
 
-        for cycle in topology.simplices2:
-            self.tree[cycle].data = False
+        for cycle in topology.boundary_cycles():
+            self.add_new_cycle(cycle, topology.alpha_cycle)
+
+        self.add_2simplices(topology.simplices(2))
+
+        if method == "power-down" or method == "connected":
+            self.remove_all(cycle for cycle in topology.boundary_cycles() if not topology.is_connected_cycle(cycle))
+
+    def __contains__(self, item):
+        return self._tree.contains(item)
+
+    def __iter__(self):
+        return self._tree.expand_tree(self._tree.root)
+
+    def __getitem__(self, item):
+        try:
+            return self._tree[item].data
+        except treelib.exceptions.NodeIDAbsentError as err:
+            raise KeyError(f"Boundary Cycle {item} not found. You are attempting to retriece the value of a cycle that "
+                           f"has not yet been added to the tree.")
+        except Exception as e:
+            print(type(e))
+
+    def set_false(self, cycle):
+        try:
+            self._tree[cycle].data = False
+        except treelib.exceptions.NodeIDAbsentError as err:
+            raise KeyError(f"Boundary Cycle {cycle} not found. You are attempting to change the value of a cycle that "
+                           f"has not yet been added to the tree.")
+
+    def set_true(self, cycle):
+        try:
+            self._tree[cycle].data = True
+        except treelib.exceptions.NodeIDAbsentError as err:
+            raise KeyError(f"Boundary Cycle {cycle} not found. You are attempting to change the value of a cycle that "
+                           f"has not yet been added to the tree.")
+
+    def remove_all(self, cycles):
+        for cycle in cycles:
+            self._tree.remove_node(cycle)
+
+    ## Set simplex cycle to be false
+    # assumes cycles is already in tree
+    def add_2simplices(self, added_cycles):
+        for cycle in added_cycles:
+            self.set_false(cycle)
+
+    ## Add cycle to tree
+    # defaults to True
+    def add_new_cycle(self, cycle, parent):
+        self._tree.create_node(tag=cycle, identifier=cycle, parent=parent, data=True)
