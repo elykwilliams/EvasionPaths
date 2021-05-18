@@ -12,7 +12,7 @@ class TestInitCycleLabelling(unittest.TestCase):
         def simplices(dim):
             return ["B", "C"] if dim == 2 else None
 
-        self.topology = mock.MagicMock()
+        self.topology = mock.Mock()
         self.topology.boundary_cycles = mock.Mock(return_value=list("ABCDE"))
         self.topology.simplices = mock.Mock(side_effect=simplices)
         self.topology.alpha_cycle = 'alpha'
@@ -59,12 +59,15 @@ class TestInitCycleLabelling(unittest.TestCase):
         assert CycleLabellingTree(self.topology, "power-on")._tree.DEPTH == 1
 
 
+## Test behavior when a connected 2simplex is added
+# In these tast cases, We have boundary cycles A, B, C, D, E. With B and C as simplices.
+# D then becomes a simplex
 class TestAddConnectedSimplex(unittest.TestCase):
     def setUp(self) -> None:
         def simplices(dim):
             return ["B", "C"] if dim == 2 else None
 
-        self.topology = mock.MagicMock()
+        self.topology = mock.Mock()
         self.topology.boundary_cycles = mock.Mock(return_value=list("ABCDE"))
         self.topology.simplices = mock.Mock(side_effect=simplices)
         self.topology.alpha_cycle = 'alpha'
@@ -91,3 +94,100 @@ class TestAddConnectedSimplex(unittest.TestCase):
     # setting non-cycle raises keyerror
     def test_raises_on_cycle_not_found(self):
         pytest.raises(KeyError, self.cycle_labelling.add_2simplices, ['Z'])
+
+
+## Test behavior when an connected 2simplex is removed
+class TestRemoveSimplex(unittest.TestCase):
+
+    def setUp(self) -> None:
+        def simplices(dim):
+            return ["B", "C"] if dim == 2 else None
+
+        self.topology = mock.Mock()
+        self.topology.boundary_cycles = mock.Mock(return_value=list("ABCDE"))
+        self.topology.simplices = mock.Mock(side_effect=simplices)
+        self.topology.alpha_cycle = 'alpha'
+
+        self.cycle_labelling = CycleLabellingTree(self.topology)
+        self.simplices_removed = ['C']
+
+    def test_remove_2simplices(self):
+        self.cycle_labelling.remove_2simplices(self.simplices_removed)
+
+    # cycles haven't changed
+    @patch('cycle_labelling.Tree.remove_node')
+    @patch('cycle_labelling.Tree.add_node')
+    def test_no_cycles_added_or_removed(self, mock_add_node, mock_remove_node):
+        self.cycle_labelling.remove_2simplices(self.simplices_removed)
+        assert mock_add_node.call_count == 0
+        assert mock_remove_node.call_count == 0
+
+    # setting non-cycle raises keyerror
+    def test_raises_on_cycle_not_found(self):
+        pytest.raises(KeyError, self.cycle_labelling.remove_2simplices, ['Z'])
+
+    ## cycle lables havent changed
+    def test_cycle_labels_unchanged(self):
+        self.cycle_labelling.remove_2simplices(self.simplices_removed)
+        for cycle in self.cycle_labelling:
+            if cycle in "ADE":
+                assert self.cycle_labelling[cycle]
+            else:
+                assert not self.cycle_labelling[cycle]
+
+
+## Test behavior when an edge is added using the "power-down/connected" approach
+# In this case, an edge is  added splitting E into boundary cycles F and G
+# This does NOT count the case where any sort of re-connection happens
+class TestAddConnected1Simplex(unittest.TestCase):
+    def setUp(self):
+        def simplices(dim):
+            return ["B", "C"] if dim == 2 else None
+
+        self.topology = mock.Mock()
+        self.topology.boundary_cycles = mock.Mock(return_value=list("ABCDE"))
+        self.topology.simplices = mock.Mock(side_effect=simplices)
+        self.topology.alpha_cycle = 'alpha'
+
+        self.cycle_labelling = CycleLabellingTree(self.topology)
+        self.cycles_added = ['F', 'G']
+        self.cycles_removed = ['E']
+
+    def test_add_1simplex(self):
+        self.cycle_labelling.add_1simplex(self.cycles_removed, self.cycles_added)
+
+    def test_correct_cycles(self):
+        self.cycle_labelling.add_1simplex(self.cycles_removed, self.cycles_added)
+        expected_cycles = list("ABCDFG") + ['alpha']
+
+        assert all([cycle in self.cycle_labelling for cycle in expected_cycles])
+        assert all([cycle in expected_cycles for cycle in self.cycle_labelling])
+
+    @patch('cycle_labelling.Tree.update_node')
+    @patch('cycle_labelling.Tree.remove_node')
+    @patch('cycle_labelling.Tree.add_node')
+    def test_two_remove_one_add(self, mock_add_node, mock_remove_node, _):
+        self.cycle_labelling.add_1simplex(self.cycles_removed, self.cycles_added)
+        assert mock_add_node.call_count == 2
+        assert mock_remove_node.call_count == 1
+
+    # If E has intrude, so to F and G
+    # Else F and G are clear
+    def test_correct_update_false(self):
+        self.cycle_labelling.set('E', False)
+        self.cycle_labelling.add_1simplex(self.cycles_removed, self.cycles_added)
+        assert not any([self.cycle_labelling[cycle] for cycle in 'FG'])
+
+    def test_correct_update_true(self):
+        self.cycle_labelling.set('E', True)
+        self.cycle_labelling.add_1simplex(self.cycles_removed, self.cycles_added)
+        assert all([self.cycle_labelling[cycle] for cycle in 'FG'])
+
+    def test_other_labels_unchanged(self):
+        expected_dict = {'A': True, 'B': False, 'C': False, 'D': True}
+        self.cycle_labelling.add_1simplex(self.cycles_removed, self.cycles_added)
+        assert all([expected_dict[cycle] == self.cycle_labelling[cycle] for cycle in 'ABCD'])
+
+    def test_old_cycles_removed(self):
+        self.cycle_labelling.add_1simplex(self.cycles_removed, self.cycles_added)
+        assert not any([cycle in self.cycle_labelling for cycle in self.cycles_removed])

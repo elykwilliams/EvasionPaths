@@ -291,7 +291,7 @@ class CycleLabellingTree:
         self._tree = Tree()
 
         self.add_new_cycle(topology.alpha_cycle, parent=None)
-        self.set_false(topology.alpha_cycle)
+        self.set(topology.alpha_cycle, False)
 
         for cycle in topology.boundary_cycles():
             self.add_new_cycle(cycle, topology.alpha_cycle)
@@ -311,25 +311,26 @@ class CycleLabellingTree:
         try:
             return self._tree[item].data
         except treelib.exceptions.NodeIDAbsentError as err:
-            raise KeyError(f"Boundary Cycle {item} not found. You are attempting to retriece the value of a cycle that "
+            raise KeyError(f"Boundary Cycle {item} not found. You are attempting to retrieve the value of a cycle that "
                            f"has not yet been added to the tree.")
         except Exception as e:
             print(type(e))
 
-    def set_false(self, cycle):
-        try:
-            self._tree[cycle].data = False
-        except treelib.exceptions.NodeIDAbsentError as err:
-            raise KeyError(f"Boundary Cycle {cycle} not found. You are attempting to change the value of a cycle that "
-                           f"has not yet been added to the tree.")
+    ## Add cycle to tree
+    # defaults to True
+    def add_new_cycle(self, cycle, parent):
+        self._tree.create_node(tag=cycle, identifier=cycle, parent=parent, data=True)
 
-    def set_true(self, cycle):
+    ## Set label.
+    def set(self, cycle, value):
         try:
-            self._tree[cycle].data = True
+            self._tree.update_node(cycle, **{'data': value})
         except treelib.exceptions.NodeIDAbsentError as err:
-            raise KeyError(f"Boundary Cycle {cycle} not found. You are attempting to change the value of a cycle that "
-                           f"has not yet been added to the tree.")
+            raise KeyError(f"Boundary Cycle {cycle} not found. "
+                           f"You are attempting to change the value of a cycle that has not yet been added to the tree."
+                           )
 
+    ## Remove cycles from tree.
     def remove_all(self, cycles):
         for cycle in cycles:
             self._tree.remove_node(cycle)
@@ -338,9 +339,22 @@ class CycleLabellingTree:
     # assumes cycles is already in tree
     def add_2simplices(self, added_cycles):
         for cycle in added_cycles:
-            self.set_false(cycle)
+            self.set(cycle, False)
 
-    ## Add cycle to tree
-    # defaults to True
-    def add_new_cycle(self, cycle, parent):
-        self._tree.create_node(tag=cycle, identifier=cycle, parent=parent, data=True)
+    ## simplex that is no longer simplex, must sill be clear
+    # code does nothing, but flags error if trying to remove non-cycle
+    def remove_2simplices(self, removed_cycles):
+        for cycle in removed_cycles:
+            if cycle not in self:
+                raise KeyError("You are attempting to remove a simplex that has not yet been added to the tree")
+
+    ## Add edge.
+    # removed cycles should have only 1 or 2 cycles
+    # added_cycles should have only 1 cycle
+    # added cycle will have intruder if either removed cycle has intruder
+    def add_1simplex(self, removed_cycles, added_cycles):
+        for cycle in added_cycles:
+            self.add_new_cycle(cycle, self._tree.root)
+            self.set(cycle, self[removed_cycles[0]])
+
+        self.remove_all(removed_cycles)
