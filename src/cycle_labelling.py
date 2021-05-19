@@ -355,7 +355,8 @@ class CycleLabellingTree:
     # added cycle will have intruder if either removed cycle has intruder
     # This should only ever result in one cycle being removed
     def add_1simplex(self, removed_cycles, added_cycles):
-        assert len(removed_cycles) == 1, "Adding edge cannot cause more than 1 boundary cycle to be removed"
+        assert len(removed_cycles) == 1, \
+            "Adding edge cannot cause more than 1 boundary cycle to be removed"
         for cycle in added_cycles:
             self.add_new_cycle(cycle, self._tree.root)
             self.set(cycle, self[removed_cycles[0]])
@@ -365,9 +366,32 @@ class CycleLabellingTree:
     ## Remove edge.
     # This should only ever result in 1 cycle being added
     def remove_1simplex(self, removed_cycles, added_cycles):
-        assert len(added_cycles) == 1, "Adding edge cannot cause more than 1 boundary cycle to be removed"
+        assert len(added_cycles) == 1, \
+            "Adding edge cannot cause more than 1 boundary cycle to be removed"
         cycle = added_cycles[0]
         self.add_new_cycle(cycle, self._tree.root)
         self.set(cycle, any([self[cycle] for cycle in removed_cycles]))
 
         self.remove_all(removed_cycles)
+
+    ## Add simplex pair
+    # Will split a cycle into two with appropriate label, then label 2simplex as False
+    def add_simplex_pair(self, removed_cycles, added_cycles, added_simplices):
+        assert is_subset(added_simplices, added_cycles), \
+            "You are attempting to add a simplex that is not being added as a boundary cycle"
+        assert len(added_simplices) == 1, \
+            "You are attempting to remove too many simplices at once."
+        assert len(added_cycles) == 2, \
+            "You are not removing two boundary cycles, this is not possible"
+        self.add_1simplex(removed_cycles, added_cycles)
+        self.add_2simplices(added_simplices)
+
+    def remove_simplex_pair(self, removed_cycles, added_cycles, removed_simplices):
+        assert is_subset(removed_simplices, removed_cycles), \
+            "You are attempting to remove a simplex that is not being added as a boundary cycle"
+        assert len(removed_simplices) == 1, \
+            "You are attempting to remove too many simplices at once."
+        assert len(removed_cycles) == 2, \
+            "You are not removing two boundary cycles, this is not possible"
+
+        self.remove_1simplex(removed_cycles, added_cycles)
