@@ -386,12 +386,15 @@ class CycleLabellingTree:
         self.add_1simplex(removed_cycles, added_cycles)
         self.add_2simplices(added_simplices)
 
-    def remove_simplex_pair(self, removed_cycles, added_cycles, removed_simplices):
-        assert is_subset(removed_simplices, removed_cycles), \
-            "You are attempting to remove a simplex that is not being added as a boundary cycle"
-        assert len(removed_simplices) == 1, \
-            "You are attempting to remove too many simplices at once."
+    def remove_simplex_pair(self, removed_cycles, added_cycles):
         assert len(removed_cycles) == 2, \
             "You are not removing two boundary cycles, this is not possible"
-
         self.remove_1simplex(removed_cycles, added_cycles)
+
+    def delauny_flip(self, removed_cycles, added_cycles):
+        assert len(removed_cycles) == 2 and len(added_cycles) == 2, \
+            "You are attempting to do a delauny flip with more(or fewer) than two 2-simplices"
+        for cycle in added_cycles:
+            self.add_new_cycle(cycle, self._tree.root)
+        self.add_2simplices(added_cycles)
+        self.remove_all(removed_cycles)

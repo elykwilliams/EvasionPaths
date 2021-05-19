@@ -6,7 +6,7 @@ from cycle_labelling import CycleLabellingTree
 
 
 @pytest.fixture
-def simple_topology():
+def connected_topology():
     def simplices(dim):
         return ["B", "C"] if dim == 2 else None
 
@@ -18,5 +18,5 @@ def simple_topology():
 
 
 @pytest.fixture
-def cycle_labelling(simple_topology):
-    return CycleLabellingTree(simple_topology)
+def connected_labelling(connected_topology):
+    return CycleLabellingTree(connected_topology)
