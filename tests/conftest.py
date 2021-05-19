@@ -19,4 +19,4 @@ def connected_topology():
 
 @pytest.fixture
 def connected_labelling(connected_topology):
-    return CycleLabellingTree(connected_topology)
+    return CycleLabellingTree(connected_topology, policy="connected")
