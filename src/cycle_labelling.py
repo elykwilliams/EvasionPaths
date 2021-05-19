@@ -346,15 +346,28 @@ class CycleLabellingTree:
     def remove_2simplices(self, removed_cycles):
         for cycle in removed_cycles:
             if cycle not in self:
-                raise KeyError("You are attempting to remove a simplex that has not yet been added to the tree")
+                raise KeyError(f"Boundary Cycle {cycle} not found."
+                               f"You are attempting to remove a simplex that has not yet been added to the tree")
 
     ## Add edge.
-    # removed cycles should have only 1 or 2 cycles
-    # added_cycles should have only 1 cycle
+    # removed cycles list should have only 1 or 2 cycles
+    # added_cycles should be a list with only 1 cycle
     # added cycle will have intruder if either removed cycle has intruder
+    # This should only ever result in one cycle being removed
     def add_1simplex(self, removed_cycles, added_cycles):
+        assert len(removed_cycles) == 1, "Adding edge cannot cause more than 1 boundary cycle to be removed"
         for cycle in added_cycles:
             self.add_new_cycle(cycle, self._tree.root)
             self.set(cycle, self[removed_cycles[0]])
+
+        self.remove_all(removed_cycles)
+
+    ## Remove edge.
+    # This should only ever result in 1 cycle being added
+    def remove_1simplex(self, removed_cycles, added_cycles):
+        assert len(added_cycles) == 1, "Adding edge cannot cause more than 1 boundary cycle to be removed"
+        cycle = added_cycles[0]
+        self.add_new_cycle(cycle, self._tree.root)
+        self.set(cycle, any([self[cycle] for cycle in removed_cycles]))
 
         self.remove_all(removed_cycles)
