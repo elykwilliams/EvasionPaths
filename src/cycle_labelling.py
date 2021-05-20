@@ -347,8 +347,8 @@ class CycleLabellingTree:
 
     ## simplex that is no longer simplex, must sill be clean
     # flags error if trying to remove non-cycle
-    def remove_2simplices(self, removed_cycles):
-        for cycle in removed_cycles:
+    def remove_2simplices(self, removed_simplices):
+        for cycle in removed_simplices:
             if cycle not in self:
                 raise KeyError(f"Boundary Cycle {cycle} not found."
                                f"You are attempting to remove a simplex that has not yet been added to the tree")
@@ -400,8 +400,35 @@ class CycleLabellingTree:
         return {cycle: False for cycle in added_simplices}
 
     def update_tree(self, removed_cycles, added_cycles, cycle_dict):
+        assert is_subset(added_cycles, cycle_dict.keys()), "Not all new cycles have a label"
         for cycle in added_cycles:
             self.add_new_cycle(cycle, self._tree.root)
         for cycle, val in cycle_dict.items():
             self.set(cycle, val)
         self.remove_all(removed_cycles)
+
+    def get_label_update(self, state_change):
+
+        assert state_change.is_atomic()
+
+        if state_change.case == (0, 1, 0, 0, 1, 2):
+            return self.remove_1simplex(state_change.removed_cycles, state_change.added_cycles)
+        elif state_change.case == (1, 0, 0, 0, 2, 1):
+            return self.add_1simplex(state_change.removed_cycles, state_change.added_cycles)
+        elif state_change.case == (0, 0, 0, 1, 0, 0):
+            return self.remove_2simplices(state_change.removed_simplices)
+        elif state_change.case == (0, 0, 1, 0, 0, 0):
+            return self.add_2simplices(state_change.added_simplices)
+        elif state_change.case == (1, 0, 1, 0, 2, 1):
+            return self.add_simplex_pair(state_change.removed_cycles, state_change.added_cycles,
+                                         state_change.added_simplices)
+        elif state_change.case == (0, 1, 0, 1, 1, 2):
+            return self.remove_simplex_pair(state_change.removed_cycles, state_change.added_cycles)
+        elif state_change.case == (1, 1, 2, 2, 2, 2):
+            return self.delauny_flip(state_change.removed_simplices, state_change.added_simplices)
+        else:
+            raise AssertionError("The requested change is non-atomic, or results in disconnection")
+
+    def update(self, state_change):
+        label_update = self.get_label_update(state_change)
+        self.update_tree(state_change.removed_cycles, state_change.added_cycles, label_update)
