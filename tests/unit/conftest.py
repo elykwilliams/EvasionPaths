@@ -25,10 +25,10 @@ def connected_labelling(connected_topology):
 @pytest.fixture
 def abstract_remove_1simplex():
     state_change = mock.Mock()
-    state_change.removed_cycles = ['E', 'D']
-    state_change.added_cycles = ['F']
-    state_change.added_simplices = []
-    state_change.removed_simplices = []
+    state_change.cycles_removed = ['E', 'D']
+    state_change.cycles_added = ['F']
+    state_change.simplices_added = []
+    state_change.simplices_removed = []
     state_change.case = (0, 1, 0, 0, 1, 2)
     state_change.is_atomic.return_value = True
     return state_change
@@ -37,10 +37,10 @@ def abstract_remove_1simplex():
 @pytest.fixture
 def abstract_add_1simplex():
     state_change = mock.Mock()
-    state_change.removed_cycles = ['E']
-    state_change.added_cycles = ['F', 'G']
-    state_change.added_simplices = []
-    state_change.removed_simplices = []
+    state_change.cycles_removed = ['E']
+    state_change.cycles_added = ['F', 'G']
+    state_change.simplices_added = []
+    state_change.simplices_removed = []
     state_change.case = (1, 0, 0, 0, 2, 1)
     state_change.is_atomic.return_value = True
     return state_change
@@ -49,10 +49,10 @@ def abstract_add_1simplex():
 @pytest.fixture
 def abstract_add_2simplex():
     state_change = mock.Mock()
-    state_change.removed_cycles = []
-    state_change.added_cycles = []
-    state_change.added_simplices = ['D']
-    state_change.removed_simplices = []
+    state_change.cycles_removed = []
+    state_change.cycles_added = []
+    state_change.simplices_added = ['D']
+    state_change.simplices_removed = []
     state_change.case = (0, 0, 1, 0, 0, 0)
     state_change.is_atomic.return_value = True
     return state_change
@@ -61,9 +61,9 @@ def abstract_add_2simplex():
 @pytest.fixture
 def abstract_remove_2simplex():
     state_change = mock.Mock()
-    state_change.removed_cycles = []
-    state_change.added_cycles = []
-    state_change.removed_simplices = ['C']
+    state_change.cycles_removed = []
+    state_change.cycles_added = []
+    state_change.simplices_removed = ['C']
     state_change.case = (0, 0, 0, 1, 0, 0)
     state_change.is_atomic.return_value = True
     return state_change
@@ -72,9 +72,9 @@ def abstract_remove_2simplex():
 @pytest.fixture
 def abstract_remove_simplex_pair():
     state_change = mock.Mock()
-    state_change.removed_cycles = ['C', 'D']
-    state_change.added_cycles = ['F']
-    state_change.removed_simplices = ['C']
+    state_change.cycles_removed = ['C', 'D']
+    state_change.cycles_added = ['F']
+    state_change.simplices_removed = ['C']
     state_change.case = (0, 1, 0, 1, 1, 2)
     state_change.is_atomic.return_value = True
     return state_change
@@ -83,9 +83,9 @@ def abstract_remove_simplex_pair():
 @pytest.fixture
 def abstract_add_simplex_pair():
     state_change = mock.Mock()
-    state_change.removed_cycles = ['E']
-    state_change.added_cycles = ['F', 'G']
-    state_change.added_simplices = ['G']
+    state_change.cycles_removed = ['E']
+    state_change.cycles_added = ['F', 'G']
+    state_change.simplices_added = ['G']
     state_change.case = (1, 0, 1, 0, 2, 1)
     state_change.is_atomic.return_value = True
     return state_change
@@ -94,10 +94,10 @@ def abstract_add_simplex_pair():
 @pytest.fixture
 def abstract_delauny_flip():
     state_change = mock.Mock()
-    state_change.removed_cycles = ['B', 'C']
-    state_change.added_cycles = ['F', 'G']
-    state_change.added_simplices = ['F', 'G']
-    state_change.removed_simplices = ['B', 'C']
+    state_change.cycles_removed = ['B', 'C']
+    state_change.cycles_added = ['F', 'G']
+    state_change.simplices_added = ['F', 'G']
+    state_change.simplices_removed = ['B', 'C']
     state_change.case = (1, 1, 2, 2, 2, 2)
     state_change.is_atomic.return_value = True
     return state_change

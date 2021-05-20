@@ -95,61 +95,61 @@ class CycleLabelling:
     # the two new boundary cycles are added, and the old boundary
     # cycle is removed.
     # Note that both parameters should be lists of boundary cycles.
-    def _add_1simplex(self, removed_cycles, added_cycles):
-        for cycle in added_cycles:
-            self._cycle_label[cycle] = self._cycle_label[removed_cycles[0]]
-        self._delete_all(removed_cycles)
+    def _add_1simplex(self, cycles_removed, cycles_added):
+        for cycle in cycles_added:
+            self._cycle_label[cycle] = self._cycle_label[cycles_removed[0]]
+        self._delete_all(cycles_removed)
 
     ## Remove edge.
     # When an edge is removed, two boundary cycles join into one.
     # The two old boundary cycles are removed, and the new boundary
     # cycle is added.
     # Note that both parameters should be lists of boundary cycles.
-    def _remove_1simplex(self, removed_cycles, added_cycles):
-        self._cycle_label[added_cycles[0]] = any([self._cycle_label[s] for s in removed_cycles])
-        self._delete_all(removed_cycles)
+    def _remove_1simplex(self, cycles_removed, cycles_added):
+        self._cycle_label[cycles_added[0]] = any([self._cycle_label[s] for s in cycles_removed])
+        self._delete_all(cycles_removed)
 
     ## Mark boundary cycle as a 2-simplex.
-    # added_simplices should be a list of boundary cycles corresponding to
+    # simplices_added should be a list of boundary cycles corresponding to
     # the new 2-simplices
-    def _add_2simplex(self, added_simplices):
-        for simplex in added_simplices:
+    def _add_2simplex(self, simplices_added):
+        for simplex in simplices_added:
             self._cycle_label[simplex] = False
 
     ## Add 2-simplex + edge.
     # Need to add edge first so that added simple is in labelling.
-    # removed_cycles and added_cycles should be lists of boundary cycles
+    # cycles_removed and cycles_added should be lists of boundary cycles
     # added_simplex is the boundary cycle of the added simplex.
-    def _add_simplex_pair(self, removed_cycles, added_cycles, added_simplices):
-        self._add_1simplex(removed_cycles, added_cycles)
-        self._add_2simplex(added_simplices)
+    def _add_simplex_pair(self, cycles_removed, cycles_added, simplices_added):
+        self._add_1simplex(cycles_removed, cycles_added)
+        self._add_2simplex(simplices_added)
 
     ## Remove edge and 2-simplex.
     # This is the same logic as removing just an edge.
-    # removed_cycles and added_cycles should be lists of boundary cycles
-    def _remove_simplex_pair(self, removed_cycles, added_cycles):
-        self._remove_1simplex(removed_cycles, added_cycles)
+    # cycles_removed and cycles_added should be lists of boundary cycles
+    def _remove_simplex_pair(self, cycles_removed, cycles_added):
+        self._remove_1simplex(cycles_removed, cycles_added)
 
     ## Delauny filp.
     # add 2 new simplices, remove two old simplices.
-    # removed_cycles and added_cycles should be lists of boundary cycles
-    def _delaunay_flip(self, removed_cycles, added_cycles):
-        self._add_2simplex(added_cycles)
-        self._delete_all(removed_cycles)
+    # cycles_removed and cycles_added should be lists of boundary cycles
+    def _delaunay_flip(self, cycles_removed, cycles_added):
+        self._add_2simplex(cycles_added)
+        self._delete_all(cycles_removed)
 
     ## Disconnect graph component - power-down model.
     # This can only happen through the removal of an edge.
     # should be removing all cycles that have become disconnected
     # the enclosing cycle is the connected boundary cycle which
     # encloses the removed cycles.
-    def _disconnect(self, removed_cycles, enclosing_cycle):
-        self._remove_1simplex(removed_cycles, [enclosing_cycle])
+    def _disconnect(self, cycles_removed, enclosing_cycle):
+        self._remove_1simplex(cycles_removed, [enclosing_cycle])
 
     ## Reconnect graph component.
     # This can only happen through the addition of an edge. Then,
     # adjust all 2-simplices.
-    def _reconnect(self, added_cycles, connected_simplices, enclosing_cycle):
-        self._add_1simplex([enclosing_cycle], added_cycles)
+    def _reconnect(self, cycles_added, connected_simplices, enclosing_cycle):
+        self._add_1simplex([enclosing_cycle], cycles_added)
         self._add_2simplex(connected_simplices)
 
     ## Ignore state changes that involve disconnected boundary cycles.
@@ -216,8 +216,8 @@ class CycleLabelling:
         # Add 2-Simplex
         elif state_change.case == (0, 0, 1, 0, 0, 0):
             simplex = state_change.simplices_added[0]
-            added_simplices = [state_change.new_state.simplex2cycle(simplex)]
-            self._add_2simplex(added_simplices)
+            simplices_added = [state_change.new_state.simplex2cycle(simplex)]
+            self._add_2simplex(simplices_added)
 
         # Remove 2-Simplex
         elif state_change.case == (0, 0, 0, 1, 0, 0):
@@ -226,8 +226,8 @@ class CycleLabelling:
         # 1-Simplex 2-Simplex Pair Added
         elif state_change.case == (1, 0, 1, 0, 2, 1):
             simplex = state_change.simplices_added[0]
-            added_simplices = [state_change.new_state.simplex2cycle(simplex)]
-            self._add_simplex_pair(state_change.cycles_removed, state_change.cycles_added, added_simplices)
+            simplices_added = [state_change.new_state.simplex2cycle(simplex)]
+            self._add_simplex_pair(state_change.cycles_removed, state_change.cycles_added, simplices_added)
 
         # 1-Simplex 2-Simplex Pair Removed
         elif state_change.case == (0, 1, 0, 1, 1, 2):
@@ -336,17 +336,17 @@ class CycleLabellingTree:
 
     ## Set simplex cycle to be false
     # assumes cycles is already in tree
-    def add_2simplices(self, added_cycles):
-        for cycle in added_cycles:
+    def add_2simplices(self, cycles_added):
+        for cycle in cycles_added:
             if cycle not in self:
                 raise KeyError(f"Boundary Cycle {cycle} not found."
                                f"You are attempting to add a simplex that has not yet been added to the tree")
-        return {cycle: False for cycle in added_cycles}
+        return {cycle: False for cycle in cycles_added}
 
     ## simplex that is no longer simplex, must sill be clean
     # flags error if trying to remove non-cycle
-    def remove_2simplices(self, removed_simplices):
-        for cycle in removed_simplices:
+    def remove_2simplices(self, simplices_removed):
+        for cycle in simplices_removed:
             if cycle not in self:
                 raise KeyError(f"Boundary Cycle {cycle} not found."
                                f"You are attempting to remove a simplex that has not yet been added to the tree")
@@ -354,60 +354,60 @@ class CycleLabellingTree:
 
     ## Add edge.
     # removed cycles list should have only 1 or 2 cycles
-    # added_cycles should be a list with only 1 cycle
+    # cycles_added should be a list with only 1 cycle
     # added cycle will have intruder if either removed cycle has intruder
     # This should only ever result in one cycle being removed
-    def add_1simplex(self, removed_cycles, added_cycles):
-        assert len(removed_cycles) == 1, \
+    def add_1simplex(self, cycles_removed, cycles_added):
+        assert len(cycles_removed) == 1, \
             "Adding edge cannot cause more than 1 boundary cycle to be removed"
-        return {cycle: self[removed_cycles[0]] for cycle in added_cycles}
+        return {cycle: self[cycles_removed[0]] for cycle in cycles_added}
 
     ## Remove edge.
     # This should only ever result in 1 cycle being added
-    def remove_1simplex(self, removed_cycles, added_cycles):
-        assert len(added_cycles) == 1, \
+    def remove_1simplex(self, cycles_removed, cycles_added):
+        assert len(cycles_added) == 1, \
             "Adding edge cannot cause more than 1 boundary cycle to be removed"
-        return {cycle: any([self[cycle] for cycle in removed_cycles]) for cycle in added_cycles}
+        return {cycle: any([self[cycle] for cycle in cycles_removed]) for cycle in cycles_added}
 
     ## Add simplex pair
     # Will split a cycle into two with appropriate label, then label 2simplex as False
-    def add_simplex_pair(self, removed_cycles, added_cycles, added_simplices):
-        assert is_subset(added_simplices, added_cycles), \
+    def add_simplex_pair(self, cycles_removed, cycles_added, simplices_added):
+        assert is_subset(simplices_added, cycles_added), \
             "You are attempting to add a simplex that is not being added as a boundary cycle"
-        assert len(removed_cycles) == 1, \
+        assert len(cycles_removed) == 1, \
             "You are attempting to remove too many simplices at once."
-        assert len(added_cycles) == 2, \
+        assert len(cycles_added) == 2, \
             "You are not removing two boundary cycles, this is not possible"
-        return {cycle: False if cycle in added_simplices else self[removed_cycles[0]] for cycle in added_cycles}
+        return {cycle: False if cycle in simplices_added else self[cycles_removed[0]] for cycle in cycles_added}
 
     ## Remove simplex pair.
     # no different than remove 1-simplex
-    def remove_simplex_pair(self, removed_cycles, added_cycles):
-        assert len(removed_cycles) == 2, \
+    def remove_simplex_pair(self, cycles_removed, cycles_added):
+        assert len(cycles_removed) == 2, \
             "You are not removing two boundary cycles, this is not possible"
-        assert len(added_cycles) == 1, \
+        assert len(cycles_added) == 1, \
             "You are not adding an individual boundary cycles, this is not possible"
-        return {cycle: any([self[cycle] for cycle in removed_cycles]) for cycle in added_cycles}
+        return {cycle: any([self[cycle] for cycle in cycles_removed]) for cycle in cycles_added}
 
     ## Delauny Flip.
     # edge between two simplices flips resulting in two new simplices
     # Note that this can only happen with simplices.
     @staticmethod
-    def delauny_flip(removed_simplices, added_simplices):
-        assert len(removed_simplices) == 2 and len(added_simplices) == 2, \
+    def delauny_flip(simplices_removed, simplices_added):
+        assert len(simplices_removed) == 2 and len(simplices_added) == 2, \
             "You are attempting to do a delauny flip with more(or fewer) than two 2-simplices"
-        return {cycle: False for cycle in added_simplices}
+        return {cycle: False for cycle in simplices_added}
 
     ## Update tree structure.
     # Given the cycles that should be added and removed from the tree along with and label updaets
     # perform said updates.
-    def update_tree(self, removed_cycles, added_cycles, cycle_dict):
-        assert is_subset(added_cycles, cycle_dict.keys()), "Not all new cycles have a label"
-        for cycle in added_cycles:
+    def update_tree(self, cycles_removed, cycles_added, cycle_dict):
+        assert is_subset(cycles_added, cycle_dict.keys()), "Not all new cycles have a label"
+        for cycle in cycles_added:
             self.add_new_cycle(cycle, self._tree.root)
         for cycle, val in cycle_dict.items():
             self.set(cycle, val)
-        self.remove_all(removed_cycles)
+        self.remove_all(cycles_removed)
 
     ## Detemine label updates.
     # return dictionary cycles cycles that need updating and their new label
@@ -415,25 +415,27 @@ class CycleLabellingTree:
 
         assert state_change.is_atomic()
 
+        if state_change.case == (0, 0, 0, 0, 0, 0):
+            return dict()
         if state_change.case == (0, 1, 0, 0, 1, 2):
-            return self.remove_1simplex(state_change.removed_cycles, state_change.added_cycles)
+            return self.remove_1simplex(state_change.cycles_removed, state_change.cycles_added)
         elif state_change.case == (1, 0, 0, 0, 2, 1):
-            return self.add_1simplex(state_change.removed_cycles, state_change.added_cycles)
+            return self.add_1simplex(state_change.cycles_removed, state_change.cycles_added)
         elif state_change.case == (0, 0, 0, 1, 0, 0):
-            return self.remove_2simplices(state_change.removed_simplices)
+            return self.remove_2simplices(state_change.simplices_removed)
         elif state_change.case == (0, 0, 1, 0, 0, 0):
-            return self.add_2simplices(state_change.added_simplices)
+            return self.add_2simplices(state_change.simplices_added)
         elif state_change.case == (1, 0, 1, 0, 2, 1):
-            return self.add_simplex_pair(state_change.removed_cycles, state_change.added_cycles,
-                                         state_change.added_simplices)
+            return self.add_simplex_pair(state_change.cycles_removed, state_change.cycles_added,
+                                         state_change.simplices_added)
         elif state_change.case == (0, 1, 0, 1, 1, 2):
-            return self.remove_simplex_pair(state_change.removed_cycles, state_change.added_cycles)
+            return self.remove_simplex_pair(state_change.cycles_removed, state_change.cycles_added)
         elif state_change.case == (1, 1, 2, 2, 2, 2):
-            return self.delauny_flip(state_change.removed_simplices, state_change.added_simplices)
+            return self.delauny_flip(state_change.simplices_removed, state_change.simplices_added)
         else:
             raise AssertionError("The requested change is non-atomic, or results in disconnection")
 
     ## get label update, and update tree
     def update(self, state_change):
         label_update = self.get_label_update(state_change)
-        self.update_tree(state_change.removed_cycles, state_change.added_cycles, label_update)
+        self.update_tree(state_change.cycles_removed, state_change.cycles_added, label_update)

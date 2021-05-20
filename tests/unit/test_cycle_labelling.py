@@ -57,15 +57,15 @@ class TestInitCycleLabelling:
 # In these test cases, We have boundary cycles A, B, C, D, E. With B and C as simplices.
 # D then becomes a simplex
 class TestAddConnected2Simplex:
-    added_simplices = ["D"]
+    simplices_added = ["D"]
 
     def test_add_2simplices(self, connected_labelling, abstract_add_2simplex):
-        connected_labelling.add_2simplices(abstract_add_2simplex.added_simplices)
+        connected_labelling.add_2simplices(abstract_add_2simplex.simplices_added)
 
     # simplices are set to false
     def test_added_2simplices_false(self, connected_labelling, abstract_add_2simplex):
-        cycle_label = connected_labelling.add_2simplices(abstract_add_2simplex.added_simplices)
-        assert not any([cycle_label[cycle] for cycle in abstract_add_2simplex.added_simplices])
+        cycle_label = connected_labelling.add_2simplices(abstract_add_2simplex.simplices_added)
+        assert not any([cycle_label[cycle] for cycle in abstract_add_2simplex.simplices_added])
 
     # setting non-cycle raises keyerror
     def test_raises_on_cycle_not_found(self, connected_labelling):
@@ -76,10 +76,10 @@ class TestAddConnected2Simplex:
 
 ## Test behavior when an connected 2simplex is removed
 class TestRemove2Simplex:
-    removed_simplices = ['C']
+    simplices_removed = ['C']
 
     def test_remove_2simplices(self, connected_labelling, abstract_remove_2simplex):
-        connected_labelling.remove_2simplices(abstract_remove_2simplex.removed_simplices)
+        connected_labelling.remove_2simplices(abstract_remove_2simplex.simplices_removed)
 
     # setting non-cycle raises keyerror
     def test_raises_on_cycle_not_found(self, connected_labelling):
@@ -92,24 +92,24 @@ class TestRemove2Simplex:
 # In this case, an edge is  added splitting E into boundary cycles F and G
 # This does NOT count the case where any sort of re-connection happens
 class TestAddConnected1Simplex:
-    added_cycles = ['F', 'G']
-    removed_cycles = ['E']
+    cycles_added = ['F', 'G']
+    cycles_removed = ['E']
 
     def test_add_1simplex(self, connected_labelling, abstract_add_1simplex):
-        connected_labelling.add_1simplex(abstract_add_1simplex.removed_cycles, abstract_add_1simplex.added_cycles)
+        connected_labelling.add_1simplex(abstract_add_1simplex.cycles_removed, abstract_add_1simplex.cycles_added)
 
     # If E has intrude, so to F and G
     # Else F and G are clear
     @pytest.mark.parametrize("cycleE", [True, False])
     def test_correct_update(self, cycleE, connected_labelling, abstract_add_1simplex):
         connected_labelling.set('E', cycleE)
-        cycle_label = connected_labelling.add_1simplex(abstract_add_1simplex.removed_cycles,
-                                                       abstract_add_1simplex.added_cycles)
+        cycle_label = connected_labelling.add_1simplex(abstract_add_1simplex.cycles_removed,
+                                                       abstract_add_1simplex.cycles_added)
         assert cycle_label == {'F': cycleE, 'G': cycleE}
 
     # Cannot remove more than one boundary cycle
     def test_raises_too_many_removed(self, connected_labelling, abstract_add_1simplex):
-        pytest.raises(AssertionError, connected_labelling.add_1simplex, ['D', 'E'], abstract_add_1simplex.added_cycles)
+        pytest.raises(AssertionError, connected_labelling.add_1simplex, ['D', 'E'], abstract_add_1simplex.cycles_added)
 
     # TODO Test more assertions
 
@@ -118,24 +118,24 @@ class TestAddConnected1Simplex:
 # In this case, an edge is  removed joining E and D into boundary cycles F
 # This does NOT count the case where any sort of disconnection happens
 class TestRemoveConnected1Simplex:
-    removed_cycles = ['E', 'D']
-    added_cycles = ['F']
+    cycles_removed = ['E', 'D']
+    cycles_added = ['F']
 
     def test_remove_1simplex(self, connected_labelling, abstract_remove_1simplex):
-        connected_labelling.remove_1simplex(abstract_remove_1simplex.removed_cycles,
-                                            abstract_remove_1simplex.added_cycles)
+        connected_labelling.remove_1simplex(abstract_remove_1simplex.cycles_removed,
+                                            abstract_remove_1simplex.cycles_added)
 
     def test_correct_cycles(self, connected_labelling, abstract_remove_1simplex):
-        cycle_label = connected_labelling.remove_1simplex(abstract_remove_1simplex.removed_cycles,
-                                                          abstract_remove_1simplex.added_cycles)
+        cycle_label = connected_labelling.remove_1simplex(abstract_remove_1simplex.cycles_removed,
+                                                          abstract_remove_1simplex.cycles_added)
         assert len(cycle_label) == 1 and 'F' in cycle_label
 
     @pytest.mark.parametrize("cycleD,cycleE", [(True, True), (True, False), (False, False)])
     def test_correct_update(self, cycleD, cycleE, connected_labelling, abstract_remove_1simplex):
         connected_labelling.set("D", cycleD)
         connected_labelling.set("E", cycleE)
-        cycle_label = connected_labelling.remove_1simplex(abstract_remove_1simplex.removed_cycles,
-                                                          abstract_remove_1simplex.added_cycles)
+        cycle_label = connected_labelling.remove_1simplex(abstract_remove_1simplex.cycles_removed,
+                                                          abstract_remove_1simplex.cycles_added)
         assert cycle_label == {'F': cycleD or cycleE}
 
 
@@ -149,32 +149,32 @@ class TestRemoveConnected1Simplex:
 ## Test behavior when an edge is added using the "power-down/connected" approach
 # In this case, an edge is added splitting E into cycles F and G where F is also a 2simplex
 class TestAddConnectedSimplexPair:
-    removed_cycles = ['E']
-    added_cycles = ['F', 'G']
-    added_simplices = ['F']
+    cycles_removed = ['E']
+    cycles_added = ['F', 'G']
+    simplices_added = ['F']
 
     def test_add_simplex_pair(self, connected_labelling):
-        connected_labelling.add_simplex_pair(self.removed_cycles, self.added_cycles, self.added_simplices)
+        connected_labelling.add_simplex_pair(self.cycles_removed, self.cycles_added, self.simplices_added)
 
     # If E has intrude, so to F and G
     # Else F and G are clear
     @pytest.mark.parametrize("cycleE", [True, False])
     def test_correct_update(self, cycleE, connected_labelling):
         connected_labelling.set('E', cycleE)
-        cycle_label = connected_labelling.add_simplex_pair(self.removed_cycles, self.added_cycles, self.added_simplices)
+        cycle_label = connected_labelling.add_simplex_pair(self.cycles_removed, self.cycles_added, self.simplices_added)
         assert cycle_label == {'F': False, 'G': cycleE}
 
     # Cannot remove more than one boundary cycle
     def test_raises_too_many_removed(self, connected_labelling):
         pytest.raises(AssertionError,
-                      connected_labelling.add_simplex_pair, ['D', 'E'], self.added_cycles, self.added_simplices)
+                      connected_labelling.add_simplex_pair, ['D', 'E'], self.cycles_added, self.simplices_added)
 
     def test_raises_not_subset(self, connected_labelling):
         pytest.raises(AssertionError,
-                      connected_labelling.add_simplex_pair, self.removed_cycles, self.added_cycles, ['A'])
+                      connected_labelling.add_simplex_pair, self.cycles_removed, self.cycles_added, ['A'])
 
     def test_raises_bad_cycle(self, connected_labelling):
-        pytest.raises(KeyError, connected_labelling.add_simplex_pair, ['Z'], self.added_cycles, self.added_simplices)
+        pytest.raises(KeyError, connected_labelling.add_simplex_pair, ['Z'], self.cycles_added, self.simplices_added)
 
 
 ## Test behavior when an edge is removed using the "power-down/connected" approach
@@ -182,34 +182,34 @@ class TestAddConnectedSimplexPair:
 # cycle E is a simplex.
 # This does NOT count the case where any sort of disconnection happens
 class TestRemoveConnectedSimplexPair:
-    removed_cycles = ['C', 'D']
-    added_cycles = ['F']
-    removed_simplices = ['C']
+    cycles_removed = ['C', 'D']
+    cycles_added = ['F']
+    simplices_removed = ['C']
 
     def test_remove_simplex_pair(self, connected_labelling):
-        connected_labelling.remove_simplex_pair(self.removed_cycles, self.added_cycles)
+        connected_labelling.remove_simplex_pair(self.cycles_removed, self.cycles_added)
 
     @pytest.mark.parametrize("cycleD", [True, False])
     def test_correct_update(self, cycleD, connected_labelling):
         connected_labelling.set("D", cycleD)
-        cycle_label = connected_labelling.remove_simplex_pair(self.removed_cycles, self.added_cycles)
+        cycle_label = connected_labelling.remove_simplex_pair(self.cycles_removed, self.cycles_added)
         assert cycle_label == {'F': cycleD}
 
     def test_raises_too_many_added(self, connected_labelling):
         pytest.raises(AssertionError,
-                      connected_labelling.remove_simplex_pair, self.removed_cycles, ['F', 'G'])
+                      connected_labelling.remove_simplex_pair, self.cycles_removed, ['F', 'G'])
 
 
 ## Delauny flip where the edge between B and C flips resulting in simplices F and G
 class TestConnectedDelaunyFlip:
-    added_cycles = ['F', 'G']
-    removed_cycles = ['B', 'C']
+    cycles_added = ['F', 'G']
+    cycles_removed = ['B', 'C']
 
     def test_delauny_flip(self, connected_labelling):
-        connected_labelling.delauny_flip(self.removed_cycles, self.added_cycles)
+        connected_labelling.delauny_flip(self.cycles_removed, self.cycles_added)
 
     def test_correct_update(self, connected_labelling):
-        cycle_label = connected_labelling.delauny_flip(self.removed_cycles, self.added_cycles)
+        cycle_label = connected_labelling.delauny_flip(self.cycles_removed, self.cycles_added)
         assert cycle_label == {'F': False, 'G': False}
 
     def test_raises_only_two(self, connected_labelling):
@@ -217,39 +217,39 @@ class TestConnectedDelaunyFlip:
         pytest.raises(AssertionError, connected_labelling.delauny_flip, ['B'], ['F'])
 
     def test_raises_same_length(self, connected_labelling):
-        pytest.raises(AssertionError, connected_labelling.delauny_flip, self.removed_cycles, ['F', 'G', 'H'])
-        pytest.raises(AssertionError, connected_labelling.delauny_flip, self.removed_cycles, ['F'])
+        pytest.raises(AssertionError, connected_labelling.delauny_flip, self.cycles_removed, ['F', 'G', 'H'])
+        pytest.raises(AssertionError, connected_labelling.delauny_flip, self.cycles_removed, ['F'])
 
 
 class TestUpdateTree:
-    removed_cycles = ['C', 'B', 'A']
-    added_cycles = ['F', 'G']
+    cycles_removed = ['C', 'B', 'A']
+    cycles_added = ['F', 'G']
     cycle_dict = {'F': False, 'G': True}
 
     def test_cycle_update(self, connected_labelling):
-        removed_cycles, added_cycles = [], []
+        cycles_removed, cycles_added = [], []
         cycle_dict = dict()
-        connected_labelling.update_tree(removed_cycles, added_cycles, cycle_dict)
+        connected_labelling.update_tree(cycles_removed, cycles_added, cycle_dict)
 
     def test_removes_old_cycles(self, connected_labelling):
-        connected_labelling.update_tree(self.removed_cycles, self.added_cycles, self.cycle_dict)
+        connected_labelling.update_tree(self.cycles_removed, self.cycles_added, self.cycle_dict)
 
-        assert all(cycle not in connected_labelling for cycle in self.removed_cycles)
+        assert all(cycle not in connected_labelling for cycle in self.cycles_removed)
 
     def test_adds_new_cycles(self, connected_labelling):
-        connected_labelling.update_tree(self.removed_cycles, self.added_cycles, self.cycle_dict)
+        connected_labelling.update_tree(self.cycles_removed, self.cycles_added, self.cycle_dict)
 
-        assert all([cycle in connected_labelling for cycle in self.added_cycles])
+        assert all([cycle in connected_labelling for cycle in self.cycles_added])
 
     def test_correct_updates(self, connected_labelling):
         expected_values = {'D': True, 'E': True, 'F': False, 'G': True, 'alpha': False}
-        connected_labelling.update_tree(self.removed_cycles, self.added_cycles, self.cycle_dict)
+        connected_labelling.update_tree(self.cycles_removed, self.cycles_added, self.cycle_dict)
 
         assert all([connected_labelling[cycle] == expected_values[cycle] for cycle in connected_labelling])
 
     def test_raises_new_cycles_not_labled(self, connected_labelling):
         pytest.raises(AssertionError,
-                      connected_labelling.update_tree, self.removed_cycles, ['F', 'G', 'H'], self.cycle_dict)
+                      connected_labelling.update_tree, self.cycles_removed, ['F', 'G', 'H'], self.cycle_dict)
 
 
 class TestGetCycleLabelUpdate:
@@ -313,8 +313,8 @@ class TestUpdate:
     @patch.object(cycle_labelling.CycleLabellingTree, 'get_label_update', return_value=dict())
     def test_update(self, connected_topology):
         state_change = mock.Mock()
-        state_change.added_cycles = []
-        state_change.removed_cycles = []
+        state_change.cycles_added = []
+        state_change.cycles_removed = []
         labelling = CycleLabellingTree(connected_topology)
 
         labelling.update(state_change)
