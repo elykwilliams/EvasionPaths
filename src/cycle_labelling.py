@@ -311,11 +311,9 @@ class CycleLabellingTree:
     def __getitem__(self, item):
         try:
             return self._tree[item].data
-        except treelib.exceptions.NodeIDAbsentError as err:
+        except treelib.exceptions.NodeIDAbsentError:
             raise KeyError(f"Boundary Cycle {item} not found. You are attempting to retrieve the value of a cycle that "
                            f"has not yet been added to the tree.")
-        except Exception as e:
-            print(type(e))
 
     ## Add cycle to tree
     # defaults to True
@@ -326,7 +324,7 @@ class CycleLabellingTree:
     def set(self, cycle, value):
         try:
             self._tree.update_node(cycle, **{'data': value})
-        except treelib.exceptions.NodeIDAbsentError as err:
+        except treelib.exceptions.NodeIDAbsentError:
             raise KeyError(f"Boundary Cycle {cycle} not found. "
                            f"You are attempting to change the value of a cycle that has not yet been added to the tree."
                            )
@@ -394,11 +392,15 @@ class CycleLabellingTree:
     ## Delauny Flip.
     # edge between two simplices flips resulting in two new simplices
     # Note that this can only happen with simplices.
-    def delauny_flip(self, removed_simplices, added_simplices):
+    @staticmethod
+    def delauny_flip(removed_simplices, added_simplices):
         assert len(removed_simplices) == 2 and len(added_simplices) == 2, \
             "You are attempting to do a delauny flip with more(or fewer) than two 2-simplices"
         return {cycle: False for cycle in added_simplices}
 
+    ## Update tree structure.
+    # Given the cycles that should be added and removed from the tree along with and label updaets
+    # perform said updates.
     def update_tree(self, removed_cycles, added_cycles, cycle_dict):
         assert is_subset(added_cycles, cycle_dict.keys()), "Not all new cycles have a label"
         for cycle in added_cycles:
@@ -407,6 +409,8 @@ class CycleLabellingTree:
             self.set(cycle, val)
         self.remove_all(removed_cycles)
 
+    ## Detemine label updates.
+    # return dictionary cycles cycles that need updating and their new label
     def get_label_update(self, state_change):
 
         assert state_change.is_atomic()
@@ -429,6 +433,7 @@ class CycleLabellingTree:
         else:
             raise AssertionError("The requested change is non-atomic, or results in disconnection")
 
+    ## get label update, and update tree
     def update(self, state_change):
         label_update = self.get_label_update(state_change)
         self.update_tree(state_change.removed_cycles, state_change.added_cycles, label_update)
