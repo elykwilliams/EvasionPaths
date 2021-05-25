@@ -23,7 +23,7 @@ def connected_labelling(connected_topology):
 
 
 @pytest.fixture
-def abstract_remove_1simplex():
+def remove_1simplex():
     state_change = mock.Mock()
     state_change.cycles_removed = ['E', 'D']
     state_change.cycles_added = ['F']
@@ -35,7 +35,7 @@ def abstract_remove_1simplex():
 
 
 @pytest.fixture
-def abstract_add_1simplex():
+def add_1simplex():
     state_change = mock.Mock()
     state_change.cycles_removed = ['E']
     state_change.cycles_added = ['F', 'G']
@@ -47,7 +47,7 @@ def abstract_add_1simplex():
 
 
 @pytest.fixture
-def abstract_add_2simplex():
+def add_2simplices():
     state_change = mock.Mock()
     state_change.cycles_removed = []
     state_change.cycles_added = []
@@ -59,7 +59,7 @@ def abstract_add_2simplex():
 
 
 @pytest.fixture
-def abstract_remove_2simplex():
+def remove_2simplices():
     state_change = mock.Mock()
     state_change.cycles_removed = []
     state_change.cycles_added = []
@@ -70,7 +70,7 @@ def abstract_remove_2simplex():
 
 
 @pytest.fixture
-def abstract_remove_simplex_pair():
+def remove_simplex_pair():
     state_change = mock.Mock()
     state_change.cycles_removed = ['C', 'D']
     state_change.cycles_added = ['F']
@@ -81,7 +81,7 @@ def abstract_remove_simplex_pair():
 
 
 @pytest.fixture
-def abstract_add_simplex_pair():
+def add_simplex_pair():
     state_change = mock.Mock()
     state_change.cycles_removed = ['E']
     state_change.cycles_added = ['F', 'G']
@@ -92,7 +92,7 @@ def abstract_add_simplex_pair():
 
 
 @pytest.fixture
-def abstract_delauny_flip():
+def delauny_flip():
     state_change = mock.Mock()
     state_change.cycles_removed = ['B', 'C']
     state_change.cycles_added = ['F', 'G']
