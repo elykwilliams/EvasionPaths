@@ -282,6 +282,10 @@ class CycleLabelling:
                             enclosing_cycle)
 
 
+class LabellingError(KeyError):
+    pass
+
+
 class CycleLabellingTree:
 
     ## Initialize all boundary cycles as True, simplices as False.
@@ -315,16 +319,15 @@ class CycleLabellingTree:
         try:
             return self.tree[item].data
         except treelib.exceptions.NodeIDAbsentError:
-            raise KeyError(f"Boundary Cycle {item} not found. You are attempting to retrieve the value of a cycle that "
-                           f"has not yet been added to the tree.")
+            raise LabellingError(f"You are attempting to retrieve the value of a cycle that "
+                                 f"has not yet been added to the tree.")
 
     def __setitem__(self, key, value):
         try:
             self.tree.update_node(key, **{'data': value})
         except treelib.exceptions.NodeIDAbsentError:
-            raise KeyError(f"Boundary Cycle {key} not found. "
-                           f"You are attempting to change the value of a cycle that has not yet been added to the tree."
-                           )
+            raise LabellingError(f"You are attempting to change the value of a cycle that "
+                                 f"has not yet been added to the tree.")
 
     def __delitem__(self, key):
         self.tree.remove_node(key)
@@ -338,7 +341,8 @@ class CycleLabellingTree:
     # Given the cycles that should be added and removed from the tree along with and label updaets
     # perform said updates.
     def update_tree(self, update_data):
-        assert is_subset(update_data.cycles_added, update_data.label_update.keys()), "Not all new cycles have a label"
+        if not is_subset(update_data.cycles_added, update_data.label_update.keys()):
+            raise LabellingError("Not all new cycles have a label")
         for cycle in update_data.cycles_added:
             self.insert(cycle, self.tree.root)
         for cycle, val in update_data.label_update.items():
