@@ -11,6 +11,7 @@ import treelib.exceptions
 from treelib import Tree
 
 from topological_state import *
+from update_data import *
 from utilities import *
 
 
@@ -290,17 +291,19 @@ class CycleLabellingTree:
     def __init__(self, topology, policy="power-down") -> None:
         self._tree = Tree()
         self.policy = policy
-        self.add_new_cycle(topology.alpha_cycle, parent=None)
-        self.set(topology.alpha_cycle, False)
+        self.insert(topology.alpha_cycle, parent=None)
+        self[topology.alpha_cycle] = False
 
         for cycle in topology.boundary_cycles():
-            self.add_new_cycle(cycle, topology.alpha_cycle)
+            self.insert(cycle, topology.alpha_cycle)
 
         for cycle in topology.simplices(2):
-            self.set(cycle, False)
+            self[cycle] = False
 
         if self.policy == "power-down" or self.policy == "connected":
-            self.remove_all(cycle for cycle in topology.boundary_cycles() if not topology.is_connected_cycle(cycle))
+            for cycle in topology.boundary_cycles():
+                if not topology.is_connected_cycle(cycle):
+                    del self[cycle]
 
     def __contains__(self, item):
         return self._tree.contains(item)
@@ -315,127 +318,34 @@ class CycleLabellingTree:
             raise KeyError(f"Boundary Cycle {item} not found. You are attempting to retrieve the value of a cycle that "
                            f"has not yet been added to the tree.")
 
-    ## Add cycle to tree
-    # defaults to True
-    def add_new_cycle(self, cycle, parent):
-        self._tree.create_node(tag=cycle, identifier=cycle, parent=parent, data=True)
-
-    ## Set label.
-    def set(self, cycle, value):
+    def __setitem__(self, key, value):
         try:
-            self._tree.update_node(cycle, **{'data': value})
+            self._tree.update_node(key, **{'data': value})
         except treelib.exceptions.NodeIDAbsentError:
-            raise KeyError(f"Boundary Cycle {cycle} not found. "
+            raise KeyError(f"Boundary Cycle {key} not found. "
                            f"You are attempting to change the value of a cycle that has not yet been added to the tree."
                            )
 
-    ## Remove cycles from tree.
-    def remove_all(self, cycles):
-        for cycle in cycles:
-            self._tree.remove_node(cycle)
+    def __delitem__(self, key):
+        self._tree.remove_node(key)
 
-    ## Set simplex cycle to be false
-    # assumes cycles is already in tree
-    def add_2simplices(self, cycles_added):
-        for cycle in cycles_added:
-            if cycle not in self:
-                raise KeyError(f"Boundary Cycle {cycle} not found."
-                               f"You are attempting to add a simplex that has not yet been added to the tree")
-        return {cycle: False for cycle in cycles_added}
-
-    ## simplex that is no longer simplex, must sill be clean
-    # flags error if trying to remove non-cycle
-    def remove_2simplices(self, simplices_removed):
-        for cycle in simplices_removed:
-            if cycle not in self:
-                raise KeyError(f"Boundary Cycle {cycle} not found."
-                               f"You are attempting to remove a simplex that has not yet been added to the tree")
-        return dict()
-
-    ## Add edge.
-    # removed cycles list should have only 1 or 2 cycles
-    # cycles_added should be a list with only 1 cycle
-    # added cycle will have intruder if either removed cycle has intruder
-    # This should only ever result in one cycle being removed
-    def add_1simplex(self, cycles_removed, cycles_added):
-        assert len(cycles_removed) == 1, \
-            "Adding edge cannot cause more than 1 boundary cycle to be removed"
-        return {cycle: self[cycles_removed[0]] for cycle in cycles_added}
-
-    ## Remove edge.
-    # This should only ever result in 1 cycle being added
-    def remove_1simplex(self, cycles_removed, cycles_added):
-        assert len(cycles_added) == 1, \
-            "Adding edge cannot cause more than 1 boundary cycle to be removed"
-        return {cycle: any([self[cycle] for cycle in cycles_removed]) for cycle in cycles_added}
-
-    ## Add simplex pair
-    # Will split a cycle into two with appropriate label, then label 2simplex as False
-    def add_simplex_pair(self, cycles_removed, cycles_added, simplices_added):
-        assert is_subset(simplices_added, cycles_added), \
-            "You are attempting to add a simplex that is not being added as a boundary cycle"
-        assert len(cycles_removed) == 1, \
-            "You are attempting to remove too many simplices at once."
-        assert len(cycles_added) == 2, \
-            "You are not removing two boundary cycles, this is not possible"
-        return {cycle: False if cycle in simplices_added else self[cycles_removed[0]] for cycle in cycles_added}
-
-    ## Remove simplex pair.
-    # no different than remove 1-simplex
-    def remove_simplex_pair(self, cycles_removed, cycles_added):
-        assert len(cycles_removed) == 2, \
-            "You are not removing two boundary cycles, this is not possible"
-        assert len(cycles_added) == 1, \
-            "You are not adding an individual boundary cycles, this is not possible"
-        return {cycle: any([self[cycle] for cycle in cycles_removed]) for cycle in cycles_added}
-
-    ## Delauny Flip.
-    # edge between two simplices flips resulting in two new simplices
-    # Note that this can only happen with simplices.
-    @staticmethod
-    def delauny_flip(simplices_removed, simplices_added):
-        assert len(simplices_removed) == 2 and len(simplices_added) == 2, \
-            "You are attempting to do a delauny flip with more(or fewer) than two 2-simplices"
-        return {cycle: False for cycle in simplices_added}
+    ## Add cycle to tree
+    # defaults to True
+    def insert(self, cycle, parent):
+        self._tree.create_node(tag=cycle, identifier=cycle, parent=parent, data=True)
 
     ## Update tree structure.
     # Given the cycles that should be added and removed from the tree along with and label updaets
     # perform said updates.
-    def update_tree(self, cycles_removed, cycles_added, cycle_dict):
-        assert is_subset(cycles_added, cycle_dict.keys()), "Not all new cycles have a label"
-        for cycle in cycles_added:
-            self.add_new_cycle(cycle, self._tree.root)
-        for cycle, val in cycle_dict.items():
-            self.set(cycle, val)
-        self.remove_all(cycles_removed)
-
-    ## Detemine label updates.
-    # return dictionary cycles cycles that need updating and their new label
-    def get_label_update(self, state_change):
-
-        assert state_change.is_atomic()
-
-        if state_change.case == (0, 0, 0, 0, 0, 0):
-            return dict()
-        if state_change.case == (0, 1, 0, 0, 1, 2):
-            return self.remove_1simplex(state_change.cycles_removed, state_change.cycles_added)
-        elif state_change.case == (1, 0, 0, 0, 2, 1):
-            return self.add_1simplex(state_change.cycles_removed, state_change.cycles_added)
-        elif state_change.case == (0, 0, 0, 1, 0, 0):
-            return self.remove_2simplices(state_change.simplices_removed)
-        elif state_change.case == (0, 0, 1, 0, 0, 0):
-            return self.add_2simplices(state_change.simplices_added)
-        elif state_change.case == (1, 0, 1, 0, 2, 1):
-            return self.add_simplex_pair(state_change.cycles_removed, state_change.cycles_added,
-                                         state_change.simplices_added)
-        elif state_change.case == (0, 1, 0, 1, 1, 2):
-            return self.remove_simplex_pair(state_change.cycles_removed, state_change.cycles_added)
-        elif state_change.case == (1, 1, 2, 2, 2, 2):
-            return self.delauny_flip(state_change.simplices_removed, state_change.simplices_added)
-        else:
-            raise AssertionError("The requested change is non-atomic, or results in disconnection")
+    def update_tree(self, update_data):
+        assert is_subset(update_data.cycles_added, update_data.label_update.keys()), "Not all new cycles have a label"
+        for cycle in update_data.cycles_added:
+            self.insert(cycle, self._tree.root)
+        for cycle, val in update_data.label_update.items():
+            self[cycle] = val
+        for cycle in update_data.cycles_removed:
+            del self[cycle]
 
     ## get label update, and update tree
     def update(self, state_change):
-        label_update = self.get_label_update(state_change)
-        self.update_tree(state_change.cycles_removed, state_change.cycles_added, label_update)
+        self.update_tree(get_update_data(self, state_change))

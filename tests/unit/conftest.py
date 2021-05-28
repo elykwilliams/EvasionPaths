@@ -101,3 +101,14 @@ def delauny_flip():
     state_change.case = (1, 1, 2, 2, 2, 2)
     state_change.is_atomic.return_value = True
     return state_change
+
+
+@pytest.fixture
+def sample_update_obj():
+    update_obj = mock.Mock()
+    update_obj.cycles_removed = ['C', 'B', 'A']
+    update_obj.cycles_added = ['F', 'G']
+    update_obj.simplices_added = []
+    update_obj.simplices_removed = []
+    update_obj.label_update = {'F': False, 'G': True}
+    return update_obj
