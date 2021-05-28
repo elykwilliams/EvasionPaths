@@ -282,11 +282,6 @@ class CycleLabelling:
                             enclosing_cycle)
 
 
-## Error to be raised when update data is inconsistent with current labelling.
-class LabellingError(KeyError):
-    pass
-
-
 class CycleLabellingTree:
 
     ## Initialize all boundary cycles as True, simplices as False.

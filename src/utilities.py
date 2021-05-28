@@ -6,11 +6,12 @@
 # If not, visit: https://opensource.org/licenses/BSD-3-Clause
 # ************************************************************
 
-from numpy.linalg import norm
-from numpy import cos, sin
-import numpy
-from math import atan2
 from abc import ABC
+from math import atan2
+
+import numpy
+from numpy import cos, sin
+from numpy.linalg import norm
 
 
 ## Convert Cartesian coordinates to polar.
@@ -20,7 +21,7 @@ def cart2pol(p: numpy.array) -> list:
 
 ## Convert Polar coordinates to cartesian.
 def pol2cart(p: list) -> list:
-    return [p[0]*cos(p[1]), p[0]*sin(p[1])]
+    return [p[0] * cos(p[1]), p[0] * sin(p[1])]
 
 
 ## Compute the set theoretic difference between two lists.
@@ -112,4 +113,14 @@ class TimedOutExc(Exception):
 # finishes before the given number of frames, throw this exception to exit out of the
 # animation loop.
 class SimulationOver(Exception):
+    pass
+
+
+## Error to be used when checking for discrepancies between existing labelling and requested update
+class UpdateError(EvasionPathError):
+    pass
+
+
+## Error to be raised when update data is inconsistent with current labelling.
+class LabellingError(KeyError):
     pass

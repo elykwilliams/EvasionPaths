@@ -104,7 +104,7 @@ def delauny_flip():
 
 
 @pytest.fixture
-def sample_update_obj():
+def sample_update_data():
     update_obj = mock.Mock()
     update_obj.cycles_removed = ['C', 'B', 'A']
     update_obj.cycles_added = ['F', 'G']

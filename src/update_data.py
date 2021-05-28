@@ -1,11 +1,6 @@
 from utilities import *
 
 
-## Error to be used when checking for discrepancies between existing labelling and requested update
-class UpdateError(Exception):
-    pass
-
-
 ## Data to preform Labelling Update.
 # This class contains all the information needed to update the labelling tree.
 # The structure is different from state change in that each subclass contains a method

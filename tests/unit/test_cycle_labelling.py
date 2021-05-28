@@ -3,6 +3,7 @@ from unittest import mock
 import pytest
 
 from cycle_labelling import CycleLabellingTree
+from utilities import LabellingError
 
 
 class TestInitCycleLabelling:
@@ -56,25 +57,25 @@ class TestUpdateTree:
     cycles_added = ['F', 'G']
     cycle_dict = {'F': False, 'G': True}
 
-    def test_cycle_update(self, connected_labelling, sample_update_obj):
-        connected_labelling.update_tree(sample_update_obj)
+    def test_cycle_update(self, connected_labelling, sample_update_data):
+        connected_labelling.update_tree(sample_update_data)
 
-    def test_removes_old_cycles(self, connected_labelling, sample_update_obj):
-        connected_labelling.update_tree(sample_update_obj)
+    def test_removes_old_cycles(self, connected_labelling, sample_update_data):
+        connected_labelling.update_tree(sample_update_data)
         assert all(cycle not in connected_labelling for cycle in self.cycles_removed)
 
-    def test_adds_new_cycles(self, connected_labelling, sample_update_obj):
-        connected_labelling.update_tree(sample_update_obj)
+    def test_adds_new_cycles(self, connected_labelling, sample_update_data):
+        connected_labelling.update_tree(sample_update_data)
         assert all([cycle in connected_labelling for cycle in self.cycles_added])
 
-    def test_correct_updates(self, connected_labelling, sample_update_obj):
+    def test_correct_updates(self, connected_labelling, sample_update_data):
         expected_values = {'D': True, 'E': True, 'F': False, 'G': True, 'alpha': False}
-        connected_labelling.update_tree(sample_update_obj)
+        connected_labelling.update_tree(sample_update_data)
         assert all([connected_labelling[cycle] == expected_values[cycle] for cycle in connected_labelling])
 
     def test_raises_new_cycles_not_labled(self, connected_labelling, sample_update_data):
         sample_update_data.cycles_added = ['F', 'G', 'H']
-        pytest.raises(AssertionError, connected_labelling.update_tree, sample_update_data)
+        pytest.raises(LabellingError, connected_labelling.update_tree, sample_update_data)
 
 
 class TestUpdate:
