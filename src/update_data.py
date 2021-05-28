@@ -6,7 +6,16 @@ class UpdateError(Exception):
     pass
 
 
+## Data to preform Labelling Update.
+# This class contains all the information needed to update the labelling tree.
+# The structure is different from state change in that each subclass contains a method
+# allowing it to compute the new cycle labels. This class is different from the statechange
+# because the statechange only looks at the differences in topology, whereas updatadata also
+# incorporates previous cycle labeling info. The label updates, are not static.
 class UpdateData:
+
+    ## Initialize with cycle labelling and StateChange.
+    # Make sure that state change is atomic, raises UpdateError Otherwise.
     def __init__(self, tree_labels, state_change):
         if not state_change.is_atomic():
             raise UpdateError("The attempted state-change is non-atomic")
@@ -21,9 +30,12 @@ class UpdateData:
         except UpdateError:
             raise
 
+    ## Check if update is self-consistant.
+    # i.e. it is the update it says it is.
     def is_valid(self):
         pass
 
+    # Return Mapping with labelling for each cycle with a new labelling.
     @property
     def label_update(self):
         return dict()
@@ -31,17 +43,22 @@ class UpdateData:
 
 class Add2Simplices(UpdateData):
 
+    ## All 2-Simplices are Labeled False
     @property
     def label_update(self):
         return {cycle: False for cycle in self.simplices_added}
 
+    ## Simplices should already be in labelling.
+    # Cannot add simplex without also adding boundary cycle (if not present)
     def is_valid(self):
         if any(cycle not in self.labels for cycle in self.simplices_added):
             raise UpdateError(f"You are attempting to add a simplex that has not yet been added to the tree")
 
 
 class Remove2Simplices(UpdateData):
+    # No update needed
 
+    ## Warn when trying to remove non-existant simplices.
     def is_valid(self):
         if any(cycle not in self.labels for cycle in self.simplices_removed):
             raise UpdateError(f"You are attempting to remove a simplex that has not yet been added to the tree")
@@ -49,7 +66,7 @@ class Remove2Simplices(UpdateData):
 
 class Add1Simplex(UpdateData):
     ## Add edge.
-    # added cycle will have intruder if either removed cycle has intruder
+    # New cycles will match the removed cycle
     @property
     def label_update(self):
         return {cycle: self.labels[self.cycles_removed[0]] for cycle in self.cycles_added}
@@ -66,6 +83,7 @@ class Add1Simplex(UpdateData):
 
 class Remove1Simplex(UpdateData):
     ## Remove edge.
+    # added cycle will have intruder if either removed cycle has intruder
     @property
     def label_update(self):
         return {cycle: any([self.labels[cycle] for cycle in self.cycles_removed]) for cycle in self.cycles_added}
@@ -78,7 +96,7 @@ class Remove1Simplex(UpdateData):
 
 class AddSimplexPair(UpdateData):
     ## Add simplex pair
-    # Will split a cycle into two with appropriate label, then label 2simplex as False
+    # Will split a cycle into two with label as in Add1Simplex, then label 2simplex as False
     @property
     def label_update(self):
         return {cycle: False if cycle in self.simplices_added else self.labels[self.cycles_removed[0]]
@@ -96,6 +114,7 @@ class AddSimplexPair(UpdateData):
 
 
 class RemoveSimplexPair(Remove1Simplex):
+    ## Same as Remove1Simplex
 
     def is_valid(self):
         super().is_valid()

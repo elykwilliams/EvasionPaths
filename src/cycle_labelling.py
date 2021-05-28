@@ -282,6 +282,7 @@ class CycleLabelling:
                             enclosing_cycle)
 
 
+## Error to be raised when update data is inconsistent with current labelling.
 class LabellingError(KeyError):
     pass
 
@@ -309,12 +310,16 @@ class CycleLabellingTree:
                 if not topology.is_connected_cycle(cycle):
                     del self[cycle]
 
+    ## Check if cycle has label.
     def __contains__(self, item):
         return self.tree.contains(item)
 
+    ## Iterate through all cycles.
     def __iter__(self):
         return self.tree.expand_tree(self.tree.root)
 
+    ## Return cycle labelling.
+    # raises key error if cycle not found.
     def __getitem__(self, item):
         try:
             return self.tree[item].data
@@ -322,6 +327,8 @@ class CycleLabellingTree:
             raise LabellingError(f"You are attempting to retrieve the value of a cycle that "
                                  f"has not yet been added to the tree.")
 
+    ## Set cycle label.
+    # raises KeyError if not found
     def __setitem__(self, key, value):
         try:
             self.tree.update_node(key, **{'data': value})
@@ -329,6 +336,7 @@ class CycleLabellingTree:
             raise LabellingError(f"You are attempting to change the value of a cycle that "
                                  f"has not yet been added to the tree.")
 
+    ## Remove cycle from tree.
     def __delitem__(self, key):
         self.tree.remove_node(key)
 
@@ -338,8 +346,10 @@ class CycleLabellingTree:
         self.tree.create_node(tag=cycle, identifier=cycle, parent=parent, data=True)
 
     ## Update tree structure.
-    # Given the cycles that should be added and removed from the tree along with and label updaets
-    # perform said updates.
+    # Given an UpdateData object, do the following
+    #   add all new cycles,
+    #   update all labels
+    #   remove all old cycles
     def update_tree(self, update_data):
         if not is_subset(update_data.cycles_added, update_data.label_update.keys()):
             raise LabellingError("Not all new cycles have a label")
@@ -350,6 +360,7 @@ class CycleLabellingTree:
         for cycle in update_data.cycles_removed:
             del self[cycle]
 
-    ## get label update, and update tree
+    ## Get label update, and update tree.
+    # the UpdateData will contain all necessary data to update the tree.
     def update(self, state_change):
         self.update_tree(get_update_data(self, state_change))
