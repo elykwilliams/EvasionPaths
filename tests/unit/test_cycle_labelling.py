@@ -21,14 +21,14 @@ class TestInitCycleLabelling:
     def test_cycle_in_label_equiv_label_in_tree(self, connected_topology):
         labelling = CycleLabellingTree(connected_topology)
 
-        tree_nodes = labelling._tree.expand_tree('alpha')
+        tree_nodes = labelling.tree.expand_tree('alpha')
         assert all([node in labelling for node in tree_nodes])
-        assert all([labelling._tree.contains(cycle) for cycle in labelling])
+        assert all([labelling.tree.contains(cycle) for cycle in labelling])
 
     # Make sure alpha cycle is set as root
     def test_alpha_cycle_is_root(self, connected_topology):
         labelling = CycleLabellingTree(connected_topology)
-        assert labelling._tree.root == 'alpha'
+        assert labelling.tree.root == 'alpha'
 
     ## test all simplices are false
     def test_simplices_false(self, connected_topology):
@@ -44,9 +44,9 @@ class TestInitCycleLabelling:
     def test_connected_init_depth(self, connected_topology):
         connected_topology.is_connected_cycle = mock.Mock(return_value=True)
 
-        assert CycleLabellingTree(connected_topology, "power-down")._tree.DEPTH == 1
-        assert CycleLabellingTree(connected_topology, "connected")._tree.DEPTH == 1
-        assert CycleLabellingTree(connected_topology, "power-on")._tree.DEPTH == 1
+        assert CycleLabellingTree(connected_topology, "power-down").tree.DEPTH == 1
+        assert CycleLabellingTree(connected_topology, "connected").tree.DEPTH == 1
+        assert CycleLabellingTree(connected_topology, "power-on").tree.DEPTH == 1
 
     # TODO test assertions
 

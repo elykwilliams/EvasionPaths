@@ -289,7 +289,7 @@ class CycleLabellingTree:
     # This can be adjusted by looking at the connected components in
     # topology and extracting the connected boundary cycles.
     def __init__(self, topology, policy="power-down") -> None:
-        self._tree = Tree()
+        self.tree = Tree()
         self.policy = policy
         self.insert(topology.alpha_cycle, parent=None)
         self[topology.alpha_cycle] = False
@@ -306,33 +306,33 @@ class CycleLabellingTree:
                     del self[cycle]
 
     def __contains__(self, item):
-        return self._tree.contains(item)
+        return self.tree.contains(item)
 
     def __iter__(self):
-        return self._tree.expand_tree(self._tree.root)
+        return self.tree.expand_tree(self.tree.root)
 
     def __getitem__(self, item):
         try:
-            return self._tree[item].data
+            return self.tree[item].data
         except treelib.exceptions.NodeIDAbsentError:
             raise KeyError(f"Boundary Cycle {item} not found. You are attempting to retrieve the value of a cycle that "
                            f"has not yet been added to the tree.")
 
     def __setitem__(self, key, value):
         try:
-            self._tree.update_node(key, **{'data': value})
+            self.tree.update_node(key, **{'data': value})
         except treelib.exceptions.NodeIDAbsentError:
             raise KeyError(f"Boundary Cycle {key} not found. "
                            f"You are attempting to change the value of a cycle that has not yet been added to the tree."
                            )
 
     def __delitem__(self, key):
-        self._tree.remove_node(key)
+        self.tree.remove_node(key)
 
     ## Add cycle to tree
     # defaults to True
     def insert(self, cycle, parent):
-        self._tree.create_node(tag=cycle, identifier=cycle, parent=parent, data=True)
+        self.tree.create_node(tag=cycle, identifier=cycle, parent=parent, data=True)
 
     ## Update tree structure.
     # Given the cycles that should be added and removed from the tree along with and label updaets
@@ -340,7 +340,7 @@ class CycleLabellingTree:
     def update_tree(self, update_data):
         assert is_subset(update_data.cycles_added, update_data.label_update.keys()), "Not all new cycles have a label"
         for cycle in update_data.cycles_added:
-            self.insert(cycle, self._tree.root)
+            self.insert(cycle, self.tree.root)
         for cycle, val in update_data.label_update.items():
             self[cycle] = val
         for cycle in update_data.cycles_removed:
