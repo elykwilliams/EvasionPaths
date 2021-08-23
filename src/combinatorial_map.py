@@ -155,7 +155,6 @@ def get_rotational_data(graph, points) -> list:
         sorted_zip = sorted(neighbor_zip,
                             key=lambda pair: theta(pair[1], points[node]),
                             reverse=anticlockwise)
-
         # Extract sorted edges
         sorted_edges[node] = [(node, n) for (n, _) in sorted_zip]
 

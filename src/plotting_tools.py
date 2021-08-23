@@ -15,8 +15,8 @@ def get_graph(sim):
     """ This function is to access the combinatorial map externally primarily
         this function is meant to help with plotting and not to be used internally"""
     from gudhi import AlphaComplex
-    alpha_complex = AlphaComplex(sim.points)
-    simplex_tree = alpha_complex.create_simplex_tree(max_alpha_square=sim.sensing_radius ** 2)
+    alpha_complex = AlphaComplex(points=sim.points, weight=sim.weights)
+    simplex_tree = alpha_complex.create_simplex_tree(max_alpha_square=sim.alpha)
 
     simplices1 = [tuple(simplex) for simplex, _ in simplex_tree.get_skeleton(1) if len(simplex) == 2]
 
@@ -57,8 +57,9 @@ def show_sensor_points(sim):
 
 def show_sensor_radius(sim):
     axis = plt.gca()
-    for pt in sim.points:
-        axis.add_artist(plt.Circle(pt, sim.sensing_radius, color='b', alpha=0.1, clip_on=False))
+    from math import sqrt
+    for i in range(len(sim.points)):
+        axis.add_artist(plt.Circle(pt, sqrt(sim.weights[i]+sim.alpha), color='b', alpha=0.1, clip_on=False))
 
 
 def show_possible_intruder(sim):

@@ -5,6 +5,7 @@
 # of the BSD-3 license with this file.
 # If not, visit: https://opensource.org/licenses/BSD-3-Clause
 # ************************************************************
+from math import sqrt
 import pickle
 from cycle_labelling import *
 from topological_state import *
@@ -36,14 +37,15 @@ class EvasionPathSimulation:
     ## Initialize
     # If end_time is set to a non-zero value, use sooner of max cutoff time or  cleared
     # domain. Set to 0 to disable.
-    def __init__(self, boundary: Boundary, motion_model: MotionModel,
-                 n_int_sensors: int, sensing_radius: float, dt: float, end_time: int = 0,
-                 points=()) -> None:
+    def __init__(self, boundary: Boundary, motion_model: MotionModel, alpha: float,
+                 n_int_sensors: int, dt: float, end_time: int = 0,
+                 points=(), weights=()) -> None:
 
         self.motion_model = motion_model
         self.boundary = boundary
-        self.sensing_radius = sensing_radius
-
+        
+        self.weights = []
+        self.alpha = alpha
         # Parameters
         self.dt = dt
         self.Tend = end_time
@@ -60,8 +62,15 @@ class EvasionPathSimulation:
                 assert motion_model.n_sensors == len(points), \
                     "motion_model.n_sensors != len(points) \n"\
                     "Use the correct number of sensors when initializing the motion model."
+        
+        #compute weights for boundary points
+        dif = len(self.points)-len(weights)
+        for i in range(dif):
+            self.weights.append(boundary.spacing**2 - self.alpha) #r = sqrt(w + alpha), solve for w
+        self.weights = self.weights + weights
+        
 
-        self.state = TopologicalState(self.points, self.sensing_radius, self.boundary)
+        self.state = TopologicalState(points=self.points, sensing_radius=self.alpha, weights=self.weights, boundary=self.boundary)
         self.cycle_label = CycleLabelling(self.state)
 
     ## Run until no more intruders.
@@ -83,7 +92,7 @@ class EvasionPathSimulation:
         for _ in range(2):
 
             new_points = self.motion_model.update_points(self.points, dt)
-            new_state = TopologicalState(new_points, self.sensing_radius, self.boundary)
+            new_state = TopologicalState(new_points, self.alpha, self.weights, self.boundary)
             state_change = StateChange(self.state, new_state)
 
             if state_change.is_atomic():
@@ -91,13 +100,26 @@ class EvasionPathSimulation:
                 self.points = new_points
                 self.state = new_state
             elif level + 1 == 25:
+                
                 raise MaxRecursionDepth(state_change)
             else:
                 self.do_timestep(level=level + 1)
 
             if level == 0:
                 return
-
+        
+    def coverage_check(self) -> bool:
+        check = 0
+        b_cycles = self.state.boundary_cycles()
+        
+        for cycle in b_cycles:
+            if set(cycle2nodes(cycle)) in [set(S) for S in self.state.simplices(2)]:
+                check += 1
+        
+        if check == len(b_cycles):
+            return True 
+        
+        return False
 
 ## Takes output from save_state() to initialize a simulation.
 # WARNING: Only use pickle files created by this software on a specific machine.

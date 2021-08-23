@@ -5,7 +5,7 @@ SHELL:=/bin/bash
 install:
 	conda env create --file environment.yml	--force
 	source ~/.bashrc
-	conda activate EvasionPaths-env
+	conda activate WeightedEvasionPaths-env
 	python3 setup.py install 
 
 # will pull from github and install source files

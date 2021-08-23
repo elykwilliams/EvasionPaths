@@ -8,7 +8,9 @@
 
 from combinatorial_map import *
 from gudhi.alpha_complex import AlphaComplex
+from math import sqrt
 import networkx as nx
+import matplotlib.pyplot as plt
 
 
 def set_difference(list1, list2):
@@ -27,21 +29,53 @@ class TopologicalState(object):
 
     ## Compute Alpha-complex and combinatorial map and extract simplices and boundary cycles. Also
     # save connectivity information.
-    def __init__(self, points, sensing_radius, boundary):
-        alpha_complex = AlphaComplex(points)
+    def __init__(self, points, sensing_radius, weights, boundary):
+        alpha_complex = AlphaComplex(points=points, weights=weights)
         simplex_tree = alpha_complex.create_simplex_tree(max_alpha_square=sensing_radius ** 2)
-
+        
+#   Uncomment this section to view the graph of the AlphaComplex
+#        figure, axes = plt.subplots()
+#        plt.axis([-0.9, 1.5,-0.9, 1.5])
+#        n = 0
+#        for point in points:
+#            plt.plot(point[0], point[1], marker='o', color='b')
+#
+#        for filtered_value in simplex_tree.get_filtration():
+#            simplex = tuple(filtered_value)[0]
+#            if len(simplex) == 2:
+#                p1 = simplex[0]
+#                p2 = simplex[1]
+#                x = [points[p1][0], points[p2][0]]
+#                y = [points[p1][1], points[p2][1]]
+#                plt.plot(x, y, color='b')
+#            if len(simplex) == 3:
+#                p1 = points[simplex[0]]
+#                p2 = points[simplex[1]]
+#                p3 = points[simplex[2]]
+#                X = [p1,p2,p3]
+#                tri = plt.Polygon(X, color='r')
+#                axes.add_artist(tri)
+#        for point in points:
+#            plt.plot(point[0], point[1])
+#            draw_circle = plt.Circle(point, sqrt(weights[n] + sensing_radius), fill=False)
+#            axes.add_artist(draw_circle)
+#            print(sqrt(weights[n] + sensing_radius))
+#            n += 1
+#        plt.show()
+        
         self._simplices = [[], [], []]
-        self._simplices[0] = [simplex[0] for simplex, _ in simplex_tree.get_skeleton(0)]
+        self._simplices[0] = range(len(points))#[simplex[0] for simplex, _ in simplex_tree.get_skeleton(0)] 
         self._simplices[1] = [tuple(simplex) for simplex, _ in simplex_tree.get_skeleton(1) if len(simplex) == 2]
         self._simplices[2] = [tuple(simplex) for simplex, _ in simplex_tree.get_skeleton(2) if len(simplex) == 3]
 
         graph = nx.Graph()
         graph.add_nodes_from(self._simplices[0])
         graph.add_edges_from(self._simplices[1])
-
+        
         self._boundary_cycles = CMap(graph, points).get_boundary_cycles()
-        self._boundary_cycles.remove(boundary.alpha_cycle)
+        
+        if boundary.alpha_cycle in self._boundary_cycles:
+            self._boundary_cycles.remove(boundary.alpha_cycle)
 
         self._connected_nodes = nx.node_connected_component(graph, 0)
 

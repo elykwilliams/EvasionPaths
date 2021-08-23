@@ -1,9 +1,8 @@
-name: EvasionPaths-env
+name: WeightedEvasionPaths-env
 channels:
   - conda-forge
 dependencies:
   - ffmpeg
-  - gudhi=3.0.0
   - matplotlib
   - networkx
   - numpy
@@ -12,4 +11,5 @@ dependencies:
   - scipy
   - setuptools
   - joblib
+  - pybind11
 

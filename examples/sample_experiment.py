@@ -5,6 +5,10 @@ from time_stepping import *
 num_sensors: int = 20
 sensing_radius: float = 0.2
 timestep_size: float = 0.01
+#weights for weighted complex
+weights: list = []
+#max_alpha_square variable
+alpha: int = 0
 
 unit_square: Boundary = RectangularDomain(spacing=sensing_radius)
 
@@ -19,12 +23,14 @@ n_runs: int = 1
 
 # Unlike the animation, each simulation needs to create its own simulation object
 def simulate() -> float:
-
+    for _ in range(num_sensors):
+        weights.append(sensing_radius**2 - alpha)
     simulation = EvasionPathSimulation(boundary=unit_square,
                                        motion_model=billiard,
                                        n_int_sensors=num_sensors,
-                                       sensing_radius=sensing_radius,
-                                       dt=timestep_size)
+                                       dt=timestep_size,
+                                       weights=weights,
+                                       alpha=alpha)
 
     return simulation.run()
 
