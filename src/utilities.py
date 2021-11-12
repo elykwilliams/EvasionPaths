@@ -6,11 +6,12 @@
 # If not, visit: https://opensource.org/licenses/BSD-3-Clause
 # ************************************************************
 
-from numpy.linalg import norm
-from numpy import cos, sin
-import numpy
-from math import atan2
 from abc import ABC
+from math import atan2
+
+import numpy
+from numpy import cos, sin
+from numpy.linalg import norm
 
 
 ## Convert Cartesian coordinates to polar.
@@ -20,12 +21,12 @@ def cart2pol(p: numpy.array) -> list:
 
 ## Convert Polar coordinates to cartesian.
 def pol2cart(p: list) -> list:
-    return [p[0]*cos(p[1]), p[0]*sin(p[1])]
+    return [p[0] * cos(p[1]), p[0] * sin(p[1])]
 
 
 ## Compute the set theoretic difference between two lists.
 def set_difference(list1: list, list2: list) -> list:
-    return list(set(list1).difference(set(list2)))
+    return [x for x in list1 if x not in list2]
 
 
 ## Determine if list is subset list.
