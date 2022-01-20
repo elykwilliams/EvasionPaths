@@ -2,6 +2,12 @@ from topological_state import StateChange, TopologicalState
 from utilities import *
 
 
+class InvalidStateChange:
+    @staticmethod
+    def is_valid():
+        return False
+
+
 ## Data to preform Labelling Update.
 # This class contains all the information needed to update the labelling tree.
 # The structure is different from state change in that each subclass contains a method
@@ -33,14 +39,25 @@ class UpdateData(StateChange):
 
     # Return Mapping with labelling for each cycle with a new labelling.
     @property
-    def label_update(self):
+    def data(self):
         return dict()
+
+    @property
+    def label_update(self):
+        if self.is_valid():
+            return self.data
+        else:
+            return InvalidStateChange()
+
+    @staticmethod
+    def is_atomic():
+        return True
 
 
 class Add2Simplices(UpdateData):
     ## All 2-Simplices are Labeled False
     @property
-    def label_update(self):
+    def data(self):
         return {cycle: False for cycle in self.simplices_added}
 
 
@@ -53,7 +70,7 @@ class Add1Simplex(UpdateData):
     ## Add edge.
     # New cycles will match the removed cycle
     @property
-    def label_update(self):
+    def data(self):
         return {cycle: self.labels[self.cycles_removed[0]] for cycle in self.cycles_added}
 
 
@@ -61,18 +78,16 @@ class Remove1Simplex(UpdateData):
     ## Remove edge.
     # added cycle will have intruder if either removed cycle has intruder
     @property
-    def label_update(self):
+    def data(self):
         return {cycle: any([self.labels[cycle] for cycle in self.cycles_removed]) for cycle in self.cycles_added}
 
 
-
-class AddSimplexPair(UpdateData):
+class AddSimplexPair(Add1Simplex):
     ## Add simplex pair
-    # Will split a cycle into two with label as in Add1Simplex, then label 2simplex as False
+    # Will split a cycle in two with label as in Add1Simplex, then label 2simplex as False
     @property
-    def label_update(self):
-        return {cycle: False if cycle in self.simplices_added else self.labels[self.cycles_removed[0]]
-                for cycle in self.cycles_added}
+    def data(self):
+        return super().data.update({cycle: False for cycle in self.simplices_added})
 
     # If a 1-simplex and 2-simplex are added/removed simultaniously, then the 1-simplex
     # should be an edge of the 2-simplex
@@ -97,14 +112,15 @@ class RemoveSimplexPair(Remove1Simplex):
         return True
 
 
-
-class DelaunyFlip(UpdateData):
+class DelaunyFlip(Add2Simplices):
     ## Delauny Flip.
     # edge between two simplices flips resulting in two new simplices
     # Note that this can only happen with simplices.
-    @property
-    def label_update(self):
-        return {cycle: False for cycle in self.simplices_added}
+    # Same as adding all 2-simplices
+
+    # If a delaunay flip appears to have occurred, the removed 1-simplex should be
+    # an edge of both removed 2-simplices; similarly the added 1-simplex should be
+    # an edge of the added 2-simplices.
 
     # The set of vertices of the 1-simplices should contain the vertices of each 2-simplex
     # that is added or removed.
