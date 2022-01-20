@@ -6,10 +6,11 @@
 # If not, visit: https://opensource.org/licenses/BSD-3-Clause
 # ************************************************************
 
-from utilities import *
-from combinatorial_map import *
-from gudhi.alpha_complex import AlphaComplex
 import networkx as nx
+from gudhi.alpha_complex import AlphaComplex
+
+from combinatorial_map import *
+from utilities import *
 
 
 ## The Topological State is the class used to encapsulate the simplicial, and combinatorial
@@ -111,28 +112,27 @@ class TopologicalState(object):
 # The state transitions are identified by simply counting the number of simplices and boundary
 # cycles that have been added or removed. With some minimal compatibility checking, this can
 # uniquely identify an atomic transition.
+#  case2name = {
+#         (0, 0, 0, 0, 0, 0): '',
+#         (1, 0, 0, 0, 2, 1): 'Add 1-Simplex',
+#         (1, 0, 0, 0, 1, 0): 'Add 1-Simplex',
+#         (0, 1, 0, 0, 1, 2): 'Remove 1-Simplex',
+#         (0, 1, 0, 0, 0, 1): 'Remove 1-Simplex',
+#         (0, 0, 1, 0, 0, 0): 'Add 2-Simplex',
+#         (0, 0, 0, 1, 0, 0): 'Remove 2-Simplex',
+#         (1, 0, 1, 0, 2, 1): 'Add 1-Simplex and 2-Simplex',
+#         (0, 1, 0, 1, 1, 2): 'Remove 1-Simplex and 2-Simplex',
+#         (1, 1, 2, 2, 2, 2): 'Delauney Flip',
+#         (0, 1, 0, 0, 2, 1): 'Disconnect',
+#         (0, 1, 0, 0, 1, 1): "Disconnect",
+#         (1, 0, 0, 0, 1, 2): "Reconnect",
+#         (1, 0, 0, 0, 1, 1): "Reconnect"
+#     }
 class StateChange(object):
     ## Identify Atomic States
     #
     # (#1-simplices added, #1-simpleices removed, #2-simplices added, #2-simplices removed, #boundary cycles added,
     # #boundary cycles removed)
-    case2name = {
-        (0, 0, 0, 0, 0, 0): '',
-        (1, 0, 0, 0, 2, 1): 'Add 1-Simplex',
-        (1, 0, 0, 0, 1, 0): 'Add 1-Simplex',
-        (0, 1, 0, 0, 1, 2): 'Remove 1-Simplex',
-        (0, 1, 0, 0, 0, 1): 'Remove 1-Simplex',
-        (0, 0, 1, 0, 0, 0): 'Add 2-Simplex',
-        (0, 0, 0, 1, 0, 0): 'Remove 2-Simplex',
-        (1, 0, 1, 0, 2, 1): 'Add 1-Simplex and 2-Simplex',
-        (0, 1, 0, 1, 1, 2): 'Remove 1-Simplex and 2-Simplex',
-        (1, 1, 2, 2, 2, 2): 'Delauney Flip',
-        (0, 1, 0, 0, 2, 1): 'Disconnect',
-        (0, 1, 0, 0, 1, 1): "Disconnect",
-        (1, 0, 0, 0, 1, 2): "Reconnect",
-        (1, 0, 0, 0, 1, 1): "Reconnect"
-    }
-
     def __init__(self, old_state: TopologicalState, new_state: TopologicalState) -> None:
         self.new_state = new_state
         self.edges_added = set_difference(new_state.simplices(1), old_state.simplices(1))
@@ -147,63 +147,15 @@ class StateChange(object):
         self.case = (len(self.edges_added), len(self.edges_removed), len(self.simplices_added),
                      len(self.simplices_removed), len(self.cycles_added), len(self.cycles_removed))
 
-    ## Determine if the current state transition is atomic.
-    # A transition is considered atomic if one of the following are true:
-    #
-    #       1. The case is not found in the list of possible transitions
-    #       2. If a 1-simplex and 2-simplex are added/removed simultaniously, the 1-simplex
-    #           should be an edge of the 2-simplex
-    #       3. If a delaunay flip appears to have occurred, the removed 1-simplex should be
-    #           an edge of both removed 2-simplices; similarly the added 1-simplex should be
-    #           an edge of the added 2-simplices.
-    #       4. The set of vertices of the 1-simplices should contain the vertices of each 2-simplex
-    #           that is added or removed.
-    #
-    def is_atomic(self) -> bool:
-        if self.case not in self.case2name.keys():
-            return False
-        elif self.case == (1, 0, 1, 0, 2, 1):
-            simplex = self.simplices_added[0]
-            edge = self.edges_added[0]
-            if not is_subset(edge, simplex):
-                return False
-        elif self.case == (0, 1, 0, 1, 1, 2):
-            simplex = self.simplices_removed[0]
-            edge = self.edges_removed[0]
-            if not is_subset(edge, simplex):
-                return False
-        elif self.case == (1, 1, 2, 2, 2, 2):
-            old_edge = self.edges_removed[0]
-            new_edge = self.edges_added[0]
-            if not all([is_subset(old_edge, s) for s in self.simplices_removed]):
-                return False
-            elif not all([is_subset(new_edge, s) for s in self.simplices_added]):
-                return False
-
-            nodes = set(old_edge).union(set(new_edge))
-            if not all([is_subset(s, nodes) for s in self.simplices_removed]):
-                return False
-            elif not all([is_subset(s, nodes) for s in self.simplices_added]):
-                return False
-        return True
-
-    ## Get name of transition.
-    # If non-atomic, return "Invalid Case"
-    def get_name(self) -> str:
-        if self.is_atomic():
-            return self.case2name[self.case]
-        else:
-            return "Invalid Case"
-
     ## Allow class to be printable.
     # Used mostly for debugging
-    def __str__(self) -> str:
+    def __repr__(self) -> str:
         return (
-            f"State Change: {self.case}\n" 
-            f"New edges: {self.edges_added}\n" 
-            f"Removed edges: {self.edges_removed}\n" 
-            f"New Simplices: {self.simplices_added}\n" 
-            f"Removed Simplices: {self.simplices_removed}\n" 
-            f"New cycles {self.cycles_added}\n" 
+            f"State Change: {self.case}\n"
+            f"New edges: {self.edges_added}\n"
+            f"Removed edges: {self.edges_removed}\n"
+            f"New Simplices: {self.simplices_added}\n"
+            f"Removed Simplices: {self.simplices_removed}\n"
+            f"New cycles {self.cycles_added}\n"
             f"Removed Cycles {self.cycles_removed}"
         )
