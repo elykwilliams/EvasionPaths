@@ -153,9 +153,6 @@ def get_label_update(old_labelling, old_state, new_state):
         (0, 1, 0, 1, 1, 2): RemoveSimplexPair,
         (1, 1, 2, 2, 2, 2): DelaunyFlip
     }
-    try:
-        return temp[state_change.case](labelling, state_change)
-    except KeyError:
-        raise UpdateError("The requested change is non-atomic, or results in disconnection")
-    except UpdateError:
-        raise
+    if case not in temp:
+        return InvalidStateChange()
+    return temp[case](old_labelling, old_state, new_state)
