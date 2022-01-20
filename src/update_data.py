@@ -1,3 +1,4 @@
+from topological_state import StateChange, TopologicalState
 from utilities import *
 
 
@@ -7,18 +8,14 @@ from utilities import *
 # allowing it to compute the new cycle labels. This class is different from the statechange
 # because the statechange only looks at the differences in topology, whereas updatadata also
 # incorporates previous cycle labeling info. The label updates, are not static.
-class UpdateData:
+class UpdateData(StateChange):
 
     ## Initialize with cycle labelling and StateChange.
     # Make sure that state change is atomic, raises UpdateError Otherwise.
-    def __init__(self, tree_labels, state_change):
-        if not state_change.is_atomic():
-            raise UpdateError("The attempted state-change is non-atomic")
+    def __init__(self, tree_labels, old_state: TopologicalState, new_state: TopologicalState):
+        super().__init__(old_state, new_state)
         self.labels = tree_labels
-        self.cycles_added = state_change.cycles_added
-        self.cycles_removed = state_change.cycles_removed
-        self.simplices_added = state_change.simplices_added
-        self.simplices_removed = state_change.simplices_removed
+        self.new_state = new_state
 
         try:
             self.is_valid()
@@ -28,7 +25,11 @@ class UpdateData:
     ## Check if update is self-consistant.
     # i.e. it is the update it says it is.
     def is_valid(self):
-        pass
+        if not all(cycle in self.labels or cycle in self.cycles_added for cycle in self.simplices_added):
+            raise UpdateError(f"You are attempting to add a simplex that has not yet been added to the tree")
+        elif not all(cycle in self.labels for cycle in self.simplices_removed + self.cycles_removed):
+            raise UpdateError(f"You are attempting to remove a simplex/cycle that has not yet been added to the tree")
+        return self.is_atomic()
 
     # Return Mapping with labelling for each cycle with a new labelling.
     @property
@@ -37,26 +38,15 @@ class UpdateData:
 
 
 class Add2Simplices(UpdateData):
-
     ## All 2-Simplices are Labeled False
     @property
     def label_update(self):
         return {cycle: False for cycle in self.simplices_added}
 
-    ## Simplices should already be in labelling.
-    # Cannot add simplex without also adding boundary cycle (if not present)
-    def is_valid(self):
-        if any(cycle not in self.labels for cycle in self.simplices_added):
-            raise UpdateError(f"You are attempting to add a simplex that has not yet been added to the tree")
-
 
 class Remove2Simplices(UpdateData):
-    # No update needed
-
-    ## Warn when trying to remove non-existant simplices.
-    def is_valid(self):
-        if any(cycle not in self.labels for cycle in self.simplices_removed):
-            raise UpdateError(f"You are attempting to remove a simplex that has not yet been added to the tree")
+    #  No update needed, use default
+    pass
 
 
 class Add1Simplex(UpdateData):
@@ -66,15 +56,6 @@ class Add1Simplex(UpdateData):
     def label_update(self):
         return {cycle: self.labels[self.cycles_removed[0]] for cycle in self.cycles_added}
 
-    # removed cycles list should have only 1 or 2 cycles
-    # cycles_added should be a list with only 1 cycle
-    # This should only ever result in one cycle being removed
-    def is_valid(self):
-        if self.cycles_removed[0] not in self.labels:
-            raise UpdateError("You are attempting to remove a boundary cycle that was never given a labelling")
-        if len(self.cycles_removed) != 1:
-            raise UpdateError("Adding edge cannot cause more than 1 boundary cycle to be removed")
-
 
 class Remove1Simplex(UpdateData):
     ## Remove edge.
@@ -83,10 +64,6 @@ class Remove1Simplex(UpdateData):
     def label_update(self):
         return {cycle: any([self.labels[cycle] for cycle in self.cycles_removed]) for cycle in self.cycles_added}
 
-    # This should only ever result in 1 cycle being added
-    def is_valid(self):
-        if len(self.cycles_added) != 1:
-            raise UpdateError("Adding edge cannot cause more than 1 boundary cycle to be removed")
 
 
 class AddSimplexPair(UpdateData):
@@ -97,24 +74,28 @@ class AddSimplexPair(UpdateData):
         return {cycle: False if cycle in self.simplices_added else self.labels[self.cycles_removed[0]]
                 for cycle in self.cycles_added}
 
-    def is_valid(self):
-        if self.cycles_removed[0] not in self.labels:
-            raise UpdateError("You are attempting to remove a boundary cycle that has not been given a labelling")
-        if not is_subset(self.simplices_added, self.cycles_added):
-            raise UpdateError("You are attempting to add a simplex that is not also being added as a boundary cycle")
-        if len(self.cycles_removed) != 1:
-            raise UpdateError("You are attempting to remove too many simplices at once.")
-        if len(self.cycles_added) != 2:
-            raise UpdateError("You are not removing two boundary cycles, this is not possible")
+    # If a 1-simplex and 2-simplex are added/removed simultaniously, then the 1-simplex
+    # should be an edge of the 2-simplex
+    def is_atomic(self):
+        # Check consistency with definition
+        simplex = self.simplices_added[0]
+        edge = self.edges_added[0]
+        if not is_subset(edge, simplex):
+            return False
+        return True
 
 
 class RemoveSimplexPair(Remove1Simplex):
     ## Same as Remove1Simplex
+    def is_atomic(self):
+        # If a 1-simplex and 2-simplex are added/removed simultaniously, then the 1-simplex
+        # should be an edge of the 2-simplex
+        simplex = self.simplices_removed[0]
+        edge = self.edges_removed[0]
+        if not is_subset(edge, simplex):
+            return False
+        return True
 
-    def is_valid(self):
-        super().is_valid()
-        if len(self.cycles_removed) != 2:
-            raise UpdateError("You are not removing two boundary cycles, this is not possible")
 
 
 class DelaunyFlip(UpdateData):
@@ -125,10 +106,22 @@ class DelaunyFlip(UpdateData):
     def label_update(self):
         return {cycle: False for cycle in self.simplices_added}
 
-    def is_valid(self):
-        if len(self.simplices_removed) != 2 or len(self.simplices_added) != 2:
-            raise UpdateError("You are attempting to do a delauny flip with more(or fewer) than two 2-simplices")
+    # The set of vertices of the 1-simplices should contain the vertices of each 2-simplex
+    # that is added or removed.
+    def is_atomic(self):
+        old_edge = self.edges_removed[0]
+        new_edge = self.edges_added[0]
+        if not all([is_subset(old_edge, s) for s in self.simplices_removed]):
+            return False
+        elif not all([is_subset(new_edge, s) for s in self.simplices_added]):
+            return False
 
+        nodes = list(set(old_edge).union(set(new_edge)))
+        if not all([is_subset(s, nodes) for s in self.simplices_removed]):
+            return False
+        elif not all([is_subset(s, nodes) for s in self.simplices_added]):
+            return False
+        return True
 
 
 def get_label_update(old_labelling, old_state, new_state):
