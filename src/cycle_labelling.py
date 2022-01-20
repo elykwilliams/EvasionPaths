@@ -10,7 +10,6 @@
 import treelib.exceptions
 from treelib import Tree
 
-from topological_state import *
 from update_data import *
 from utilities import *
 
@@ -345,17 +344,12 @@ class CycleLabellingTree:
     #   add all new cycles,
     #   update all labels
     #   remove all old cycles
-    def update_tree(self, update_data):
-        if not is_subset(update_data.cycles_added, update_data.label_update.keys()):
-            raise LabellingError("Not all new cycles have a label")
-        for cycle in update_data.cycles_added:
-            self.insert(cycle, self.tree.root)
-        for cycle, val in update_data.label_update.items():
-            self[cycle] = val
+    def update(self, update_data):
+        if not update_data.is_valid():
+            raise LabellingError("Update data given is not valid")
+        for cycle in update_data.label_update:
+            if cycle not in self:
+                self.insert(cycle, self.tree.root)
+            self[cycle] = update_data.label_update[cycle]
         for cycle in update_data.cycles_removed:
             del self[cycle]
-
-    ## Get label update, and update tree.
-    # the UpdateData will contain all necessary data to update the tree.
-    def update(self, state_change):
-        self.update_tree(get_update_data(self, state_change))

@@ -130,9 +130,10 @@ class DelaunyFlip(UpdateData):
             raise UpdateError("You are attempting to do a delauny flip with more(or fewer) than two 2-simplices")
 
 
-## Detemine label updates.
-# return dictionary cycles cycles that need updating and their new label
-def get_update_data(labelling, state_change):
+
+def get_label_update(old_labelling, old_state, new_state):
+    # label_update will be defined to be a valid dictionary or of type InvalidStateChange
+    case = StateChange(old_state, new_state).case
     temp = {
         (0, 0, 0, 0, 0, 0): UpdateData,  # No Change
         (0, 1, 0, 0, 1, 2): Remove1Simplex,
