@@ -49,8 +49,7 @@ class UpdateData(StateChange):
         else:
             return InvalidStateChange()
 
-    @staticmethod
-    def is_atomic():
+    def is_atomic(self):
         return True
 
 
