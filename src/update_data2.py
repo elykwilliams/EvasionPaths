@@ -32,7 +32,7 @@ class StateChange:
 
     @property
     def simplices_added(self):
-        return set_difference(self.new_state.simplices(2), self.old_state.simplices(1))
+        return set_difference(self.new_state.simplices(2), self.old_state.simplices(2))
 
     @property
     def simplices_removed(self):
@@ -60,15 +60,18 @@ class StateChange:
         )
 
 
-class LabelUpdate(StateChange):
-    labels: CycleLabellingTree
+class LabelUpdate:
+    def __init__(self, state_change: StateChange, labels: CycleLabellingTree):
+        self.state_change = state_change
+        self.labels = labels
 
     ## Check if update is self-consistant
     def is_valid(self):
-        if not all(cycle in self.labels or cycle in self.cycles_added for cycle in self.simplices_added):
+        if not all(cycle in self.labels or cycle in self.state_change.cycles_added
+                   for cycle in self.state_change.simplices_added):
             raise UpdateError(f"You are attempting to add a simplex that has not yet been added to the tree")
-        elif not all(cycle in self.labels for cycle in self.simplices_removed + self.cycles_removed):
-            raise UpdateError(f"You are attempting to remove a simplex/cycle that has not yet been added to the tree")
+        elif not all(cycle in self.labels for cycle in self.state_change.cycles_removed):
+            raise UpdateError(f"You are attempting to remove a cycle that has not yet been added to the tree")
         return True
 
     # Return Mapping with labelling for each cycle with a new labelling.
@@ -81,11 +84,11 @@ class LabelUpdate(StateChange):
 
 
 class LabelUpdateFactory:
-    atomic_updates = defaultdict(default_factory=lambda *args: NonAtomicUpdate(*args))
+    atomic_updates = defaultdict(lambda: NonAtomicUpdate)
 
     @classmethod
     def get_label_update(cls, state_change, labelling):
-        update = cls.atomic_updates[state_change.case](state_change.new_state, state_change.old_state, labelling)
+        update = cls.atomic_updates[state_change.case](state_change, labelling)
         try:
             if update.is_valid():
                 return update
@@ -116,7 +119,7 @@ class Add2Simplices(LabelUpdate):
     ## All 2-Simplices are Labeled False
     @property
     def mapping(self):
-        return {cycle: False for cycle in self.simplices_added}
+        return {cycle: False for cycle in self.state_change.simplices_added}
 
 
 @LabelUpdateFactory.register((0, 0, 0, 1, 0, 0))
@@ -131,7 +134,8 @@ class Add1Simplex(LabelUpdate):
     # New cycles will match the removed cycle
     @property
     def mapping(self):
-        return {cycle: self.labels[self.cycles_removed[0]] for cycle in self.cycles_added}
+        label = self.labels[self.state_change.cycles_removed[0]]
+        return {cycle: label for cycle in self.state_change.cycles_added}
 
 
 @LabelUpdateFactory.register((0, 1, 0, 0, 1, 2))
@@ -140,7 +144,8 @@ class Remove1Simplex(LabelUpdate):
     # added cycle will have intruder if either removed cycle has intruder
     @property
     def mapping(self):
-        return {cycle: any([self.labels[cycle] for cycle in self.cycles_removed]) for cycle in self.cycles_added}
+        label = any([self.labels[cycle] for cycle in self.state_change.cycles_removed])
+        return {cycle: label for cycle in self.state_change.cycles_added}
 
 
 @LabelUpdateFactory.register((1, 0, 1, 0, 2, 1))
@@ -149,14 +154,14 @@ class AddSimplexPair(Add1Simplex):
     # Will split a cycle in two with label as in Add1Simplex, then label 2simplex as False
     @property
     def mapping(self):
-        return super().mapping.update({cycle: False for cycle in self.simplices_added})
+        return super().mapping.update({cycle: False for cycle in self.state_change.simplices_added})
 
     # If a 1-simplex and 2-simplex are added/removed simultaniously, then the 1-simplex
     # should be an edge of the 2-simplex
     def is_atomic(self):
         # Check consistency with definition
-        simplex = self.simplices_added[0]
-        edge = self.edges_added[0]
+        simplex = self.state_change.simplices_added[0]
+        edge = self.state_change.edges_added[0]
         if not is_subset(edge, simplex):
             return False
         return True
@@ -168,8 +173,8 @@ class RemoveSimplexPair(Remove1Simplex):
     def is_atomic(self):
         # If a 1-simplex and 2-simplex are added/removed simultaniously, then the 1-simplex
         # should be an edge of the 2-simplex
-        simplex = self.simplices_removed[0]
-        edge = self.edges_removed[0]
+        simplex = self.state_change.simplices_removed[0]
+        edge = self.state_change.edges_removed[0]
         if not is_subset(edge, simplex):
             return False
         return True
@@ -189,17 +194,17 @@ class DelaunyFlip(Add2Simplices):
     # The set of vertices of the 1-simplices should contain the vertices of each 2-simplex
     # that is added or removed.
     def is_atomic(self):
-        old_edge = self.edges_removed[0]
-        new_edge = self.edges_added[0]
-        if not all([is_subset(old_edge, s) for s in self.simplices_removed]):
+        old_edge = self.state_change.edges_removed[0]
+        new_edge = self.state_change.edges_added[0]
+        if not all([is_subset(old_edge, s) for s in self.state_change.simplices_removed]):
             return False
-        elif not all([is_subset(new_edge, s) for s in self.simplices_added]):
+        elif not all([is_subset(new_edge, s) for s in self.state_change.simplices_added]):
             return False
 
         nodes = list(set(old_edge).union(set(new_edge)))
-        if not all([is_subset(s, nodes) for s in self.simplices_removed]):
+        if not all([is_subset(s, nodes) for s in self.state_change.simplices_removed]):
             return False
-        elif not all([is_subset(s, nodes) for s in self.simplices_added]):
+        elif not all([is_subset(s, nodes) for s in self.state_change.simplices_added]):
             return False
         return True
 
