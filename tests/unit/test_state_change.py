@@ -2,7 +2,7 @@ from unittest import mock
 
 import pytest
 
-from update_data2 import StateChange
+from update_data2 import StateChange2D
 
 
 ## All changes done with respect to initial topology: topology1

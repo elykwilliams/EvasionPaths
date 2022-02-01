@@ -5,7 +5,8 @@ from typing import Type, Dict
 
 from dataclasses import dataclass
 
-from utilities import SetDifference
+from topological_state import TopologicalState
+from utilities import SetDifference, UpdateError
 
 
 #
@@ -44,10 +45,37 @@ class Simplex:
 
 
 @dataclass
-class StateChange:
-    edges: SetDifference
-    simplices: SetDifference
-    boundary_cycles: SetDifference
+class StateChange(ABC):
+    new_topology: TopologicalState
+    old_topology: TopologicalState
+
+    @property
+    @abstractmethod
+    def case(self) -> tuple:
+        ...
+
+    @abstractmethod
+    def is_valid(self) -> bool:
+        ...
+
+    @property
+    @abstractmethod
+    def boundary_cycles(self) -> SetDifference:
+        ...
+
+    def simplices(self, dim: int) -> SetDifference:
+        ...
+
+
+@dataclass
+class StateChange2D(StateChange):
+
+    def simplices(self, dim) -> SetDifference:
+        return SetDifference(self.new_topology.simplices(dim), self.old_topology.simplices(dim))
+
+    @property
+    def boundary_cycles(self) -> SetDifference:
+        return SetDifference(self.new_topology.boundary_cycles(), self.old_topology.boundary_cycles())
 
     ## Identify Atomic States
     #
@@ -55,24 +83,25 @@ class StateChange:
     # #boundary cycles removed)
     @property
     def case(self):
-        return (len(self.edges.added()), len(self.edges.removed()),
-                len(self.simplices.added()), len(self.simplices.removed()),
+        return (len(self.simplices(1).added()), len(self.simplices(1).removed()),
+                len(self.simplices(2).added()), len(self.simplices(2).removed()),
                 len(self.boundary_cycles.added()), len(self.boundary_cycles.removed()))
 
     def __repr__(self) -> str:
         return (
             f"State Change: {self.case}\n"
-            f"New edges: {self.edges.added()}\n"
-            f"Removed edges: {self.edges.removed()}\n"
-            f"New Simplices: {self.simplices.added()}\n"
-            f"Removed Simplices: {self.simplices.removed()}\n"
+            f"New edges: {self.simplices(1).added()}\n"
+            f"Removed edges: {self.simplices(1).removed()}\n"
+            f"New Simplices: {self.simplices(2).added()}\n"
+            f"Removed Simplices: {self.simplices(2).removed()}\n"
             f"New cycles {self.boundary_cycles.added()}\n"
             f"Removed Cycles {self.boundary_cycles.removed()}"
         )
 
     def is_valid(self):
-        new_simplex_cycles = [simplex.to_cycle(self.boundary_cycles.new_list) for simplex in self.simplices.added()]
-        old_simplex_cycles = [simplex.to_cycle(self.boundary_cycles.old_list) for simplex in self.simplices.removed()]
+        new_simplex_cycles = [simplex.to_cycle(self.boundary_cycles.new_list) for simplex in self.simplices(2).added()]
+        old_simplex_cycles = [simplex.to_cycle(self.boundary_cycles.old_list)
+                              for simplex in self.simplices(2).removed()]
         check1 = all(cycle in self.boundary_cycles.old_list for cycle in old_simplex_cycles)
         check2 = all(cycle in self.boundary_cycles.new_list for cycle in new_simplex_cycles)
         return check1 and check2
@@ -82,12 +111,12 @@ class LabelUpdate(ABC):
 
     @property
     @abstractmethod
-    def nodes_added(self):
+    def cycles_added(self):
         ...
 
     @property
     @abstractmethod
-    def nodes_removed(self):
+    def cycles_removed(self):
         ...
 
     @property
@@ -101,7 +130,9 @@ class LabelUpdate(ABC):
 
 class LabelUpdate2D(LabelUpdate):
     def __init__(self, state_change: StateChange, labels: Dict):
-        self.state_change = state_change
+        self.edges = state_change.simplices(1)
+        self.simplices = state_change.simplices(2)
+        self.boundary_cycles = state_change.boundary_cycles
         self.labels = labels
 
     ## Check if update is self-consistant
@@ -123,13 +154,13 @@ class LabelUpdate2D(LabelUpdate):
     ##
     @property
     def _simplex_cycles_added(self):
-        new_cycles = self.state_change.boundary_cycles.new_list
-        return [simplex.to_cycle(new_cycles) for simplex in self.state_change.simplices.added()]
+        new_cycles = self.boundary_cycles.new_list
+        return [simplex.to_cycle(new_cycles) for simplex in self.simplices.added()]
 
     @property
     def _simplex_cycles_removed(self):
-        old_cycles = self.state_change.boundary_cycles.old_list
-        return [simplex.to_cycle(old_cycles) for simplex in self.state_change.simplices.removed()]
+        old_cycles = self.boundary_cycles.old_list
+        return [simplex.to_cycle(old_cycles) for simplex in self.simplices.removed()]
 
 
 class LabelUpdateFactory:
@@ -137,6 +168,8 @@ class LabelUpdateFactory:
 
     @classmethod
     def get_label_update(cls, state_change: StateChange):
+        if not state_change.is_valid():
+            raise UpdateError("The state_change provided is not self consistent")
         return cls.atomic_updates[state_change.case]
 
     @classmethod
@@ -209,8 +242,8 @@ class AddSimplexPairUpdate2D(Add1SimplexUpdate2D):
     # If a 1-simplex and 2-simplex are added/removed simultaniously, then the 1-simplex
     # should be an edge of the 2-simplex
     def is_atomic(self):
-        simplex = next(iter(self.state_change.simplices.added()))
-        edge = next(iter(self.state_change.edges.added()))
+        simplex = next(iter(self.simplices.added()))
+        edge = next(iter(self.edges.added()))
         return simplex.is_subface(edge)
 
 
@@ -221,8 +254,8 @@ class RemoveSimplexPairUpdate2D(Remove1SimplexUpdate2D):
     def is_atomic(self):
         # If a 1-simplex and 2-simplex are added/removed simultaniously, then the 1-simplex
         # should be an edge of the 2-simplex
-        simplex = next(iter(self.state_change.simplices.removed()))
-        edge = next(iter(self.state_change.edges.removed()))
+        simplex = next(iter(self.simplices.removed()))
+        edge = next(iter(self.edges.removed()))
         return simplex.is_subface(edge)
 
 
@@ -245,16 +278,16 @@ class DelaunyFlipUpdate2D(LabelUpdate2D):
     # The set of vertices of the 1-simplices should contain the vertices of each 2-simplex
     # that is added or removed.
     def is_atomic(self):
-        old_edge = next(iter(self.state_change.edges.removed()))
-        new_edge = next(iter(self.state_change.edges.added().pop()))
+        old_edge = next(iter(self.edges.removed()))
+        new_edge = next(iter(self.edges.added()))
 
-        if not all([simplex.is_subface(old_edge) for simplex in self.state_change.simplices.removed()]):
+        if not all([simplex.is_subface(old_edge) for simplex in self.simplices.removed()]):
             return False
-        elif not all([simplex.is_subface(new_edge) for simplex in self.state_change.simplices.added()]):
+        elif not all([simplex.is_subface(new_edge) for simplex in self.simplices.added()]):
             return False
 
-        old_nodes = chain(*[simplex.nodes for simplex in self.state_change.simplices.removed()])
-        new_nodes = chain(*[simplex.nodes for simplex in self.state_change.simplices.added()])
+        old_nodes = chain(*[simplex.nodes for simplex in self.simplices.removed()])
+        new_nodes = chain(*[simplex.nodes for simplex in self.simplices.added()])
         if set(old_nodes) != set(new_nodes):
             return False
         return True
@@ -266,7 +299,7 @@ class DelaunyFlipUpdate2D(LabelUpdate2D):
 #     T2 = TopologicalState([])
 #
 #     state_change = StateChange(T1, T2)
-#     label_update = LabelUpdateFactory.get_label_update(state_change, cycle_labelling)
+#     label_update = LabelUpdateFactory.get_label_update(state_change)(state_change, cycle_labelling)
 #
 #     if label_update.is_atomic():
 #         cycle_labelling.update(label_update)
