@@ -179,7 +179,7 @@ class Add1Simplex(LabelUpdate):
     # New cycles will match the removed cycle
     @property
     def mapping(self):
-        label = self.labels[self.nodes_removed[0]]
+        label = self.labels[next(iter(self.nodes_removed))]
         return {cycle: label for cycle in self.nodes_added}
 
 
@@ -200,7 +200,7 @@ class AddSimplexPair(Add1Simplex):
     # Will split a cycle in two with label as in Add1Simplex, then label 2simplex as False
     @property
     def mapping(self):
-        label = self.labels[self.nodes_removed[0]]
+        label = self.labels[next(iter(self.nodes_removed))]
         result = {cycle: label for cycle in self.nodes_added}
 
         result.update({cycle: False for cycle in self._simplex_cycles_added})
@@ -209,8 +209,8 @@ class AddSimplexPair(Add1Simplex):
     # If a 1-simplex and 2-simplex are added/removed simultaniously, then the 1-simplex
     # should be an edge of the 2-simplex
     def is_atomic(self):
-        simplex = self.state_change.simplices.added()[0]
-        edge = self.state_change.edges.added()[0]
+        simplex = next(iter(self.state_change.simplices.added()))
+        edge = next(iter(self.state_change.edges.added()))
         return simplex.is_subface(edge)
 
 
@@ -221,8 +221,8 @@ class RemoveSimplexPair(Remove1Simplex):
     def is_atomic(self):
         # If a 1-simplex and 2-simplex are added/removed simultaniously, then the 1-simplex
         # should be an edge of the 2-simplex
-        simplex = self.state_change.simplices.removed()[0]
-        edge = self.state_change.edges.removed()[0]
+        simplex = next(iter(self.state_change.simplices.removed()))
+        edge = next(iter(self.state_change.edges.removed()))
         return simplex.is_subface(edge)
 
 
@@ -245,8 +245,8 @@ class DelaunyFlip(LabelUpdate):
     # The set of vertices of the 1-simplices should contain the vertices of each 2-simplex
     # that is added or removed.
     def is_atomic(self):
-        old_edge = self.state_change.edges.removed()[0]
-        new_edge = self.state_change.edges.added()[0]
+        old_edge = next(iter(self.state_change.edges.removed()))
+        new_edge = next(iter(self.state_change.edges.added().pop()))
 
         if not all([simplex.is_subface(old_edge) for simplex in self.state_change.simplices.removed()]):
             return False
