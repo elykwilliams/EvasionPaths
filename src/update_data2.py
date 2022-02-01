@@ -5,7 +5,6 @@ from typing import Type, Dict
 
 from dataclasses import dataclass
 
-from topological_state import TopologicalState
 from utilities import SetDifference
 
 
@@ -46,22 +45,20 @@ class Simplex:
 
 @dataclass
 class StateChange:
+    edges: SetDifference
+    simplices: SetDifference
+    boundary_cycles: SetDifference
+
     ## Identify Atomic States
     #
     # (#1-simplices added, #1-simpleices removed, #2-simplices added, #2-simplices removed, #boundary cycles added,
     # #boundary cycles removed)
-
-    new_state: TopologicalState
-    old_state: TopologicalState
-
     @property
     def case(self):
         return (len(self.edges.added()), len(self.edges.removed()),
                 len(self.simplices.added()), len(self.simplices.removed()),
                 len(self.boundary_cycles.added()), len(self.boundary_cycles.removed()))
 
-    ## Allow class to be printable.
-    # Used mostly for debugging
     def __repr__(self) -> str:
         return (
             f"State Change: {self.case}\n"
@@ -73,28 +70,11 @@ class StateChange:
             f"Removed Cycles {self.boundary_cycles.removed()}"
         )
 
-    @property
-    def edges(self):
-        return SetDifference(self.old_state.simplices(1), self.new_state.simplices(1))
-
-    @property
-    def simplices(self):
-        new_simplex_nodes = self.new_state.simplices(2)
-        old_simplex_nodes = self.old_state.simplices(2)
-
-        new_simplex_cycles = [self.new_state.cmap.nodes2cycle(simplex) for simplex in new_simplex_nodes]
-        old_simplex_cycles = [self.old_state.cmap.nodes2cycle(simplex) for simplex in old_simplex_nodes]
-        return SetDifference(old_simplex_cycles, new_simplex_cycles)
-
-    @property
-    def boundary_cycles(self) -> SetDifference:
-        return SetDifference(self.old_state.boundary_cycles, self.new_state.boundary_cycles)
-
     def is_valid(self):
-        new_simplex_cycles = [simplex.to_cycle(self.new_state.boundary_cycles) for simplex in self.simplices.added()]
-        old_simplex_cycles = [simplex.to_cycle(self.old_state.boundary_cycles) for simplex in self.simplices.removed()]
-        check1 = all(cycle in self.boundary_cycles.removed() for cycle in old_simplex_cycles)
-        check2 = all(cycle in self.boundary_cycles.added() for cycle in new_simplex_cycles)
+        new_simplex_cycles = [simplex.to_cycle(self.boundary_cycles.new_list) for simplex in self.simplices.added()]
+        old_simplex_cycles = [simplex.to_cycle(self.boundary_cycles.old_list) for simplex in self.simplices.removed()]
+        check1 = all(cycle in self.boundary_cycles.old_list for cycle in old_simplex_cycles)
+        check2 = all(cycle in self.boundary_cycles.new_list for cycle in new_simplex_cycles)
         return check1 and check2
 
 

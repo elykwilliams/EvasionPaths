@@ -2,9 +2,7 @@ from unittest import mock
 
 import pytest
 
-from cycle_labelling import CycleLabellingTree
-from update_data import *
-from utilities import UpdateError
+from update_data2 import StateChange
 
 
 ## All changes done with respect to initial topology: topology1
@@ -22,14 +20,14 @@ from utilities import UpdateError
 #        B
 
 
-@pytest.mark.fixture
+@pytest.fixture
 def concrete_topology():
     topology = mock.Mock()
     topology.alpha_cycle = 'bcdef'
     return topology
 
 
-@pytest.mark.fixture
+@pytest.fixture
 def initial_topology():
     topology = concrete_topology()
     topology.boundary_cycles.return_value = ['abc', 'cdea', 'efa', 'fab']
@@ -38,7 +36,7 @@ def initial_topology():
     return topology
 
 
-@pytest.mark.fixture
+@pytest.fixture
 def trivial_topology():
     topology = concrete_topology()
     topology.boundary_cycles.return_value = ['fedcb']
@@ -46,7 +44,7 @@ def trivial_topology():
     return topology
 
 
-@pytest.mark.fixture
+@pytest.fixture
 def remove_1simplex_topology():
     # remove EA
     topology = concrete_topology()
@@ -56,7 +54,7 @@ def remove_1simplex_topology():
     return topology
 
 
-@pytest.mark.fixture
+@pytest.fixture
 def remove_2simplex_topology():
     # remove ABC
     topology = concrete_topology()
@@ -66,7 +64,7 @@ def remove_2simplex_topology():
     return topology
 
 
-@pytest.mark.fixture
+@pytest.fixture
 def remove_simplex_pair_topology():
     # remove BC and ABC
     topology = concrete_topology()
@@ -76,7 +74,7 @@ def remove_simplex_pair_topology():
     return topology
 
 
-@pytest.mark.fixture
+@pytest.fixture
 def add_1simplex_topology():
     # add CE
     topology = concrete_topology()
@@ -86,7 +84,7 @@ def add_1simplex_topology():
     return topology
 
 
-@pytest.mark.fixture
+@pytest.fixture
 def add_2simplex_topology():
     # add EFA
     topology = concrete_topology()
@@ -96,7 +94,7 @@ def add_2simplex_topology():
     return topology
 
 
-@pytest.mark.fixture
+@pytest.fixture
 def add_simplex_pair_topology():
     # add CE CDE
     topology = concrete_topology()
@@ -107,7 +105,7 @@ def add_simplex_pair_topology():
     return topology
 
 
-@pytest.mark.fixture
+@pytest.fixture
 def delauny_flip_topology():
     # switch ab with fc
     topology = concrete_topology()
@@ -117,7 +115,7 @@ def delauny_flip_topology():
     return topology
 
 
-@pytest.mark.fixture
+@pytest.fixture
 def non_atomic_topology():
     # remove EA and AC
     topology = concrete_topology()
@@ -127,38 +125,88 @@ def non_atomic_topology():
     return topology
 
 
-class TestGetLabelUpdate:
-    topology1 = initial_topology()
-    cycle_labelling = CycleLabellingTree(topology1)
+def Simplex(name):
+    s = mock.Mock()
+    s.to_cycle.return_value = name
+    return s
 
-    # label_update will produce a valid dictionary or object of type InvalidStateChange
-    @pytest.mark.parametrize('new_state', [remove_1simplex_topology,
-                                           remove_2simplex_topology,
-                                           remove_simplex_pair_topology,
-                                           add_1simplex_topology,
-                                           add_2simplex_topology,
-                                           add_simplex_pair_topology,
-                                           delauny_flip_topology])
-    def test_doesnt_return_none(self, new_state):
-        update = get_label_update(self.cycle_labelling, self.topology1, new_state())
-        assert update is not None and not isinstance(update, InvalidStateChange)
 
-    def test_nonatomic_returns_InvalidStateChange(self):
-        label_update = get_label_update(self.cycle_labelling, self.topology1, non_atomic_topology())
-        assert isinstance(label_update, InvalidStateChange)
+def SetDifference(new, old):
+    s = mock.Mock()
+    s.added.return_value = new
+    s.removed.return_value = old
+    return s
 
-    def test_invalid_returns_InvalidStateChange(self):
-        cycle_labelling = CycleLabellingTree(trivial_topology())
-        with pytest.raises(UpdateError):
-            get_label_update(cycle_labelling, self.topology1, remove_1simplex_topology())
 
-    @pytest.mark.parametrize('new_state, expected', [(remove_1simplex_topology, Remove1Simplex),
-                                                     (remove_2simplex_topology, Remove2Simplices),
-                                                     (remove_simplex_pair_topology, RemoveSimplexPair),
-                                                     (add_1simplex_topology, Add1Simplex),
-                                                     (add_2simplex_topology, Add2Simplices),
-                                                     (add_simplex_pair_topology, AddSimplexPair),
-                                                     (delauny_flip_topology, DelaunyFlip)])
-    def test_returns_correct_case(self, new_state, expected):
-        label_update = get_label_update(self.cycle_labelling, self.topology1, new_state())
-        assert type(label_update) == expected
+class TestStateChange:
+    def test_case(self):
+        edges = SetDifference([None] * 1, [None] * 2)
+        simplices = SetDifference([None] * 3, [None] * 4)
+        boundary_cycles = SetDifference([None] * 5, [None] * 6)
+        sc = StateChange(edges, simplices, boundary_cycles)
+
+        assert sc.case == (1, 2, 3, 4, 5, 6)
+
+    def test_is_valid_added(self):
+        simplex = Simplex("A")
+
+        simplices = mock.Mock()
+        simplices.added.return_value = [simplex]
+        simplices.removed.return_value = []
+
+        b_cycles = mock.Mock()
+        b_cycles.new_list = ["A", "B"]
+        b_cycles.old_list = ["B"]
+
+        edges = mock.Mock()
+
+        sc = StateChange(edges, simplices, b_cycles)
+        assert sc.is_valid()
+
+    def test_is_valid_removed(self):
+        simplex = Simplex("A")
+
+        simplices = mock.Mock()
+        simplices.added.return_value = []
+        simplices.removed.return_value = [simplex]
+
+        b_cycles = mock.Mock()
+        b_cycles.new_list = ["B"]
+        b_cycles.old_list = ["A", "B"]
+
+        edges = mock.Mock()
+
+        sc = StateChange(edges, simplices, b_cycles)
+        assert sc.is_valid()
+
+    def test_invalid_add_simplex(self):
+        simplex = Simplex("A")
+
+        simplices = mock.Mock()
+        simplices.added.return_value = [simplex]
+        simplices.removed.return_value = []
+
+        b_cycles = mock.Mock()
+        b_cycles.new_list = ["C"]
+        b_cycles.old_list = []
+
+        edges = mock.Mock()
+
+        sc = StateChange(edges, simplices, b_cycles)
+        assert not sc.is_valid()
+
+    def test_invalid_remove_simplex(self):
+        simplex = Simplex("A")
+
+        simplices = mock.Mock()
+        simplices.added.return_value = []
+        simplices.removed.return_value = [simplex]
+
+        b_cycles = mock.Mock()
+        b_cycles.new_list = []
+        b_cycles.old_list = ["C"]
+
+        edges = mock.Mock()
+
+        sc = StateChange(edges, simplices, b_cycles)
+        assert not sc.is_valid()

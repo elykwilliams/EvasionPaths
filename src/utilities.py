@@ -38,8 +38,8 @@ def is_subset(list1: list, list2: list) -> bool:
 
 @dataclass
 class SetDifference:
-    old_list: Iterable
     new_list: Iterable
+    old_list: Iterable
 
     def added(self) -> Sequence:
         return [item for item in self.new_list if item not in self.old_list]
