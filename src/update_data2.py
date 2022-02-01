@@ -1,5 +1,6 @@
 from abc import ABC, abstractmethod
 from collections import defaultdict
+from functools import partial
 from itertools import chain
 from typing import Type, Dict
 
@@ -129,16 +130,18 @@ class LabelUpdate(ABC):
 
 
 class LabelUpdate2D(LabelUpdate):
-    def __init__(self, state_change: StateChange, labels: Dict):
-        self.edges = state_change.simplices(1)
-        self.simplices = state_change.simplices(2)
-        self.boundary_cycles = state_change.boundary_cycles
+    def __init__(self, edges, simplices, boundary_cycles, labels: Dict):
+        self.edges = edges
+        self.simplices = simplices
+        self.boundary_cycles = boundary_cycles
         self.labels = labels
 
     ## Check if update is self-consistant
     # move to labellingTree ???
     def is_valid(self):
-        return all(cycle in self.labels for cycle in self.cycles_removed)
+        check1 = all(cycle in self.labels for cycle in self.cycles_removed)
+        check2 = all(cycle in self.labels for cycle in self._simplex_cycles_removed)
+        return check1 and check2
 
     def is_atomic(self):
         return True
@@ -164,13 +167,14 @@ class LabelUpdate2D(LabelUpdate):
 
 
 class LabelUpdateFactory:
-    atomic_updates: Dict[tuple, Type[LabelUpdate]] = defaultdict(lambda: NonAtomicUpdate)
+    atomic_updates: Dict[tuple, Type[LabelUpdate2D]] = defaultdict(lambda: NonAtomicUpdate)
 
     @classmethod
     def get_label_update(cls, state_change: StateChange):
         if not state_change.is_valid():
             raise UpdateError("The state_change provided is not self consistent")
-        return cls.atomic_updates[state_change.case]
+        update_type = cls.atomic_updates[state_change.case]
+        return partial(update_type, state_change.simplices(1), state_change.simplices(2), state_change.boundary_cycles)
 
     @classmethod
     def register(cls, case: tuple):
