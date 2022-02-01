@@ -8,7 +8,7 @@
 
 from abc import ABC
 from math import atan2
-from typing import Iterable, Sequence
+from typing import Iterable, Set
 
 import numpy
 from dataclasses import dataclass
@@ -41,11 +41,11 @@ class SetDifference:
     new_list: Iterable
     old_list: Iterable
 
-    def added(self) -> Sequence:
-        return [item for item in self.new_list if item not in self.old_list]
+    def added(self) -> Set:
+        return {item for item in self.new_list if item not in self.old_list}
 
-    def removed(self) -> Sequence:
-        return [item for item in self.old_list if item not in self.new_list]
+    def removed(self) -> Set:
+        return {item for item in self.old_list if item not in self.new_list}
 
 
 ## Base Exception Class.

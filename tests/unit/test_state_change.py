@@ -125,30 +125,30 @@ def non_atomic_topology():
     return topology
 
 
-def Simplex(name):
-    s = mock.Mock()
-    s.to_cycle.return_value = name
-    return s
-
-
-def SetDifference(new, old):
-    s = mock.Mock()
-    s.added.return_value = new
-    s.removed.return_value = old
-    return s
-
-
 class TestStateChange:
+    @staticmethod
+    def SetDifference(new, old):
+        s = mock.Mock()
+        s.added.return_value = new
+        s.removed.return_value = old
+        return s
+
+    @staticmethod
+    def Simplex(name):
+        s = mock.Mock()
+        s.to_cycle.return_value = name
+        return s
+
     def test_case(self):
-        edges = SetDifference([None] * 1, [None] * 2)
-        simplices = SetDifference([None] * 3, [None] * 4)
-        boundary_cycles = SetDifference([None] * 5, [None] * 6)
+        edges = self.SetDifference([None] * 1, [None] * 2)
+        simplices = self.SetDifference([None] * 3, [None] * 4)
+        boundary_cycles = self.SetDifference([None] * 5, [None] * 6)
         sc = StateChange(edges, simplices, boundary_cycles)
 
         assert sc.case == (1, 2, 3, 4, 5, 6)
 
     def test_is_valid_added(self):
-        simplex = Simplex("A")
+        simplex = self.Simplex("A")
 
         simplices = mock.Mock()
         simplices.added.return_value = [simplex]
@@ -164,7 +164,7 @@ class TestStateChange:
         assert sc.is_valid()
 
     def test_is_valid_removed(self):
-        simplex = Simplex("A")
+        simplex = self.Simplex("A")
 
         simplices = mock.Mock()
         simplices.added.return_value = []
@@ -180,7 +180,7 @@ class TestStateChange:
         assert sc.is_valid()
 
     def test_invalid_add_simplex(self):
-        simplex = Simplex("A")
+        simplex = self.Simplex("A")
 
         simplices = mock.Mock()
         simplices.added.return_value = [simplex]
@@ -196,7 +196,7 @@ class TestStateChange:
         assert not sc.is_valid()
 
     def test_invalid_remove_simplex(self):
-        simplex = Simplex("A")
+        simplex = self.Simplex("A")
 
         simplices = mock.Mock()
         simplices.added.return_value = []
