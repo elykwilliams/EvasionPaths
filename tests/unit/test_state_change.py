@@ -1,4 +1,5 @@
 from unittest import mock
+from unittest.mock import patch
 
 import pytest
 
@@ -125,88 +126,86 @@ def non_atomic_topology():
     return topology
 
 
+@pytest.mark.fixture
+def Simplex(name, edges=(), nodes=()):
+    s = mock.Mock()
+    s.to_cycle.return_value = name
+    s.is_subface.side_effect = lambda e: True if e in edges else False
+    s.nodes = nodes
+    return s
+
+
 class TestStateChange:
-    @staticmethod
-    def SetDifference(new, old):
-        s = mock.Mock()
-        s.added.return_value = new
-        s.removed.return_value = old
-        return s
+    @pytest.fixture
+    def topology1(self):
+        t = mock.Mock()
+        t.simplices.side_effect = lambda dim: ["B", "C"] if dim == 2 else ["bc"]
+        t.boundary_cycles.return_value = ["B", "C"]
+        return t
 
-    @staticmethod
-    def Simplex(name):
-        s = mock.Mock()
-        s.to_cycle.return_value = name
-        return s
+    @pytest.fixture
+    def topology2(self):
+        t = mock.Mock()
+        t.simplices.side_effect = lambda dim: ["B", "C", "D"] if dim == 2 else ["bc", "cd"]
+        t.boundary_cycles.return_value = ["B", "C", "D"]
+        return t
 
-    def test_case(self):
-        edges = self.SetDifference([None] * 1, [None] * 2)
-        simplices = self.SetDifference([None] * 3, [None] * 4)
-        boundary_cycles = self.SetDifference([None] * 5, [None] * 6)
-        sc = StateChange(edges, simplices, boundary_cycles)
+    def test_init(self):
+        t1 = mock.Mock()
+        t2 = mock.Mock()
+        sc = StateChange2D(t1, t2)
+        assert sc.old_topology is not None and sc.new_topology is not None
 
-        assert sc.case == (1, 2, 3, 4, 5, 6)
+    @patch("update_data2.SetDifference")
+    def test_simplices2(self, mock_set_diff, topology1, topology2):
+        sc = StateChange2D(topology2, topology1)
+        _ = sc.simplices(2)
+        mock_set_diff.assert_called_once_with(["B", "C", "D"], ["B", "C"])
 
-    def test_is_valid_added(self):
-        simplex = self.Simplex("A")
+    @patch("update_data2.SetDifference")
+    def test_simplices1(self, mock_set_diff, topology1, topology2):
+        sc = StateChange2D(topology2, topology1)
+        _ = sc.simplices(1)
+        mock_set_diff.assert_called_once_with(["bc", "cd"], ["bc"])
 
-        simplices = mock.Mock()
-        simplices.added.return_value = [simplex]
-        simplices.removed.return_value = []
+    @patch("update_data2.SetDifference")
+    def test_boundary_cycels(self, mock_set_diff, topology1, topology2):
+        sc = StateChange2D(topology2, topology1)
+        _ = sc.boundary_cycles
+        mock_set_diff.assert_called_once_with(["B", "C", "D"], ["B", "C"])
 
-        b_cycles = mock.Mock()
-        b_cycles.new_list = ["A", "B"]
-        b_cycles.old_list = ["B"]
-
-        edges = mock.Mock()
-
-        sc = StateChange(edges, simplices, b_cycles)
+    def test_is_valid(self, topology1, topology2):
+        topology2.simplices.side_effect = lambda dim: [Simplex("B"), Simplex("C"), Simplex("D")]
+        topology1.simplices.side_effect = lambda dim: [Simplex("B"), Simplex("C")]
+        sc = StateChange2D(topology2, topology1)
         assert sc.is_valid()
 
-    def test_is_valid_removed(self):
-        simplex = self.Simplex("A")
-
-        simplices = mock.Mock()
-        simplices.added.return_value = []
-        simplices.removed.return_value = [simplex]
-
-        b_cycles = mock.Mock()
-        b_cycles.new_list = ["B"]
-        b_cycles.old_list = ["A", "B"]
-
-        edges = mock.Mock()
-
-        sc = StateChange(edges, simplices, b_cycles)
-        assert sc.is_valid()
-
-    def test_invalid_add_simplex(self):
-        simplex = self.Simplex("A")
-
-        simplices = mock.Mock()
-        simplices.added.return_value = [simplex]
-        simplices.removed.return_value = []
-
-        b_cycles = mock.Mock()
-        b_cycles.new_list = ["C"]
-        b_cycles.old_list = []
-
-        edges = mock.Mock()
-
-        sc = StateChange(edges, simplices, b_cycles)
+    def test_invalid_remove(self, topology1, topology2):
+        topology2.simplices.side_effect = lambda dim: [Simplex("B"), Simplex("C"), Simplex("D")]
+        topology1.simplices.side_effect = lambda dim: [Simplex("B"), Simplex("F")]
+        sc = StateChange2D(topology2, topology1)
         assert not sc.is_valid()
 
-    def test_invalid_remove_simplex(self):
-        simplex = self.Simplex("A")
-
-        simplices = mock.Mock()
-        simplices.added.return_value = []
-        simplices.removed.return_value = [simplex]
-
-        b_cycles = mock.Mock()
-        b_cycles.new_list = []
-        b_cycles.old_list = ["C"]
-
-        edges = mock.Mock()
-
-        sc = StateChange(edges, simplices, b_cycles)
+    def test_invalid_add(self, topology1, topology2):
+        topology2.simplices.side_effect = lambda dim: [Simplex("B"), Simplex("C"), Simplex("D")]
+        topology1.simplices.side_effect = lambda dim: [Simplex("B"), Simplex("C")]
+        topology2.boundary_cycles.return_value = ["B", "C", "E"]
+        sc = StateChange2D(topology2, topology1)
         assert not sc.is_valid()
+
+    def test_simplex_len(self, topology1, topology2):
+        simplexB = Simplex("B")
+        simplexC = Simplex("C")
+        topology2.simplices.side_effect = lambda dim: [simplexB, simplexC, Simplex("D")]
+        topology1.simplices.side_effect = lambda dim: [simplexB, simplexC]
+        sc = StateChange2D(topology2, topology1)
+        assert len(sc.simplices(2).added()) == 1 and len(sc.simplices(2).removed()) == 0
+
+    def test_case(self, topology1, topology2):
+        simplexB = Simplex("B")
+        simplexC = Simplex("C")
+        topology2.simplices.side_effect = lambda dim: [simplexB, simplexC, Simplex("D")]
+        topology1.simplices.side_effect = lambda dim: [simplexB, simplexC]
+        topology2.boundary_cycles.return_value = ["B", "C", "D"]
+        sc = StateChange2D(topology2, topology1)
+        assert sc.case == (1, 0, 1, 0, 1, 0)
