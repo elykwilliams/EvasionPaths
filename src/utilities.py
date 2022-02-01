@@ -8,8 +8,10 @@
 
 from abc import ABC
 from math import atan2
+from typing import Iterable, Sequence
 
 import numpy
+from dataclasses import dataclass
 from numpy import cos, sin
 from numpy.linalg import norm
 
@@ -32,6 +34,18 @@ def set_difference(list1: list, list2: list) -> list:
 ## Determine if list is subset list.
 def is_subset(list1: list, list2: list) -> bool:
     return set(list1).issubset(set(list2))
+
+
+@dataclass
+class SetDifference:
+    old_list: Iterable
+    new_list: Iterable
+
+    def added(self) -> Sequence:
+        return [item for item in self.new_list if item not in self.old_list]
+
+    def removed(self) -> Sequence:
+        return [item for item in self.old_list if item not in self.new_list]
 
 
 ## Base Exception Class.
