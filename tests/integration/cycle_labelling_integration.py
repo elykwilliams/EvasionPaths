@@ -2,106 +2,75 @@ from unittest import mock
 
 import pytest
 
-from cycle_labelling import CycleLabellingTree
-from topological_state import StateChange
-from update_data import UpdateError
+from update_data2 import StateChange2D, LabelUpdateFactory, Add2SimplicesUpdate2D, RemoveSimplexPairUpdate2D
 
 
-@pytest.fixture
-def non_atomic(connected_topology):
-    # TODO fixme
-    def simplices(dim):
-        return ["acf", "fbc"] if dim == 2 else ['fc', 'bc', 'ac', 'cd', 'de', 'ef', 'fa', 'ea', 'fb']
-
-    connected_topology.boundary_cycles = mock.Mock(return_value=["acf", "fbc", 'cdea', 'efa'])
-    connected_topology.simplices = mock.Mock(side_effect=simplices)
-    return connected_topology
+@pytest.mark.fixture
+def Simplex(name, edges=(), nodes=()):
+    s = mock.Mock()
+    s.to_cycle.return_value = name
+    s.is_subface.side_effect = lambda e: True if e in edges else False
+    s.nodes = nodes
+    return s
 
 
-class TestCycleLabelStateChange:
-    # Test that the interface for each allowed method is accessible
-    connected_cases = ['topology1', 'remove_1simplex', 'remove_2simplex', 'remove_simplex_pair',
-                       'add_1simplex', 'add_2simplex', 'add_simplex_pair', 'delauny_flip']
-
-    @pytest.mark.parametrize('topology2', connected_cases, ids=connected_cases)
-    def test_interface(self, topology1, topology2, request):
-        connected_labelling = CycleLabellingTree(topology1)
-        topology2 = request.getfixturevalue(topology2)
-
-        state_change = StateChange(topology1, topology2)
-        # print(state_change.case)
-        # connected_labelling._tree.show(data_property="real")
-        # connected_labelling._tree.show()
-
-        connected_labelling.update(state_change)
-        # connected_labelling._tree.show(data_property="real")
-        # connected_labelling._tree.show()
-
-    # Test that non atomic transitions raise a known error
-    def test_raises_non_atomic(self, topology1, non_atomic):
-        pass
+@pytest.mark.fixture
+def topology(cycles, simplices=(), edges=()):
+    new_topology = mock.Mock()
+    new_topology.boundary_cycles.return_value = cycles
+    new_topology.simplices.side_effect = lambda dim: simplices if dim == 2 else edges
+    return new_topology
 
 
-class TestCycleLabellingUpdateData:
+class TestAdd1Simplex:
+    simplexB = Simplex("B")
+    simplexC = Simplex("C")
+    simplexD = Simplex("D")
+    cycles = ['A', 'B', 'C', 'D', 'E']
+    new_topology = topology(cycles, simplices=[simplexB, simplexC, simplexD])
+    old_topology = topology(cycles, simplices=[simplexB, simplexC])
 
-    def test_add_1simplex(self, connected_labelling, add_1simplex):
-        connected_labelling.update(add_1simplex)
-        expected = {'A': True, 'B': False, 'C': False, 'D': True, 'F': True, 'G': True, 'alpha': False}
+    def test_new_simplices(self, connected_labelling):
+        state_change = StateChange2D(self.new_topology, self.old_topology)
+        assert state_change.simplices(2).new_list == [self.simplexB, self.simplexC, self.simplexD]
 
-        assert all([connected_labelling[cycle] == val for cycle, val in expected.items()])
-        assert all(cycle in expected for cycle in connected_labelling)
+    def test_added_simplices(self, connected_labelling):
+        state_change = StateChange2D(self.new_topology, self.old_topology)
+        assert state_change.simplices(2).added() == {self.simplexD}
 
-    def test_add_2simplex(self, connected_labelling, add_2simplices):
-        connected_labelling.update(add_2simplices)
-        expected = {'A': True, 'B': False, 'C': False, 'D': False, 'E': True, 'alpha': False}
+    def test_case(self, connected_labelling):
+        state_change = StateChange2D(self.new_topology, self.old_topology)
+        assert state_change.case == (0, 0, 1, 0, 0, 0)
 
-        assert all(connected_labelling[cycle] == val for cycle, val in expected.items())
-        assert all(cycle in expected for cycle in connected_labelling)
+    def test_factory(self, connected_labelling):
+        state_change = StateChange2D(self.new_topology, self.old_topology)
+        label_update = LabelUpdateFactory.get_update(state_change, connected_labelling)
+        assert type(label_update) == Add2SimplicesUpdate2D
 
-    def test_add_simplex_pair(self, connected_labelling, add_simplex_pair):
-        connected_labelling.update(add_simplex_pair)
-        expected = {'A': True, 'B': False, 'C': False, 'D': True, 'F': True, 'G': False, 'alpha': False}
-
-        assert all(connected_labelling[cycle] == val for cycle, val in expected.items())
-        assert all(cycle in expected for cycle in connected_labelling)
-
-    def test_remove_1simplex(self, connected_labelling, remove_1simplex):
-        connected_labelling.update(remove_1simplex)
-        expected = {'A': True, 'B': False, 'C': False, 'F': True, 'alpha': False}
-
-        assert all(connected_labelling[cycle] == val for cycle, val in expected.items())
-        assert all(cycle in expected for cycle in connected_labelling)
-
-    def test_remove_2simplex(self, connected_labelling, remove_2simplices):
-        connected_labelling.update(remove_2simplices)
-        expected = {'A': True, 'B': False, 'C': False, 'D': True, 'E': True, 'alpha': False}
-
-        assert all([connected_labelling[cycle] == val for cycle, val in expected.items()])
-        assert all([cycle in expected for cycle in connected_labelling])
-
-    def test_remove_simplex_pair(self, connected_labelling, remove_simplex_pair):
-        connected_labelling.update(remove_simplex_pair)
-        expected = {'A': True, 'B': False, 'E': True, 'F': True, 'alpha': False}
-
-        assert all([connected_labelling[cycle] == val for cycle, val in expected.items()])
-        assert all([cycle in expected for cycle in connected_labelling])
-
-    def test_delauny_flip(self, connected_labelling, delauny_flip):
-        connected_labelling.update(delauny_flip)
-        expected = {'A': True, 'D': True, 'E': True, 'F': False, 'G': False, 'alpha': False}
-
-        assert all([connected_labelling[cycle] == val for cycle, val in expected.items()])
-        assert all([cycle in expected for cycle in connected_labelling])
-
-    def test_raises_non_atomic(self, connected_labelling):
-        state_change = mock.Mock()
-        state_change.is_atomic.return_value = False
-        pytest.raises(UpdateError, connected_labelling.update, state_change)
+    def test_update(self, connected_labelling):
+        state_change = StateChange2D(self.new_topology, self.old_topology)
+        label_update = LabelUpdateFactory.get_update(state_change, connected_labelling)
+        assert label_update.mapping == {"D": False}
 
 
-class TestCycleLabellingTopology:
-    pass
+class TestRemoveSimplexPair:
+    simplexB = Simplex("B")
+    simplexC = Simplex("C")
+    simplexD = Simplex("D")
+    cycles = ['A', 'B', 'C', 'D', 'E']
+    new_topology = topology(['A', 'B', 'E', 'F'], simplices=[simplexB], edges=[])
+    old_topology = topology(['A', 'B', 'C', 'D', 'E'], simplices=[simplexB, simplexC], edges=["cd"])
 
+    def test_case(self, connected_labelling):
+        state_change = StateChange2D(self.new_topology, self.old_topology)
+        assert state_change.case == (0, 1, 0, 1, 1, 2)
 
-class TestCycleLabellingSimulation:
-    pass
+    def test_factory(self, connected_labelling):
+        state_change = StateChange2D(self.new_topology, self.old_topology)
+        label_update = LabelUpdateFactory.get_update(state_change, connected_labelling)
+        assert type(label_update) == RemoveSimplexPairUpdate2D
+
+    def test_update(self, connected_labelling):
+        state_change = StateChange2D(self.new_topology, self.old_topology)
+        label_update = LabelUpdateFactory.get_update(state_change, connected_labelling)
+        assert label_update.mapping == {"F": True}
