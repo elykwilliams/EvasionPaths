@@ -352,17 +352,18 @@ class TestLabelFactory:
         labelling = mock.Mock()
         sc = mock.Mock()
         sc.case = (1, 0, 0, 0, 2, 1)
-        update = LabelUpdateFactory.get_label_update(sc)
-        assert type(update(labelling)) == Add1SimplexUpdate2D
+        update = LabelUpdateFactory.get_update(sc, labelling)
+        assert type(update) == Add1SimplexUpdate2D
 
     def test_returns_nonatomic(self):
         labelling = mock.Mock()
         sc = mock.Mock()
         sc.case = (1, 0, 0, 30, 2, 1)
-        update = LabelUpdateFactory.get_label_update(sc)
-        assert type(update(labelling)) == NonAtomicUpdate
+        update = LabelUpdateFactory.get_update(sc, labelling)
+        assert type(update) == NonAtomicUpdate
 
     def test_raise_on_invalid_state_change(self):
+        labelling = mock.Mock()
         sc = mock.Mock()
         sc.is_valid.return_value = False
-        assert pytest.raises(UpdateError, LabelUpdateFactory.get_label_update, sc)
+        assert pytest.raises(UpdateError, LabelUpdateFactory.get_update, sc, labelling)

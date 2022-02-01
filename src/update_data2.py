@@ -1,6 +1,5 @@
 from abc import ABC, abstractmethod
 from collections import defaultdict
-from functools import partial
 from itertools import chain
 from typing import Type, Dict
 
@@ -170,11 +169,13 @@ class LabelUpdateFactory:
     atomic_updates: Dict[tuple, Type[LabelUpdate2D]] = defaultdict(lambda: NonAtomicUpdate)
 
     @classmethod
-    def get_label_update(cls, state_change: StateChange):
+    def get_update(cls, state_change: StateChange, labelling):
         if not state_change.is_valid():
             raise UpdateError("The state_change provided is not self consistent")
-        update_type = cls.atomic_updates[state_change.case]
-        return partial(update_type, state_change.simplices(1), state_change.simplices(2), state_change.boundary_cycles)
+        return cls.atomic_updates[state_change.case](state_change.simplices(1),
+                                                     state_change.simplices(2),
+                                                     state_change.boundary_cycles,
+                                                     labelling)
 
     @classmethod
     def register(cls, case: tuple):
