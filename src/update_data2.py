@@ -78,7 +78,7 @@ class StateChange:
         return check1 and check2
 
 
-class AbstractUpdate(ABC):
+class LabelUpdate(ABC):
 
     @property
     @abstractmethod
@@ -99,7 +99,7 @@ class AbstractUpdate(ABC):
         ...
 
 
-class LabelUpdate(AbstractUpdate):
+class LabelUpdate2D(LabelUpdate):
     def __init__(self, state_change: StateChange, labels: Dict):
         self.state_change = state_change
         self.labels = labels
@@ -148,18 +148,18 @@ class LabelUpdateFactory:
         return deco
 
 
-class NonAtomicUpdate(LabelUpdate):
+class NonAtomicUpdate(LabelUpdate2D):
     def is_atomic(self):
         return False
 
 
 @LabelUpdateFactory.register((0, 0, 0, 0, 0, 0))
-class TrivialUpdate(LabelUpdate):
+class TrivialUpdate(LabelUpdate2D):
     pass
 
 
 @LabelUpdateFactory.register((0, 0, 1, 0, 0, 0))
-class Add2Simplices(LabelUpdate):
+class Add2SimplicesUpdate2D(LabelUpdate2D):
     ## All 2-Simplices are Labeled False
     @property
     def mapping(self):
@@ -167,14 +167,14 @@ class Add2Simplices(LabelUpdate):
 
 
 @LabelUpdateFactory.register((0, 0, 0, 1, 0, 0))
-class Remove2Simplices(LabelUpdate):
+class Remove2SimplicesUpdate2D(LabelUpdate2D):
     @property
     def mapping(self):
         return {cycle: self.labels[cycle] for cycle in self._simplex_cycles_removed if cycle in self.labels}
 
 
 @LabelUpdateFactory.register((1, 0, 0, 0, 2, 1))
-class Add1Simplex(LabelUpdate):
+class Add1SimplexUpdate2D(LabelUpdate2D):
     ## Add edge.
     # New cycles will match the removed cycle
     @property
@@ -184,7 +184,7 @@ class Add1Simplex(LabelUpdate):
 
 
 @LabelUpdateFactory.register((0, 1, 0, 0, 1, 2))
-class Remove1Simplex(LabelUpdate):
+class Remove1SimplexUpdate2D(LabelUpdate2D):
     ## Remove edge.
     # added cycle will have intruder if either removed cycle has intruder
     @property
@@ -194,7 +194,7 @@ class Remove1Simplex(LabelUpdate):
 
 
 @LabelUpdateFactory.register((1, 0, 1, 0, 2, 1))
-class AddSimplexPair(Add1Simplex):
+class AddSimplexPairUpdate2D(Add1SimplexUpdate2D):
 
     ## Add simplex pair
     # Will split a cycle in two with label as in Add1Simplex, then label 2simplex as False
@@ -215,7 +215,7 @@ class AddSimplexPair(Add1Simplex):
 
 
 @LabelUpdateFactory.register((0, 1, 0, 1, 1, 2))
-class RemoveSimplexPair(Remove1Simplex):
+class RemoveSimplexPairUpdate2D(Remove1SimplexUpdate2D):
 
     ## Same as Remove1Simplex
     def is_atomic(self):
@@ -227,7 +227,7 @@ class RemoveSimplexPair(Remove1Simplex):
 
 
 @LabelUpdateFactory.register((1, 1, 2, 2, 2, 2))
-class DelaunyFlip(LabelUpdate):
+class DelaunyFlipUpdate2D(LabelUpdate2D):
     ## Delauny Flip.
     # edge between two simplices flips resulting in two new simplices
     # Note that this can only happen with simplices.
