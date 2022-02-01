@@ -107,18 +107,18 @@ class LabelUpdate2D(LabelUpdate):
     ## Check if update is self-consistant
     # move to labellingTree ???
     def is_valid(self):
-        return self.state_change.is_valid() and all(cycle in self.labels for cycle in self.nodes_removed)
+        return all(cycle in self.labels for cycle in self.cycles_removed)
 
     def is_atomic(self):
         return True
 
     @property
-    def nodes_added(self):
-        return self.state_change.boundary_cycles.added()
+    def cycles_added(self):
+        return self.boundary_cycles.added()
 
     @property
-    def nodes_removed(self):
-        return self.state_change.boundary_cycles.removed()
+    def cycles_removed(self):
+        return self.boundary_cycles.removed()
 
     ##
     @property
@@ -179,8 +179,8 @@ class Add1SimplexUpdate2D(LabelUpdate2D):
     # New cycles will match the removed cycle
     @property
     def mapping(self):
-        label = self.labels[next(iter(self.nodes_removed))]
-        return {cycle: label for cycle in self.nodes_added}
+        label = self.labels[next(iter(self.cycles_removed))]
+        return {cycle: label for cycle in self.cycles_added}
 
 
 @LabelUpdateFactory.register((0, 1, 0, 0, 1, 2))
@@ -189,8 +189,8 @@ class Remove1SimplexUpdate2D(LabelUpdate2D):
     # added cycle will have intruder if either removed cycle has intruder
     @property
     def mapping(self):
-        label = any([self.labels[cycle] for cycle in self.nodes_removed])
-        return {cycle: label for cycle in self.nodes_added}
+        label = any([self.labels[cycle] for cycle in self.cycles_removed])
+        return {cycle: label for cycle in self.cycles_added}
 
 
 @LabelUpdateFactory.register((1, 0, 1, 0, 2, 1))
@@ -200,8 +200,8 @@ class AddSimplexPairUpdate2D(Add1SimplexUpdate2D):
     # Will split a cycle in two with label as in Add1Simplex, then label 2simplex as False
     @property
     def mapping(self):
-        label = self.labels[next(iter(self.nodes_removed))]
-        result = {cycle: label for cycle in self.nodes_added}
+        label = self.labels[next(iter(self.cycles_removed))]
+        result = {cycle: label for cycle in self.cycles_added}
 
         result.update({cycle: False for cycle in self._simplex_cycles_added})
         return result
