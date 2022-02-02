@@ -2,7 +2,8 @@ from unittest import mock
 
 import pytest
 
-from update_data2 import StateChange2D, LabelUpdateFactory, Add2SimplicesUpdate2D, RemoveSimplexPairUpdate2D
+from state_change import StateChange2D
+from update_data import LabelUpdateFactory, Add2SimplicesUpdate2D, RemoveSimplexPairUpdate2D
 
 
 @pytest.mark.fixture
@@ -56,10 +57,9 @@ class TestAdd1Simplex:
 class TestRemoveSimplexPair:
     simplexB = Simplex("B")
     simplexC = Simplex("C")
-    simplexD = Simplex("D")
     cycles = ['A', 'B', 'C', 'D', 'E']
     new_topology = topology(['A', 'B', 'E', 'F'], simplices=[simplexB], edges=[])
-    old_topology = topology(['A', 'B', 'C', 'D', 'E'], simplices=[simplexB, simplexC], edges=["cd"])
+    old_topology = topology(cycles, simplices=[simplexB, simplexC], edges=["cd"])
 
     def test_case(self, connected_labelling):
         state_change = StateChange2D(self.new_topology, self.old_topology)

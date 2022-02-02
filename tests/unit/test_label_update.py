@@ -2,7 +2,7 @@ from unittest import mock
 
 import pytest
 
-from update_data2 import \
+from update_data import \
     LabelUpdate2D, NonAtomicUpdate, Add2SimplicesUpdate2D, \
     Remove2SimplicesUpdate2D, Add1SimplexUpdate2D, AddSimplexPairUpdate2D, \
     RemoveSimplexPairUpdate2D, DelaunyFlipUpdate2D, LabelUpdateFactory

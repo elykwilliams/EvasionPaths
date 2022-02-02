@@ -3,7 +3,7 @@ from unittest.mock import patch
 
 import pytest
 
-from update_data2 import StateChange2D
+from state_change import StateChange2D
 
 
 ## All changes done with respect to initial topology: topology1
@@ -156,19 +156,19 @@ class TestStateChange:
         sc = StateChange2D(t1, t2)
         assert sc.old_topology is not None and sc.new_topology is not None
 
-    @patch("update_data2.SetDifference")
+    @patch("state_change.SetDifference")
     def test_simplices2(self, mock_set_diff, topology1, topology2):
         sc = StateChange2D(topology2, topology1)
         _ = sc.simplices(2)
         mock_set_diff.assert_called_once_with(["B", "C", "D"], ["B", "C"])
 
-    @patch("update_data2.SetDifference")
+    @patch("state_change.SetDifference")
     def test_simplices1(self, mock_set_diff, topology1, topology2):
         sc = StateChange2D(topology2, topology1)
         _ = sc.simplices(1)
         mock_set_diff.assert_called_once_with(["bc", "cd"], ["bc"])
 
-    @patch("update_data2.SetDifference")
+    @patch("state_change.SetDifference")
     def test_boundary_cycels(self, mock_set_diff, topology1, topology2):
         sc = StateChange2D(topology2, topology1)
         _ = sc.boundary_cycles
