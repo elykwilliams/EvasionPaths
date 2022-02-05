@@ -24,10 +24,14 @@ class AlphaComplex(ABC):
 
 
 class BoundaryCycle:
-    def __init__(self, dart, cmap):
+    def __init__(self, dart):
         pass
 
     def __iter__(self):
+        pass
+
+    @property
+    def darts(self):
         pass
 
 
@@ -62,6 +66,6 @@ class ConnectedTopology:
         graph = nx.Graph()
         graph.add_nodes_from(self.boundary_cycles)
         for cycle in self.boundary_cycles:
-            for dart in cycle:
+            for dart in cycle.darts:
                 graph.add_edge(cycle, self.cmap.get_cycle(self.cmap.alpha(dart)))
         return graph

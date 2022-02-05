@@ -9,7 +9,7 @@ from topology2 import ConnectedTopology
 def BoundaryCycle(name, darts):
     bc = mock.MagicMock()
     bc.id = name
-    bc.__iter__.return_value = set(darts)
+    bc.darts = set(darts)
     return bc
 
 
@@ -95,7 +95,16 @@ class TestTopology:
 
         cmap.boundary_cycles = [cycleA, cycleB, cycleC]
         cmap.alpha.side_effect = lambda dart: dart[-1::-1]
-        cmap.get_cycle.side_effect = [cycleA, cycleB, cycleC] * 2
+
+        def get_cycle(dart):
+            if dart in cycleA.darts:
+                return cycleA
+            elif dart in cycleB.darts:
+                return cycleB
+            else:
+                return cycleC
+
+        cmap.get_cycle.side_effect = get_cycle
 
         topology = ConnectedTopology(alpha_complex, cmap)
-        assert all(edge in set(topology._graph.edges) for edge in {(cycleA, cycleB), (cycleB, cycleC)})
+        assert all(edge in topology._graph.edges for edge in {(cycleA, cycleB), (cycleB, cycleC)})
