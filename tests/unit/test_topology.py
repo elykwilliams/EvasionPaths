@@ -14,97 +14,65 @@ def BoundaryCycle(name, darts):
 
 
 class TestTopology:
+    alpha_complex = mock.Mock()
 
-    def test_init(self):
-        alpha_complex = mock.Mock()
-        cmap = mock.Mock()
-        topology = ConnectedTopology(alpha_complex, cmap)
-        assert topology.alpha_complex is not None and topology.cmap is not None
+    cycleA = BoundaryCycle("A", darts=["ab"])
+    cycleB = BoundaryCycle("B", darts=["ba", "bc"])
+    cycleC = BoundaryCycle("C", darts=["cb"])
 
-    def test_2simplices(self):
-        alpha_complex = mock.Mock()
-        alpha_complex.simplices.side_effect = lambda dim: ["A", "B", "C"]
-        cmap = mock.Mock()
-        topology = ConnectedTopology(alpha_complex, cmap)
-        assert topology.simplices(2) == ["A", "B", "C"]
-
-    def test_1simplices(self):
-        alpha_complex = mock.Mock()
-        alpha_complex.simplices.side_effect = lambda dim: ["A", "B", "C"]
-        cmap = mock.Mock()
-        topology = ConnectedTopology(alpha_complex, cmap)
-        assert topology.simplices(1) == ["A", "B", "C"]
-
-    def test_boundary_cycles(self):
-        alpha_complex = mock.Mock()
-        cmap = mock.Mock()
-        cmap.boundary_cycles = ["A", "B", "C"]
-        topology = ConnectedTopology(alpha_complex, cmap)
-        assert topology.boundary_cycles == ["A", "B", "C"]
-
-    def test_graph_adds_nodes(self):
-        alpha_complex = mock.Mock()
-        cmap = mock.Mock()
-
-        cycleA = BoundaryCycle("A", darts=["ab"])
-        cycleB = BoundaryCycle("B", darts=["ba", "bc"])
-        cycleC = BoundaryCycle("C", darts=["cb"])
-        cmap.boundary_cycles = [cycleA, cycleB, cycleC]
-        cmap.alpha.side_effect = lambda dart: dart[-1::-1]
-        cmap.get_cycle.side_effect = [cycleA, cycleB, cycleC] * 2
-        topology = ConnectedTopology(alpha_complex, cmap)
-        assert topology._graph.order() == 3
-
-    def test_graph_has_correct_nodes(self):
-        alpha_complex = mock.Mock()
-        cmap = mock.Mock()
-
-        cycleA = BoundaryCycle("A", darts=["ab"])
-        cycleB = BoundaryCycle("B", darts=["ba", "bc"])
-        cycleC = BoundaryCycle("C", darts=["cb"])
-
-        cmap.boundary_cycles = [cycleA, cycleB, cycleC]
-        cmap.alpha.side_effect = lambda dart: dart[-1::-1]
-        cmap.get_cycle.side_effect = [cycleA, cycleB, cycleC] * 2
-
-        topology = ConnectedTopology(alpha_complex, cmap)
-        assert set(topology._graph.nodes) == {"A", "B", "C"}
-
-    def test_has_edges(self):
-        alpha_complex = mock.Mock()
-        cmap = mock.Mock()
-
-        cycleA = BoundaryCycle("A", darts=["ab"])
-        cycleB = BoundaryCycle("B", darts=["ba", "bc"])
-        cycleC = BoundaryCycle("C", darts=["cb"])
-
-        cmap.boundary_cycles = [cycleA, cycleB, cycleC]
-        cmap.alpha.side_effect = lambda dart: dart[-1::-1]
-        cmap.get_cycle.side_effect = [cycleA, cycleB, cycleC] * 2
-
-        topology = ConnectedTopology(alpha_complex, cmap)
-        assert len(topology._graph.edges) == 2
-
-    def test_has_correct_edges(self):
-        alpha_complex = mock.Mock()
-        cmap = mock.Mock()
-
-        cycleA = BoundaryCycle("A", darts=["ab"])
-        cycleB = BoundaryCycle("B", darts=["ba", "bc"])
-        cycleC = BoundaryCycle("C", darts=["cb"])
-
-        cmap.boundary_cycles = [cycleA, cycleB, cycleC]
-        cmap.alpha.side_effect = lambda dart: dart[-1::-1]
+    @pytest.fixture
+    def cmap(self):
+        map = mock.Mock()
 
         def get_cycle(dart):
-            if dart in cycleA.darts:
-                return cycleA
-            elif dart in cycleB.darts:
-                return cycleB
+            if dart in self.cycleA.darts:
+                return self.cycleA
+            elif dart in self.cycleB.darts:
+                return self.cycleB
             else:
-                return cycleC
+                return self.cycleC
 
-        cmap.get_cycle.side_effect = get_cycle
+        map.boundary_cycles = [self.cycleA, self.cycleB, self.cycleC]
+        map.alpha.side_effect = lambda dart: dart[-1::-1]
+        map.get_cycle.side_effect = get_cycle
+        return map
 
-        topology = ConnectedTopology(alpha_complex, cmap)
-        assert all(edge in topology._graph.edges for edge in {(cycleA, cycleB), (cycleB, cycleC)})
+    def test_init(self, cmap):
+        topology = ConnectedTopology(self.alpha_complex, cmap)
+        assert topology.alpha_complex is not None and topology.cmap is not None
+
+    def test_2simplices(self, cmap):
+        self.alpha_complex.simplices.side_effect = lambda dim: ["A", "B", "C"]
+        topology = ConnectedTopology(self.alpha_complex, cmap)
+        assert topology.simplices(2) == ["A", "B", "C"]
+
+    def test_1simplices(self, cmap):
+        self.alpha_complex.simplices.side_effect = lambda dim: ["A", "B", "C"]
+        topology = ConnectedTopology(self.alpha_complex, self.cmap)
+        assert topology.simplices(1) == ["A", "B", "C"]
+
+    def test_boundary_cycles(self, cmap):
+        cmap.boundary_cycles = ["A", "B", "C"]
+        topology = ConnectedTopology(self.alpha_complex, cmap)
+        assert topology.boundary_cycles == ["A", "B", "C"]
+
+    def test_graph_adds_nodes(self, cmap):
+        topology = ConnectedTopology(self.alpha_complex, cmap)
+        assert topology._graph.order() == 3
+
+    def test_graph_has_correct_nodes(self, cmap):
+        topology = ConnectedTopology(self.alpha_complex, cmap)
+        assert set(topology._graph.nodes) == {self.cycleA, self.cycleB, self.cycleC}
+
+    def test_has_edges(self, cmap):
+        topology = ConnectedTopology(self.alpha_complex, cmap)
+        assert len(topology._graph.edges) == 2
+
+    def test_has_correct_edges(self, cmap):
+        topology = ConnectedTopology(self.alpha_complex, cmap)
+        assert all(edge in topology._graph.edges for edge
+                   in {(self.cycleA, self.cycleB), (self.cycleB, self.cycleC)})
+
+    @pytest.mark.xfail
+    def test_is_connected_graph(self):
+        assert False
