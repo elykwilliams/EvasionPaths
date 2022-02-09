@@ -6,7 +6,7 @@ from topology2 import ConnectedTopology
 
 
 @pytest.mark.fixture
-def BoundaryCycle(name, darts):
+def BoundaryCycle(name, darts=()):
     bc = mock.MagicMock()
     bc.id = name
     bc.darts = set(darts)
@@ -73,6 +73,8 @@ class TestTopology:
         assert all(edge in topology._graph.edges for edge
                    in {(self.cycleA, self.cycleB), (self.cycleB, self.cycleC)})
 
-    @pytest.mark.xfail
-    def test_is_connected_graph(self):
-        assert False
+    def test_is_not_connected_graph(self, cmap):
+        cycleD = BoundaryCycle("D")
+        cmap.boundary_cycles.append(cycleD)
+        topology = ConnectedTopology(self.alpha_complex, cmap)
+        assert not topology.is_connected()

@@ -31,8 +31,8 @@ class BoundaryCycle:
         pass
 
     @property
-    def darts(self):
-        pass
+    def darts(self) -> Iterable:
+        return []
 
 
 class CombinatorialMap(ABC):
@@ -69,3 +69,6 @@ class ConnectedTopology:
             for dart in cycle.darts:
                 graph.add_edge(cycle, self.cmap.get_cycle(self.cmap.alpha(dart)))
         return graph
+
+    def is_connected(self):
+        return nx.is_connected(self._graph)
