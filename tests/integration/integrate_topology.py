@@ -3,6 +3,9 @@ from unittest import mock
 
 from state_change import StateChange2D
 from topology2 import ConnectedTopology
+from update_data import LabelUpdateFactory, RemoveSimplexPairUpdate2D
+
+# import pytest
 
 BoundaryCycle = frozenset
 
@@ -10,9 +13,9 @@ BoundaryCycle = frozenset
 def CombinatorialMap(cycle_dict):
     m = mock.Mock()
     m.dict = cycle_dict
-    m.boundary_cycles = m.dict.values()
+    m.boundary_cycles = m.dict.keys()
     m.alpha.side_effect = lambda dart: dart[-1::-1]
-    m.get_cycle.side_effect = lambda dart: next(value for _, value in m.dict.items() if dart in value)
+    m.get_cycle.side_effect = lambda dart: next(key for key, value in m.dict.items() if dart in value)
     return m
 
 
@@ -94,3 +97,28 @@ class TestIntegrateTopology:
         sc = StateChange2D(top2, top1)
 
         assert sc.case == (0, 1, 0, 1, 1, 2)
+
+    def test_integrate_UpdateFactory(self):
+        simplexC = Simplex("C", edges=("CB", "CD", "CE"))
+        edges = ("AD", "AB", "AE", "BD", "BE", "BC", "CE", "CD")
+        alpha_complex = AlphaComplex({simplexC}, edges)
+
+        d = {"A": frozenset({"AE", "AB", "AC"}),
+             "B": frozenset({"BD", "BA", "BC", "BE"}),
+             "C": frozenset({"CB", "CD", "CE"})}
+        cmap = CombinatorialMap(d)
+        top1 = ConnectedTopology(alpha_complex, cmap)
+
+        edges = ("AD", "AB", "AE", "BD", "BE", "CE", "CD")
+        alpha_complex = AlphaComplex({}, edges)
+
+        d = {"A": frozenset({"AE", "AB", "AC"}),
+             "D": frozenset({"BD", "BA", "BE", "CD", "CE"})}
+        cmap = CombinatorialMap(d)
+        top2 = ConnectedTopology(alpha_complex, cmap)
+        sc = StateChange2D(top2, top1)
+
+        labelling = {"A": True,
+                     "B": True,
+                     "C": False}
+        assert type(LabelUpdateFactory().get_update(sc, labelling)) == RemoveSimplexPairUpdate2D
