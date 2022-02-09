@@ -140,14 +140,14 @@ class TestStateChange:
     def topology1(self):
         t = mock.Mock()
         t.simplices.side_effect = lambda dim: ["B", "C"] if dim == 2 else ["bc"]
-        t.boundary_cycles.return_value = ["B", "C"]
+        t.boundary_cycles = ["B", "C"]
         return t
 
     @pytest.fixture
     def topology2(self):
         t = mock.Mock()
         t.simplices.side_effect = lambda dim: ["B", "C", "D"] if dim == 2 else ["bc", "cd"]
-        t.boundary_cycles.return_value = ["B", "C", "D"]
+        t.boundary_cycles = ["B", "C", "D"]
         return t
 
     def test_init(self):
@@ -189,7 +189,7 @@ class TestStateChange:
     def test_invalid_add(self, topology1, topology2):
         topology2.simplices.side_effect = lambda dim: [Simplex("B"), Simplex("C"), Simplex("D")]
         topology1.simplices.side_effect = lambda dim: [Simplex("B"), Simplex("C")]
-        topology2.boundary_cycles.return_value = ["B", "C", "E"]
+        topology2.boundary_cycles = ["B", "C", "E"]
         sc = StateChange2D(topology2, topology1)
         assert not sc.is_valid()
 
@@ -206,6 +206,6 @@ class TestStateChange:
         simplexC = Simplex("C")
         topology2.simplices.side_effect = lambda dim: [simplexB, simplexC, Simplex("D")]
         topology1.simplices.side_effect = lambda dim: [simplexB, simplexC]
-        topology2.boundary_cycles.return_value = ["B", "C", "D"]
+        topology2.boundary_cycles = ["B", "C", "D"]
         sc = StateChange2D(topology2, topology1)
         assert sc.case == (1, 0, 1, 0, 1, 0)

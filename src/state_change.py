@@ -2,14 +2,14 @@ from abc import ABC, abstractmethod
 
 from dataclasses import dataclass
 
-from topological_state import TopologicalState
+from topology2 import Topology
 from utilities import SetDifference
 
 
 @dataclass
 class StateChange(ABC):
-    new_topology: TopologicalState
-    old_topology: TopologicalState
+    new_topology: Topology
+    old_topology: Topology
 
     @property
     @abstractmethod
@@ -37,7 +37,7 @@ class StateChange2D(StateChange):
 
     @property
     def boundary_cycles(self) -> SetDifference:
-        return SetDifference(self.new_topology.boundary_cycles(), self.old_topology.boundary_cycles())
+        return SetDifference(self.new_topology.boundary_cycles, self.old_topology.boundary_cycles)
 
     ## Identify Atomic States
     #

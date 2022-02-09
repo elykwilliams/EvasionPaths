@@ -50,7 +50,7 @@ class CombinatorialMap(ABC):
 
 
 @dataclass
-class ConnectedTopology:
+class ConnectedTopology(Topology):
     alpha_complex: AlphaComplex
     cmap: CombinatorialMap
 
