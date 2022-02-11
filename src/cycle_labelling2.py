@@ -2,6 +2,7 @@ from abc import ABC, abstractmethod
 
 from topology2 import Topology
 from update_data import LabelUpdate
+from utilities import LabellingError
 
 
 class AbstractCycleLabelling(ABC):
@@ -14,23 +15,6 @@ class AbstractCycleLabelling(ABC):
     ## Iterate through all cycles.
     @abstractmethod
     def __iter__(self):
-        ...
-
-    ## Return cycle labelling.
-    # raises key error if cycle not found.
-    @abstractmethod
-    def __getitem__(self, item):
-        ...
-
-    ## Set cycle label.
-    # raises KeyError if not found
-    @abstractmethod
-    def __setitem__(self, key, value):
-        ...
-
-    ## Remove cycle from tree.
-    @abstractmethod
-    def __delitem__(self, key):
         ...
 
     # Given an UpdateData object, do the following
@@ -68,20 +52,24 @@ class CycleLabellingDict(AbstractCycleLabelling):
             raise LabellingError("Item does not have a label")
         return self.dict[item]
 
-    ## Set cycle label.
-    # raises KeyError if not found
-    def __setitem__(self, key, value):
-        if key not in self.dict:
-            raise LabellingError("Item does not have a label")
-        self.dict[key] = value
-
-    ## Remove cycle from tree.
-    def __delitem__(self, key):
-        del self.dict[key]
-
     # Given an UpdateData object, do the following
     #   add all new cycles,
     #   update all labels
     #   remove all old cycles
     def update(self, update_data: LabelUpdate):
+        if not self.is_valid(update_data):
+            raise LabellingError("Invalid update provided to labelling")
+
+        for cycle in update_data.cycles_added:
+            self.dict[cycle] = True
         self.dict.update(update_data.mapping)
+        for cycle in update_data.cycles_removed:
+            del self.dict[cycle]
+
+    def is_valid(self, update_data: LabelUpdate):
+        if any(cycle not in self for cycle in update_data.cycles_removed):
+            return False
+        elif not all(cycle in self or cycle in update_data.cycles_added for cycle in update_data.mapping):
+            return False
+        else:
+            return True
