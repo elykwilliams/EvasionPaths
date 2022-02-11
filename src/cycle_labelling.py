@@ -6,12 +6,13 @@
 # If not, visit: https://opensource.org/licenses/BSD-3-Clause
 # ************************************************************
 
+from abc import ABC, abstractmethod
 
 import treelib.exceptions
 from treelib import Tree
 
-from update_data import *
-from utilities import *
+from topological_state import TopologicalState
+from utilities import InvalidStateChange, CycleNotFound, LabellingError
 
 
 ## The CycleLabelling class manages the time dependant labelling of boundary cycles.
@@ -279,6 +280,44 @@ class CycleLabelling:
             self._reconnect(state_change.cycles_added + reconnected_cycles,
                             connected_simplices,
                             enclosing_cycle)
+
+
+class AbstractCycleLabelling(ABC):
+
+    ## Check if cycle has label.
+    @abstractmethod
+    def __contains__(self, item):
+        ...
+
+    ## Iterate through all cycles.
+    @abstractmethod
+    def __iter__(self):
+        ...
+
+    ## Return cycle labelling.
+    # raises key error if cycle not found.
+    @abstractmethod
+    def __getitem__(self, item):
+        ...
+
+    ## Set cycle label.
+    # raises KeyError if not found
+    @abstractmethod
+    def __setitem__(self, key, value):
+        ...
+
+    ## Remove cycle from tree.
+    @abstractmethod
+    def __delitem__(self, key):
+        ...
+
+    # Given an UpdateData object, do the following
+    #   add all new cycles,
+    #   update all labels
+    #   remove all old cycles
+    @abstractmethod
+    def update(self, update_data):
+        ...
 
 
 class CycleLabellingTree:
