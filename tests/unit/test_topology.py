@@ -56,25 +56,25 @@ class TestTopology:
         topology = ConnectedTopology(self.alpha_complex, cmap)
         assert topology.boundary_cycles == ["A", "B", "C"]
 
-    def test_graph_adds_nodes(self, cmap):
-        topology = ConnectedTopology(self.alpha_complex, cmap)
-        assert topology._graph.order() == 3
-
-    def test_graph_has_correct_nodes(self, cmap):
-        topology = ConnectedTopology(self.alpha_complex, cmap)
-        assert set(topology._graph.nodes) == {self.cycleA, self.cycleB, self.cycleC}
-
-    def test_has_edges(self, cmap):
-        topology = ConnectedTopology(self.alpha_complex, cmap)
-        assert len(topology._graph.edges) == 2
-
-    def test_has_correct_edges(self, cmap):
-        topology = ConnectedTopology(self.alpha_complex, cmap)
-        assert all(edge in topology._graph.edges for edge
-                   in {(self.cycleA, self.cycleB), (self.cycleB, self.cycleC)})
-
-    def test_is_not_connected_graph(self, cmap):
-        cycleD = BoundaryCycle("D")
-        cmap.boundary_cycles.append(cycleD)
-        topology = ConnectedTopology(self.alpha_complex, cmap)
-        assert not topology.is_connected()
+    # def test_graph_adds_nodes(self, cmap):
+    #     topology = ConnectedTopology(self.alpha_complex, cmap)
+    #     assert topology._graph.order() == 3
+    #
+    # def test_graph_has_correct_nodes(self, cmap):
+    #     topology = ConnectedTopology(self.alpha_complex, cmap)
+    #     assert set(topology._graph.nodes) == {self.cycleA, self.cycleB, self.cycleC}
+    #
+    # def test_has_edges(self, cmap):
+    #     topology = ConnectedTopology(self.alpha_complex, cmap)
+    #     assert len(topology._graph.edges) == 2
+    #
+    # def test_has_correct_edges(self, cmap):
+    #     topology = ConnectedTopology(self.alpha_complex, cmap)
+    #     assert all(edge in topology._graph.edges for edge
+    #                in {(self.cycleA, self.cycleB), (self.cycleB, self.cycleC)})
+    #
+    # def test_is_not_connected_graph(self, cmap):
+    #     cycleD = BoundaryCycle("D")
+    #     cmap.boundary_cycles.append(cycleD)
+    #     topology = ConnectedTopology(self.alpha_complex, cmap)
+    #     assert not topology.is_connected()

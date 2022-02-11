@@ -7,41 +7,6 @@ from state_change import StateChange
 from utilities import UpdateError
 
 
-#
-#
-# class AlphaComplex(ABC):
-#     @abstractmethod
-#     def simplices(self, dim) -> Sequence[Simplex]:
-#         ...
-#
-#
-# class CombinatorialMap(ABC):
-#     @property
-#     @abstractmethod
-#     def boundary_cycles(self) -> Sequence[BoundaryCycle]:
-#         ...
-#
-#     @abstractmethod
-#     def nodes2cycles(self):
-#         ...
-#
-#
-# class AbstractTopology(ABC, AlphaComplex, CombinatorialMap):
-#     pass
-#
-# class Simplex:
-#
-#     @property
-#     def nodes(self):
-#         return None
-#
-#     def is_subface(self, edge):
-#         pass
-#
-#     def to_cycle(self, cmap):
-#         pass
-
-
 class LabelUpdate(ABC):
 
     @property
