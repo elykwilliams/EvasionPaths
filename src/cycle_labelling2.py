@@ -5,7 +5,7 @@ from update_data import LabelUpdate
 from utilities import LabellingError
 
 
-class AbstractCycleLabelling(ABC):
+class CycleLabelling(ABC):
 
     ## Check if cycle has label.
     @abstractmethod
@@ -26,7 +26,7 @@ class AbstractCycleLabelling(ABC):
         ...
 
 
-class CycleLabellingDict(AbstractCycleLabelling):
+class CycleLabellingDict(CycleLabelling):
 
     def __init__(self, topology: Topology):
         self.dict = dict()
