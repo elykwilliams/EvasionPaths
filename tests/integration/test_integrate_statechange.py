@@ -18,7 +18,7 @@ def Simplex(name, edges=(), nodes=()):
 @pytest.mark.fixture
 def topology(cycles, simplices=(), edges=()):
     new_topology = mock.Mock()
-    new_topology.boundary_cycles.return_value = cycles
+    new_topology.boundary_cycles = cycles
     new_topology.simplices.side_effect = lambda dim: simplices if dim == 2 else edges
     return new_topology
 
