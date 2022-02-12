@@ -21,7 +21,8 @@ class Simplex:
         else:
             return cycles_found.pop()
 
-    def __len__(self):
+    @property
+    def dim(self):
         return len(self.nodes) - 1
 
     def __eq__(self, other):
@@ -52,4 +53,4 @@ class AlphaComplex(SimplicialComplex):
         return {simplex[0] for simplex, _ in self.simplex_tree.get_skeleton(0)}
 
     def simplices(self, dim):
-        return [Simplex(frozenset(nodes)) for nodes, _ in self.simplex_tree.get_skeleton(dim) if len(nodes) == dim + 1]
+        return {Simplex(frozenset(nodes)) for nodes, _ in self.simplex_tree.get_skeleton(dim) if len(nodes) == dim + 1}

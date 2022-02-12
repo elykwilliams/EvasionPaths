@@ -53,9 +53,23 @@ class TestSimplex:
         simplex = Simplex(frozenset({1, 2, 3}))
         pytest.raises(ValueError, simplex.to_cycle, boundary_cycles)
 
+    def test_dim(self):
+        s = Simplex(frozenset({1, 2, 3}))
+        assert s.dim == 2
+
+    def test_eq(self):
+        s1 = Simplex(frozenset({1, 2, 3}))
+        s2 = Simplex(frozenset({1, 2, 3}))
+        assert s1 == s2
+
+    def test_hash(self):
+        s1 = Simplex(frozenset({1, 2, 3}))
+        s2 = Simplex(frozenset({1, 3, 2}))
+        assert hash(s1) == hash(s2)
+
 
 class TestAlphaComplex:
-    points = [(0, 0), (0, 1), (1, 0), (1, 1)]
+    points = [(0, 0), (1, 1), (0, 1), (1, 0)]
     radius = 0.5 ** 0.5
 
     def test_init(self):
@@ -67,9 +81,9 @@ class TestAlphaComplex:
         ac = AlphaComplex(points, 1 / 2)
         assert ac.simplex_tree is not None
 
-    def test_simplices_correct_length(self):
+    def test_simplices_correct_dim(self):
         ac = AlphaComplex(self.points, self.radius)
-        assert len(ac.simplices(1)[0]) == 1 and len(ac.simplices(2)[0]) == 2
+        assert next(iter(ac.simplices(1))).dim == 1 and next(iter(ac.simplices(2))).dim == 2
 
     def test_num_nodes(self):
         ac = AlphaComplex(self.points, self.radius)
