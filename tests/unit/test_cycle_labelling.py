@@ -63,6 +63,15 @@ class TestCycleLabellingDict:
         labelling = CycleLabellingDict(topology)
         pytest.raises(LabellingError, lambda: labelling["F"])
 
+    def test_set_item(self, topology):
+        labelling = CycleLabellingDict(topology)
+        labelling["A"] = False
+        assert not labelling["A"]
+
+    def test_set_item_raises(self, topology):
+        labelling = CycleLabellingDict(topology)
+        pytest.raises(LabellingError, labelling.__setitem__, "F", False)
+
     def test_update_change_values(self, topology, label_update):
         labelling = CycleLabellingDict(topology)
         labelling.update(label_update)

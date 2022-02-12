@@ -52,6 +52,13 @@ class CycleLabellingDict(CycleLabelling):
             raise LabellingError("Item does not have a label")
         return self.dict[item]
 
+    ## Return cycle labelling.
+    # raises key error if cycle not found.
+    def __setitem__(self, item, value):
+        if item not in self.dict:
+            raise LabellingError("Item does not have a label")
+        self.dict[item] = value
+
     # Given an UpdateData object, do the following
     #   add all new cycles,
     #   update all labels

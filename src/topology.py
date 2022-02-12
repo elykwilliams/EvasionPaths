@@ -31,6 +31,10 @@ class ConnectedTopology(Topology):
     def boundary_cycles(self):
         return self.cmap.boundary_cycles
 
+    @property
+    def alpha_cycle(self):
+        return self.cmap.get_cycle((0, 1))
+
 
 def generate_topology(points, radius):
     ac = AlphaComplex(points, radius)

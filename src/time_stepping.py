@@ -7,12 +7,10 @@
 # ************************************************************
 import pickle
 
-from alpha_complex import AlphaComplex
-from combinatorial_map import RotationInfo2D, CombinatorialMap2D
 from cycle_labelling import CycleLabellingDict
 from sensor_network import SensorNetwork
 from state_change import StateChange2D
-from topology import ConnectedTopology
+from topology import generate_topology
 from update_data import LabelUpdateFactory
 from utilities import *
 
@@ -34,11 +32,9 @@ class EvasionPathSimulation:
         self.time = 0
 
         self.sensor_network = sensor_network
-        ac = AlphaComplex(sensor_network.points, sensor_network.sensing_radius)
-        rot_info = RotationInfo2D(sensor_network.points, ac)
-        cmap = CombinatorialMap2D(rot_info)
-        self.state = ConnectedTopology(ac, cmap)
-        self.cycle_label = CycleLabellingDict(self.state)
+        self.topology = generate_topology(sensor_network.points, sensor_network.sensing_radius)
+        self.cycle_label = CycleLabellingDict(self.topology)
+        self.cycle_label[self.topology.alpha_cycle] = False
 
     ## Run until no more intruders.
     # exit if max time is set. Returns simulation time.
@@ -60,18 +56,15 @@ class EvasionPathSimulation:
 
         for _ in range(2):
             self.sensor_network.move(dt)
-            ac = AlphaComplex(self.sensor_network.points, self.sensor_network.sensing_radius)
-            rot_info = RotationInfo2D(self.sensor_network.points, ac)
-            cmap = CombinatorialMap2D(rot_info)
-            new_state = ConnectedTopology(ac, cmap)
-            state_change = StateChange2D(new_state, self.state)
+            new_state = generate_topology(self.sensor_network.points, self.sensor_network.sensing_radius)
+            state_change = StateChange2D(new_state, self.topology)
 
             label_update = LabelUpdateFactory().get_update(state_change, self.cycle_label)
 
             if label_update.is_atomic() and self.cycle_label.is_valid(label_update):
                 self.cycle_label.update(label_update)
                 self.sensor_network.update()
-                self.state = state_change.new_topology
+                self.topology = state_change.new_topology
             elif level + 1 == 25:
                 raise MaxRecursionDepth(state_change)
             else:
@@ -83,7 +76,7 @@ class EvasionPathSimulation:
     def update(self, state_change):
         self.cycle_label.update(state_change)
         self.sensor_network.update()
-        self.state = state_change.new_state
+        self.topology = state_change.new_state
 
 
 ## Takes output from save_state() to initialize a simulation.
@@ -100,8 +93,7 @@ def load_state(filename: str) -> EvasionPathSimulation:
 
 ## Dumps current state to be resumed later.
 # This function is used to save the current state of a simulation.
-# This is useful for saving a random initial state for testing or
-# for saving an incomplete simulation to restart later.
+# This is useful for saving an incomplete simulation to restart later.
 def save_state(simulation, filename: str) -> None:
     try:
         with open(filename, 'wb') as file:
