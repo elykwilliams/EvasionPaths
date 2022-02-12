@@ -4,7 +4,7 @@ from typing import Iterable
 from dataclasses import dataclass
 
 from alpha_complex import Simplex, AlphaComplex
-from combinatorial_map import CombinatorialMap, BoundaryCycle, RotationInfo2D, CombinatorialMap2D
+from combinatorial_map import BoundaryCycle, RotationInfo2D, CombinatorialMap2D
 
 
 class Topology(ABC):
@@ -20,9 +20,9 @@ class Topology(ABC):
 
 
 @dataclass
-class ConnectedTopology(Topology):
+class ConnectedTopology2D(Topology):
     alpha_complex: AlphaComplex
-    cmap: CombinatorialMap
+    cmap: CombinatorialMap2D
 
     def simplices(self, dim):
         return self.alpha_complex.simplices(dim)
@@ -32,7 +32,7 @@ class ConnectedTopology(Topology):
         return self.cmap.boundary_cycles
 
     @property
-    def alpha_cycle(self):
+    def alpha_cycle(self) -> BoundaryCycle:
         return self.cmap.get_cycle((0, 1))
 
 
@@ -40,4 +40,4 @@ def generate_topology(points, radius):
     ac = AlphaComplex(points, radius)
     rot_info = RotationInfo2D(points, ac)
     cmap = CombinatorialMap2D(rot_info)
-    return ConnectedTopology(ac, cmap)
+    return ConnectedTopology2D(ac, cmap)

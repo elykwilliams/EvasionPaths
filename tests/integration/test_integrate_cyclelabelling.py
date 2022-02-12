@@ -4,7 +4,7 @@ import pytest
 
 from cycle_labelling import CycleLabellingDict
 from state_change import StateChange2D
-from topology import ConnectedTopology
+from topology import ConnectedTopology2D
 from update_data import LabelUpdateFactory
 from utilities import SetDifference
 
@@ -93,11 +93,11 @@ class TestIntegrateCycleLabellingDict:
         cmap = mock_CombinatorialMap(d)
 
         alpha_complex = mock_AlphaComplex({simplexB, simplexC}, {})
-        top1 = ConnectedTopology(alpha_complex, cmap)
+        top1 = ConnectedTopology2D(alpha_complex, cmap)
         labelling = CycleLabellingDict(top1)
 
         alpha_complex = mock_AlphaComplex({simplexB, simplexC, simplexD}, {})
-        top2 = ConnectedTopology(alpha_complex, cmap)
+        top2 = ConnectedTopology2D(alpha_complex, cmap)
 
         sc = StateChange2D(top2, top1)
         label_update = LabelUpdateFactory().get_update(sc, labelling)

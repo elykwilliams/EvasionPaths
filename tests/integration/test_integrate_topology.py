@@ -2,7 +2,7 @@ from typing import Hashable
 from unittest import mock
 
 from state_change import StateChange2D
-from topology import ConnectedTopology, generate_topology
+from topology import ConnectedTopology2D, generate_topology
 from update_data import LabelUpdateFactory, RemoveSimplexPairUpdate2D
 
 # import pytest
@@ -59,7 +59,7 @@ class TestIntegrateTopology:
              "B": frozenset({"BD", "BA", "BC", "BE"}),
              "C": frozenset({"CB", "CD", "CE"})}
         cmap = CombinatorialMap(d)
-        top = ConnectedTopology(alpha_complex, cmap)
+        top = ConnectedTopology2D(alpha_complex, cmap)
 
         assert top.simplices(2) == {simplexC}
 
@@ -72,7 +72,7 @@ class TestIntegrateTopology:
              "B": frozenset({"BD", "BA", "BC", "BE"}),
              "C": frozenset({"CB", "CD", "CE"})}
         cmap = CombinatorialMap(d)
-        top = ConnectedTopology(alpha_complex, cmap)
+        top = ConnectedTopology2D(alpha_complex, cmap)
 
         assert cmap.get_cycle("AE") in top.boundary_cycles
 
@@ -85,7 +85,7 @@ class TestIntegrateTopology:
              "B": frozenset({"BD", "BA", "BC", "BE"}),
              "C": frozenset({"CB", "CD", "CE"})}
         cmap = CombinatorialMap(d)
-        top1 = ConnectedTopology(alpha_complex, cmap)
+        top1 = ConnectedTopology2D(alpha_complex, cmap)
 
         edges = ("AD", "AB", "AE", "BD", "BE", "CE", "CD")
         alpha_complex = AlphaComplex({}, edges)
@@ -93,7 +93,7 @@ class TestIntegrateTopology:
         d = {"A": frozenset({"AE", "AB", "AC"}),
              "D": frozenset({"BD", "BA", "BE", "CD", "CE"})}
         cmap = CombinatorialMap(d)
-        top2 = ConnectedTopology(alpha_complex, cmap)
+        top2 = ConnectedTopology2D(alpha_complex, cmap)
         sc = StateChange2D(top2, top1)
 
         assert sc.case == (0, 1, 0, 1, 1, 2)
@@ -107,7 +107,7 @@ class TestIntegrateTopology:
              "B": frozenset({"BD", "BA", "BC", "BE"}),
              "C": frozenset({"CB", "CD", "CE"})}
         cmap = CombinatorialMap(d)
-        top1 = ConnectedTopology(alpha_complex, cmap)
+        top1 = ConnectedTopology2D(alpha_complex, cmap)
 
         edges = ("AD", "AB", "AE", "BD", "BE", "CE", "CD")
         alpha_complex = AlphaComplex({}, edges)
@@ -115,7 +115,7 @@ class TestIntegrateTopology:
         d = {"A": frozenset({"AE", "AB", "AC"}),
              "D": frozenset({"BD", "BA", "BE", "CD", "CE"})}
         cmap = CombinatorialMap(d)
-        top2 = ConnectedTopology(alpha_complex, cmap)
+        top2 = ConnectedTopology2D(alpha_complex, cmap)
         sc = StateChange2D(top2, top1)
 
         labelling = {"A": True,

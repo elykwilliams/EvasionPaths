@@ -2,7 +2,7 @@ from unittest import mock
 
 import pytest
 
-from topology import ConnectedTopology
+from topology import ConnectedTopology2D
 
 
 @pytest.mark.fixture
@@ -38,22 +38,22 @@ class TestTopology:
         return map
 
     def test_init(self, cmap):
-        topology = ConnectedTopology(self.alpha_complex, cmap)
+        topology = ConnectedTopology2D(self.alpha_complex, cmap)
         assert topology.alpha_complex is not None and topology.cmap is not None
 
     def test_2simplices(self, cmap):
         self.alpha_complex.simplices.side_effect = lambda dim: ["A", "B", "C"]
-        topology = ConnectedTopology(self.alpha_complex, cmap)
+        topology = ConnectedTopology2D(self.alpha_complex, cmap)
         assert topology.simplices(2) == ["A", "B", "C"]
 
     def test_1simplices(self, cmap):
         self.alpha_complex.simplices.side_effect = lambda dim: ["A", "B", "C"]
-        topology = ConnectedTopology(self.alpha_complex, self.cmap)
+        topology = ConnectedTopology2D(self.alpha_complex, self.cmap)
         assert topology.simplices(1) == ["A", "B", "C"]
 
     def test_boundary_cycles(self, cmap):
         cmap.boundary_cycles = ["A", "B", "C"]
-        topology = ConnectedTopology(self.alpha_complex, cmap)
+        topology = ConnectedTopology2D(self.alpha_complex, cmap)
         assert topology.boundary_cycles == ["A", "B", "C"]
 
     # def test_graph_adds_nodes(self, cmap):
