@@ -123,8 +123,7 @@ class TestIntegrateCMap:
         edges = [(5, 0), (0, 1), (1, 2), (2, 3), (3, 4), (4, 5), (1, 5)]
         topology2 = topology(self.simplices, edges, self.points)
 
-        sc = StateChange2D(topology2, topology1)
-        label_update = LabelUpdateFactory().get_update(sc, labelling)
+        label_update = LabelUpdateFactory().get_update(topology2, topology1, labelling)
         assert type(label_update) == Remove1SimplexUpdate2D
 
     def test_integrate_labelling_update(self):
@@ -134,8 +133,7 @@ class TestIntegrateCMap:
         edges = [(5, 0), (0, 1), (1, 2), (2, 3), (3, 4), (4, 5), (1, 5)]
         topology2 = topology(self.simplices, edges, self.points)
 
-        sc = StateChange2D(topology2, topology1)
-        label_update = LabelUpdateFactory().get_update(sc, labelling)
+        label_update = LabelUpdateFactory().get_update(topology2, topology1, labelling)
         labelling.update(label_update)
         assert len(labelling.dict) == 3
 
@@ -146,8 +144,7 @@ class TestIntegrateCMap:
         edges = [(5, 0), (0, 1), (1, 2), (2, 3), (3, 4), (4, 5), (1, 5)]
         topology2 = topology(self.simplices, edges, self.points)
 
-        sc = StateChange2D(topology2, topology1)
-        label_update = LabelUpdateFactory().get_update(sc, labelling)
+        label_update = LabelUpdateFactory().get_update(topology2, topology1, labelling)
         labelling.update(label_update)
 
         cycle1 = topology2.cmap.get_cycle((0, 5))

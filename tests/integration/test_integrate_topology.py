@@ -116,12 +116,11 @@ class TestIntegrateTopology:
              "D": frozenset({"BD", "BA", "BE", "CD", "CE"})}
         cmap = CombinatorialMap(d)
         top2 = ConnectedTopology2D(alpha_complex, cmap)
-        sc = StateChange2D(top2, top1)
 
         labelling = {"A": True,
                      "B": True,
                      "C": False}
-        assert type(LabelUpdateFactory().get_update(sc, labelling)) == RemoveSimplexPairUpdate2D
+        assert type(LabelUpdateFactory().get_update(top2, top1, labelling)) == RemoveSimplexPairUpdate2D
 
 
 def test_generate_topology():

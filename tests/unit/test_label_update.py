@@ -1,4 +1,5 @@
 from unittest import mock
+from unittest.mock import patch
 
 import pytest
 
@@ -340,30 +341,41 @@ class TestDelaunyFlip:
         assert not update.is_atomic()
 
 
+@pytest.mark.fixture
+def mock_state_change(case, is_valid):
+    temp = mock.Mock()
+    temp.is_valid.return_value = is_valid
+    temp.case = case
+    return temp
+
+
 class TestLabelFactory:
     def test_update_dict_nonempty(self):
-        assert len(LabelUpdateFactory.atomic_updates) != 0
+        assert len(LabelUpdateFactory.atomic_updates2d) != 0
 
     def test_add1_simplex_in_dict(self):
         case = (1, 0, 0, 0, 2, 1)
-        assert LabelUpdateFactory.atomic_updates[case] == Add1SimplexUpdate2D
+        assert LabelUpdateFactory.atomic_updates2d[case] == Add1SimplexUpdate2D
 
-    def test_get_add1simplex(self):
+    @patch("update_data.StateChange2D")
+    def test_get_add1simplex(self, StateChange2D):
+        StateChange2D.return_value = mock_state_change((1, 0, 0, 0, 2, 1), True)
         labelling = mock.Mock()
-        sc = mock.Mock()
-        sc.case = (1, 0, 0, 0, 2, 1)
-        update = LabelUpdateFactory.get_update(sc, labelling)
+        t1 = mock.Mock()
+        update = LabelUpdateFactory().get_update(t1, t1, labelling)
         assert type(update) == Add1SimplexUpdate2D
 
-    def test_returns_nonatomic(self):
+    @patch("update_data.StateChange2D")
+    def test_returns_nonatomic(self, StateChange2D):
+        StateChange2D.return_value = mock_state_change((1, 0, 0, 30, 2, 1), True)
         labelling = mock.Mock()
-        sc = mock.Mock()
-        sc.case = (1, 0, 0, 30, 2, 1)
-        update = LabelUpdateFactory.get_update(sc, labelling)
+        t1 = mock.Mock()
+        update = LabelUpdateFactory().get_update(t1, t1, labelling)
         assert type(update) == NonAtomicUpdate
 
-    def test_raise_on_invalid_state_change(self):
+    @patch("update_data.StateChange2D")
+    def test_raise_on_invalid_state_change(self, StateChange2D):
         labelling = mock.Mock()
-        sc = mock.Mock()
-        sc.is_valid.return_value = False
-        assert pytest.raises(UpdateError, LabelUpdateFactory.get_update, sc, labelling)
+        StateChange2D.return_value = mock_state_change((1, 0, 0, 30, 2, 1), False)
+        t1 = mock.Mock()
+        assert pytest.raises(UpdateError, LabelUpdateFactory.get_update, t1, t1, labelling)

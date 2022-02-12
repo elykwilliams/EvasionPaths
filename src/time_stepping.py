@@ -9,7 +9,6 @@ import pickle
 
 from cycle_labelling import CycleLabellingDict
 from sensor_network import SensorNetwork
-from state_change import StateChange2D
 from topology import generate_topology
 from update_data import LabelUpdateFactory
 from utilities import *
@@ -57,14 +56,13 @@ class EvasionPathSimulation:
         if level == 25:
             raise MaxRecursionDepthError()
 
-        dt = self.dt * 2 ** -level
+        adaptive_dt = self.dt * 2 ** -level
 
         for _ in range(2):
-            self.sensor_network.move(dt)
-            new_state = generate_topology(self.sensor_network.points, self.sensor_network.sensing_radius)
-            state_change = StateChange2D(new_state, self.topology)
+            self.sensor_network.move(adaptive_dt)
+            new_topology = generate_topology(self.sensor_network.points, self.sensor_network.sensing_radius)
 
-            label_update = LabelUpdateFactory().get_update(state_change, self.cycle_label)
+            label_update = LabelUpdateFactory().get_update(new_topology, self.topology, self.cycle_label)
 
             if label_update.is_atomic():
                 self.update(label_update, new_topology)

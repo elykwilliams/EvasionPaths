@@ -44,13 +44,11 @@ class TestAdd2Simplex:
         assert state_change.case == (0, 0, 1, 0, 0, 0)
 
     def test_factory(self, connected_labelling):
-        state_change = StateChange2D(self.new_topology, self.old_topology)
-        label_update = LabelUpdateFactory.get_update(state_change, connected_labelling)
+        label_update = LabelUpdateFactory.get_update(self.new_topology, self.old_topology, connected_labelling)
         assert type(label_update) == Add2SimplicesUpdate2D
 
     def test_update(self, connected_labelling):
-        state_change = StateChange2D(self.new_topology, self.old_topology)
-        label_update = LabelUpdateFactory.get_update(state_change, connected_labelling)
+        label_update = LabelUpdateFactory.get_update(self.new_topology, self.old_topology, connected_labelling)
         assert label_update.mapping == {"D": False}
 
 
@@ -66,11 +64,9 @@ class TestRemoveSimplexPair:
         assert state_change.case == (0, 1, 0, 1, 1, 2)
 
     def test_factory(self, connected_labelling):
-        state_change = StateChange2D(self.new_topology, self.old_topology)
-        label_update = LabelUpdateFactory.get_update(state_change, connected_labelling)
+        label_update = LabelUpdateFactory.get_update(self.new_topology, self.old_topology, connected_labelling)
         assert type(label_update) == RemoveSimplexPairUpdate2D
 
     def test_update(self, connected_labelling):
-        state_change = StateChange2D(self.new_topology, self.old_topology)
-        label_update = LabelUpdateFactory.get_update(state_change, connected_labelling)
+        label_update = LabelUpdateFactory.get_update(self.new_topology, self.old_topology, connected_labelling)
         assert label_update.mapping == {"F": True}

@@ -2,7 +2,7 @@ from alpha_complex import AlphaComplex, Simplex
 from combinatorial_map import RotationInfo2D, CombinatorialMap2D, BoundaryCycle2D
 from cycle_labelling import CycleLabellingDict
 from state_change import StateChange2D
-from topology import ConnectedTopology2D
+from topology import generate_topology
 from update_data import LabelUpdateFactory, Add2SimplicesUpdate2D
 
 
@@ -40,17 +40,11 @@ class TestIntegrateAlphaComplex:
         assert set(cycle.darts for cycle in cmap.boundary_cycles) == {c1, c2, c3, c4}
 
     def test_integrate_topology(self):
-        ac = AlphaComplex(self.points, self.radius)
-        ri = RotationInfo2D(self.points, ac)
-        cmap = CombinatorialMap2D(ri)
-        topology = ConnectedTopology2D(ac, cmap)
+        topology = generate_topology(self.points, self.radius)
         assert topology.simplices(2) == {Simplex(frozenset({1, 5, 0}))}
 
     def test_integrate_labelling(self):
-        ac = AlphaComplex(self.points, self.radius)
-        ri = RotationInfo2D(self.points, ac)
-        cmap = CombinatorialMap2D(ri)
-        topology = ConnectedTopology2D(ac, cmap)
+        topology = generate_topology(self.points, self.radius)
         labelling = CycleLabellingDict(topology)
 
         c1 = frozenset({(0, 5), (5, 1), (1, 0)})
@@ -63,51 +57,31 @@ class TestIntegrateAlphaComplex:
                                   BoundaryCycle2D(c4): True}
 
     def test_integrate_statechange(self):
-        ac = AlphaComplex(self.points, self.radius)
-        ri = RotationInfo2D(self.points, ac)
-        cmap = CombinatorialMap2D(ri)
-        topology = ConnectedTopology2D(ac, cmap)
+        topology = generate_topology(self.points, self.radius)
 
         points = [(1.5, 0.5), (1, 1), (0.5, 1.5), (0, 1), (0, 0), (1, 0)]
-        ac2 = AlphaComplex(points, self.radius)
-        ri2 = RotationInfo2D(points, ac2)
-        cmap2 = CombinatorialMap2D(ri2)
-        topology2 = ConnectedTopology2D(ac2, cmap2)
+        topology2 = generate_topology(points, self.radius)
 
         sc = StateChange2D(topology2, topology)
         assert sc.case == (0, 0, 1, 0, 0, 0)
 
     def test_integrate_lableupdate(self):
-        ac = AlphaComplex(self.points, self.radius)
-        ri = RotationInfo2D(self.points, ac)
-        cmap = CombinatorialMap2D(ri)
-        topology = ConnectedTopology2D(ac, cmap)
+        topology = generate_topology(self.points, self.radius)
         labelling = CycleLabellingDict(topology)
 
         points = [(1.5, 0.5), (1, 1), (0.5, 1.5), (0, 1), (0, 0), (1, 0)]
-        ac2 = AlphaComplex(points, self.radius)
-        ri2 = RotationInfo2D(points, ac2)
-        cmap2 = CombinatorialMap2D(ri2)
-        topology2 = ConnectedTopology2D(ac2, cmap2)
+        topology2 = generate_topology(points, self.radius)
 
-        sc = StateChange2D(topology2, topology)
-        label_update = LabelUpdateFactory().get_update(sc, labelling)
+        label_update = LabelUpdateFactory().get_update(topology2, topology, labelling)
         assert type(label_update) == Add2SimplicesUpdate2D
 
     def test_integrate_do_update(self):
-        ac = AlphaComplex(self.points, self.radius)
-        ri = RotationInfo2D(self.points, ac)
-        cmap = CombinatorialMap2D(ri)
-        topology = ConnectedTopology2D(ac, cmap)
+        topology = generate_topology(self.points, self.radius)
         labelling = CycleLabellingDict(topology)
 
         points = [(1.5, 0.5), (1, 1), (0.5, 1.5), (0, 1), (0, 0), (1, 0)]
-        ac2 = AlphaComplex(points, self.radius)
-        ri2 = RotationInfo2D(points, ac2)
-        cmap2 = CombinatorialMap2D(ri2)
-        topology2 = ConnectedTopology2D(ac2, cmap2)
+        topology2 = generate_topology(points, self.radius)
 
-        sc = StateChange2D(topology2, topology)
-        label_update = LabelUpdateFactory().get_update(sc, labelling)
+        label_update = LabelUpdateFactory().get_update(topology2, topology, labelling)
         labelling.update(label_update)
         assert not labelling[BoundaryCycle2D(frozenset({(2, 1), (3, 2), (1, 3)}))]

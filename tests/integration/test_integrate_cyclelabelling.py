@@ -1,9 +1,9 @@
 from unittest import mock
+from unittest.mock import patch
 
 import pytest
 
 from cycle_labelling import CycleLabellingDict
-from state_change import StateChange2D
 from topology import ConnectedTopology2D
 from update_data import LabelUpdateFactory
 from utilities import SetDifference
@@ -63,16 +63,18 @@ class TestIntegrateCycleLabellingDict:
         labelling.update(label_update)
         assert labelling.dict == {"A": True, "B": False, "C": False, "D": False, "E": True}
 
-    def test_mock_state_change(self):
+    @patch("update_data.StateChange2D")
+    def test_mock_state_change(self, StateChange2D):
         sc = mock.Mock()
         sc.case = (0, 0, 1, 0, 0, 0)
         sc.is_valid.return_value = True
         sc.boundary_cycles = SetDifference(self.cycles, self.cycles)
         sc.simplices.return_value = SetDifference([simplexB, simplexC, simplexD], [simplexB, simplexC])
+        StateChange2D.return_value = sc
 
         topology = mock_topology(self.cycles, simplices=[simplexB, simplexC])
         labelling = CycleLabellingDict(topology)
-        label_update = LabelUpdateFactory().get_update(sc, labelling)
+        label_update = LabelUpdateFactory().get_update(topology, topology, labelling)
 
         labelling.update(label_update)
         assert labelling.dict == {"A": True, "B": False, "C": False, "D": False, "E": True}
@@ -82,8 +84,7 @@ class TestIntegrateCycleLabellingDict:
         labelling = CycleLabellingDict(old_topology)
 
         new_topology = mock_topology(self.cycles, simplices=[simplexB, simplexC, simplexD])
-        sc = StateChange2D(new_topology, old_topology)
-        label_update = LabelUpdateFactory().get_update(sc, labelling)
+        label_update = LabelUpdateFactory().get_update(new_topology, old_topology, labelling)
 
         labelling.update(label_update)
         assert labelling.dict == {"A": True, "B": False, "C": False, "D": False, "E": True}
@@ -99,8 +100,7 @@ class TestIntegrateCycleLabellingDict:
         alpha_complex = mock_AlphaComplex({simplexB, simplexC, simplexD}, {})
         top2 = ConnectedTopology2D(alpha_complex, cmap)
 
-        sc = StateChange2D(top2, top1)
-        label_update = LabelUpdateFactory().get_update(sc, labelling)
+        label_update = LabelUpdateFactory().get_update(top2, top1, labelling)
 
         labelling.update(label_update)
         assert labelling.dict == {"A": True, "B": False, "C": False, "D": False, "E": True}

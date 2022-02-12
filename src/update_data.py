@@ -3,7 +3,8 @@ from collections import defaultdict
 from itertools import chain
 from typing import Type, Dict, Iterable
 
-from state_change import StateChange
+from state_change import StateChange2D
+from topology import Topology
 from utilities import UpdateError
 
 
@@ -66,21 +67,22 @@ class LabelUpdate2D(LabelUpdate):
 
 
 class LabelUpdateFactory:
-    atomic_updates: Dict[tuple, Type[LabelUpdate2D]] = defaultdict(lambda: NonAtomicUpdate)
+    atomic_updates2d: Dict[tuple, Type[LabelUpdate2D]] = defaultdict(lambda: NonAtomicUpdate)
 
     @classmethod
-    def get_update(cls, state_change: StateChange, labelling):
+    def get_update(cls, new_topology: Topology, old_topology: Topology, labelling):
+        state_change = StateChange2D(new_topology, old_topology)
         if not state_change.is_valid():
             raise UpdateError("The state_change provided is not self consistent")
-        return cls.atomic_updates[state_change.case](state_change.simplices(1),
-                                                     state_change.simplices(2),
-                                                     state_change.boundary_cycles,
-                                                     labelling)
+        return cls.atomic_updates2d[state_change.case](state_change.simplices(1),
+                                                       state_change.simplices(2),
+                                                       state_change.boundary_cycles,
+                                                       labelling)
 
     @classmethod
     def register(cls, case: tuple):
         def deco(deco_cls):
-            cls.atomic_updates[case] = deco_cls
+            cls.atomic_updates2d[case] = deco_cls
             return deco_cls
 
         return deco
