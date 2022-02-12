@@ -24,6 +24,12 @@ class Simplex:
     def __len__(self):
         return len(self.nodes) - 1
 
+    def __eq__(self, other):
+        return self.nodes == other.nodes
+
+    def __hash__(self):
+        return hash(self.nodes)
+
 
 class SimplicialComplex(ABC):
     @property

@@ -24,6 +24,9 @@ class BoundaryCycle2D:
     def __iter__(self):
         return iter(self.darts)
 
+    def __hash__(self):
+        return hash(self.darts)
+
     @property
     def nodes(self):
         return set(sum(self.darts, ()))
@@ -77,7 +80,7 @@ class CombinatorialMap(ABC):
 class CombinatorialMap2D(CombinatorialMap):
     Dart = tuple
     rotation_info: RotationInfo2D
-    _boundary_cycles: Set = field(default_factory=lambda: {})
+    _boundary_cycles: Set = field(default_factory=lambda: set())
 
     def __post_init__(self) -> None:
         all_darts = self.rotation_info.all_darts.copy()
