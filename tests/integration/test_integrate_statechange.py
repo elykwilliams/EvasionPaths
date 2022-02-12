@@ -23,7 +23,7 @@ def topology(cycles, simplices=(), edges=()):
     return new_topology
 
 
-class TestAdd1Simplex:
+class TestAdd2Simplex:
     simplexB = Simplex("B")
     simplexC = Simplex("C")
     simplexD = Simplex("D")
