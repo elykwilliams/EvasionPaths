@@ -2,7 +2,7 @@ from unittest import mock
 
 import pytest
 
-from topology2 import ConnectedTopology
+from topology import ConnectedTopology
 
 
 @pytest.mark.fixture

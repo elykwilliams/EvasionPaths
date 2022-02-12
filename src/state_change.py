@@ -2,7 +2,7 @@ from abc import ABC, abstractmethod
 
 from dataclasses import dataclass
 
-from topology2 import Topology
+from topology import Topology
 from utilities import SetDifference
 
 

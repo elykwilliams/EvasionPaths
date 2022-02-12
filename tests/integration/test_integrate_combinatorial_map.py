@@ -5,10 +5,10 @@ import pytest
 from dataclasses import dataclass
 
 from alpha_complex import Simplex
-from combinatorial_map2 import CombinatorialMap2D, RotationInfo2D
-from cycle_labelling2 import CycleLabellingDict
+from combinatorial_map import CombinatorialMap2D, RotationInfo2D
+from cycle_labelling import CycleLabellingDict
 from state_change import StateChange2D
-from topology2 import ConnectedTopology
+from topology import ConnectedTopology
 from update_data import LabelUpdateFactory, Remove1SimplexUpdate2D
 
 

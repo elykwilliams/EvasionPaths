@@ -6,13 +6,13 @@
 # If not, visit: https://opensource.org/licenses/BSD-3-Clause
 # ************************************************************
 
-from combinatorial_map import *
-from boundary_geometry import Domain
-from time_stepping import EvasionPathSimulation
-from sensor_network import SensorNetwork
-
-import networkx as nx
 import matplotlib.pyplot as plt
+import networkx as nx
+
+from boundary_geometry import Domain
+from combinatorial_map_old import *
+from sensor_network import SensorNetwork
+from time_stepping import EvasionPathSimulation
 
 
 ## Show fence sensors.

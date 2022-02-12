@@ -1,5 +1,4 @@
-from abc import ABC, abstractmethod
-from typing import FrozenSet, Iterable, Sequence
+from typing import FrozenSet
 
 import gudhi
 from dataclasses import dataclass
@@ -32,18 +31,7 @@ class Simplex:
         return hash(self.nodes)
 
 
-class SimplicialComplex(ABC):
-    @property
-    @abstractmethod
-    def nodes(self) -> Iterable[int]:
-        ...
-
-    @abstractmethod
-    def simplices(self, dim: int) -> Sequence[Simplex]:
-        pass
-
-
-class AlphaComplex(SimplicialComplex):
+class AlphaComplex:
     def __init__(self, points, radius):
         alpha_complex = gudhi.alpha_complex.AlphaComplex(points)
         self.simplex_tree = alpha_complex.create_simplex_tree(max_alpha_square=radius ** 2)

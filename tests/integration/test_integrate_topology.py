@@ -2,7 +2,7 @@ from typing import Hashable
 from unittest import mock
 
 from state_change import StateChange2D
-from topology2 import ConnectedTopology
+from topology import ConnectedTopology
 from update_data import LabelUpdateFactory, RemoveSimplexPairUpdate2D
 
 # import pytest

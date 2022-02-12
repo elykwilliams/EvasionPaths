@@ -3,8 +3,8 @@ from typing import Iterable
 
 from dataclasses import dataclass
 
-from alpha_complex import SimplicialComplex, Simplex
-from combinatorial_map2 import CombinatorialMap, BoundaryCycle
+from alpha_complex import Simplex, AlphaComplex
+from combinatorial_map import CombinatorialMap, BoundaryCycle
 
 
 class Topology(ABC):
@@ -21,7 +21,7 @@ class Topology(ABC):
 
 @dataclass
 class ConnectedTopology(Topology):
-    alpha_complex: SimplicialComplex
+    alpha_complex: AlphaComplex
     cmap: CombinatorialMap
 
     def simplices(self, dim):

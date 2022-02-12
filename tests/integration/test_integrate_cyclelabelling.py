@@ -2,9 +2,9 @@ from unittest import mock
 
 import pytest
 
-from cycle_labelling2 import CycleLabellingDict
+from cycle_labelling import CycleLabellingDict
 from state_change import StateChange2D
-from topology2 import ConnectedTopology
+from topology import ConnectedTopology
 from update_data import LabelUpdateFactory
 from utilities import SetDifference
 

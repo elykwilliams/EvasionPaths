@@ -5,13 +5,16 @@
 # of the BSD-3 license with this file.
 # If not, visit: https://opensource.org/licenses/BSD-3-Clause
 # ************************************************************
-
-from cycle_labelling import CycleLabelling
-from topological_state import TopologicalState, StateChange
-from sensor_network import SensorNetwork
-from utilities import *
-
 import pickle
+
+from alpha_complex import AlphaComplex
+from combinatorial_map import RotationInfo2D, CombinatorialMap2D
+from cycle_labelling import CycleLabellingDict
+from sensor_network import SensorNetwork
+from state_change import StateChange2D
+from topology import ConnectedTopology
+from update_data import LabelUpdateFactory
+from utilities import *
 
 
 ## This class provides the main interface for running a simulation.
@@ -31,8 +34,11 @@ class EvasionPathSimulation:
         self.time = 0
 
         self.sensor_network = sensor_network
-        self.state = TopologicalState(self.sensor_network)
-        self.cycle_label = CycleLabelling(self.state)
+        ac = AlphaComplex(sensor_network.points, sensor_network.sensing_radius)
+        rot_info = RotationInfo2D(sensor_network.points, ac)
+        cmap = CombinatorialMap2D(rot_info)
+        self.state = ConnectedTopology(ac, cmap)
+        self.cycle_label = CycleLabellingDict(self.state)
 
     ## Run until no more intruders.
     # exit if max time is set. Returns simulation time.
@@ -54,11 +60,18 @@ class EvasionPathSimulation:
 
         for _ in range(2):
             self.sensor_network.move(dt)
-            new_state = TopologicalState(self.sensor_network)
-            state_change = StateChange(self.state, new_state)
+            ac = AlphaComplex(self.sensor_network.points, self.sensor_network.sensing_radius)
+            rot_info = RotationInfo2D(self.sensor_network.points, ac)
+            cmap = CombinatorialMap2D(rot_info)
+            new_state = ConnectedTopology(ac, cmap)
+            state_change = StateChange2D(new_state, self.state)
 
-            if state_change.is_atomic():
-                self.update(state_change)
+            label_update = LabelUpdateFactory().get_update(state_change, self.cycle_label)
+
+            if label_update.is_atomic() and self.cycle_label.is_valid(label_update):
+                self.cycle_label.update(label_update)
+                self.sensor_network.update()
+                self.state = state_change.new_topology
             elif level + 1 == 25:
                 raise MaxRecursionDepth(state_change)
             else:

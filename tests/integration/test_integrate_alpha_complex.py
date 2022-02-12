@@ -1,8 +1,8 @@
 from alpha_complex import AlphaComplex, Simplex
-from combinatorial_map2 import RotationInfo2D, CombinatorialMap2D, BoundaryCycle2D
-from cycle_labelling2 import CycleLabellingDict
+from combinatorial_map import RotationInfo2D, CombinatorialMap2D, BoundaryCycle2D
+from cycle_labelling import CycleLabellingDict
 from state_change import StateChange2D
-from topology2 import ConnectedTopology
+from topology import ConnectedTopology
 from update_data import LabelUpdateFactory, Add2SimplicesUpdate2D
 
 

@@ -3,7 +3,7 @@ from unittest.mock import patch
 
 import pytest
 
-from cycle_labelling2 import CycleLabellingDict
+from cycle_labelling import CycleLabellingDict
 from utilities import LabellingError
 
 
@@ -82,7 +82,7 @@ class TestCycleLabellingDict:
         labelling = CycleLabellingDict(topology)
         assert not labelling.is_valid(label_update)
 
-    @patch("cycle_labelling2.CycleLabellingDict.is_valid", return_value=False)
+    @patch("cycle_labelling.CycleLabellingDict.is_valid", return_value=False)
     def test_update_raises_invalid(self, topology, label_update):
         labelling = CycleLabellingDict(topology)
         pytest.raises(LabellingError, labelling.update, label_update)

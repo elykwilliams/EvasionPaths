@@ -3,7 +3,7 @@ from unittest.mock import patch
 
 import pytest
 
-from combinatorial_map2 import BoundaryCycle2D, CombinatorialMap2D, RotationInfo2D
+from combinatorial_map import BoundaryCycle2D, CombinatorialMap2D, RotationInfo2D
 
 
 class TestBoundaryCycle2D:
@@ -45,27 +45,27 @@ def mock_rotinfo():
 
 
 class TestCombinatorialMap2D:
-    @patch("combinatorial_map2.CombinatorialMap2D.__post_init__", return_value=None)
+    @patch("combinatorial_map.CombinatorialMap2D.__post_init__", return_value=None)
     def test_init(self, mock_rotinfo):
         cmap = CombinatorialMap2D(mock_rotinfo)
         assert cmap._boundary_cycles is not None
 
-    @patch("combinatorial_map2.CombinatorialMap2D.__post_init__", return_value=None)
+    @patch("combinatorial_map.CombinatorialMap2D.__post_init__", return_value=None)
     def test_alpha(self, m, mock_rotinfo):
         cmap = CombinatorialMap2D(mock_rotinfo)
         assert cmap.alpha((1, 0)) == (0, 1)
 
-    @patch("combinatorial_map2.CombinatorialMap2D.__post_init__", return_value=None)
+    @patch("combinatorial_map.CombinatorialMap2D.__post_init__", return_value=None)
     def test_sigma(self, _, mock_rotinfo):
         cmap = CombinatorialMap2D(mock_rotinfo)
         assert cmap.sigma((1, 0)) == (1, 2)
 
-    @patch("combinatorial_map2.CombinatorialMap2D.__post_init__", return_value=None)
+    @patch("combinatorial_map.CombinatorialMap2D.__post_init__", return_value=None)
     def test_phi(self, _, mock_rotinfo):
         cmap = CombinatorialMap2D(mock_rotinfo)
         assert cmap.phi((1, 0)) == (0, 5)
 
-    @patch("combinatorial_map2.CombinatorialMap2D.__post_init__", return_value=None)
+    @patch("combinatorial_map.CombinatorialMap2D.__post_init__", return_value=None)
     def test_generate_cycle_darts(self, _, mock_rotinfo):
         cmap = CombinatorialMap2D(mock_rotinfo)
         darts = cmap._generate_cycle_darts((1, 0))
