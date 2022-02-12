@@ -5,7 +5,7 @@ import pytest
 from update_data import \
     LabelUpdate2D, NonAtomicUpdate, Add2SimplicesUpdate2D, \
     Remove2SimplicesUpdate2D, Add1SimplexUpdate2D, AddSimplexPairUpdate2D, \
-    RemoveSimplexPairUpdate2D, DelaunyFlipUpdate2D, LabelUpdateFactory
+    RemoveSimplexPairUpdate2D, DelaunyFlipUpdate2D, LabelUpdateFactory, Remove1SimplexUpdate2D
 from utilities import UpdateError
 
 
@@ -186,21 +186,21 @@ class TestRemove1Simplex:
         return cycles
 
     def test_valid_true_false(self, edges, simplices, boundary_cycles, connected_labelling):
-        update = Add1SimplexUpdate2D(edges, simplices, boundary_cycles, connected_labelling)
+        update = Remove1SimplexUpdate2D(edges, simplices, boundary_cycles, connected_labelling)
         assert update.mapping == {"F": True}
 
     def test_valid_true_true(self, edges, simplices, boundary_cycles, connected_labelling):
         boundary_cycles.removed.return_value = {"D", "E"}
-        update = Add1SimplexUpdate2D(edges, simplices, boundary_cycles, connected_labelling)
+        update = Remove1SimplexUpdate2D(edges, simplices, boundary_cycles, connected_labelling)
         assert update.mapping == {"F": True}
 
     def test_valid_false_false(self, edges, simplices, boundary_cycles, connected_labelling):
         boundary_cycles.removed.return_value = ["B", "C"]
-        update = Add1SimplexUpdate2D(edges, simplices, boundary_cycles, connected_labelling)
+        update = Remove1SimplexUpdate2D(edges, simplices, boundary_cycles, connected_labelling)
         assert update.mapping == {"F": False}
 
     def test_correct_length(self, edges, simplices, boundary_cycles, connected_labelling):
-        update = Add1SimplexUpdate2D(edges, simplices, boundary_cycles, connected_labelling)
+        update = Remove1SimplexUpdate2D(edges, simplices, boundary_cycles, connected_labelling)
         assert len(update.mapping) == 1
 
 
