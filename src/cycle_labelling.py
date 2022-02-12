@@ -25,6 +25,9 @@ class CycleLabelling(ABC):
     def update(self, update_data: LabelUpdate):
         ...
 
+    @abstractmethod
+    def has_intruder(self) -> bool:
+        ...
 
 class CycleLabellingDict(CycleLabelling):
 
@@ -80,3 +83,6 @@ class CycleLabellingDict(CycleLabelling):
             return False
         else:
             return True
+
+    def has_intruder(self):
+        return any(label for label in self.dict.values())

@@ -95,3 +95,13 @@ class TestCycleLabellingDict:
     def test_update_raises_invalid(self, topology, label_update):
         labelling = CycleLabellingDict(topology)
         pytest.raises(LabellingError, labelling.update, label_update)
+
+    def test_has_intruder(self, topology):
+        labelling = CycleLabellingDict(topology)
+        assert labelling.has_intruder()
+
+    def test_no_intruder(self, topology):
+        labelling = CycleLabellingDict(topology)
+        for cycle in labelling:
+            labelling[cycle] = False
+        assert not labelling.has_intruder()
