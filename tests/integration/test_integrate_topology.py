@@ -2,7 +2,7 @@ from typing import Hashable
 from unittest import mock
 
 from state_change import StateChange2D
-from topology import ConnectedTopology
+from topology import ConnectedTopology, generate_topology
 from update_data import LabelUpdateFactory, RemoveSimplexPairUpdate2D
 
 # import pytest
@@ -122,3 +122,12 @@ class TestIntegrateTopology:
                      "B": True,
                      "C": False}
         assert type(LabelUpdateFactory().get_update(sc, labelling)) == RemoveSimplexPairUpdate2D
+
+
+def test_generate_topology():
+    from alpha_complex import Simplex
+    points = [(1.5, 0.5), (1, 1), (0.5, 1.6), (0, 1), (0, 0), (1, 0)]
+    radius = 0.5
+
+    topology = generate_topology(points, radius)
+    assert topology.simplices(2) == {Simplex(frozenset({1, 5, 0}))}
