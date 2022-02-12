@@ -4,6 +4,8 @@ from typing import Iterable
 import networkx as nx
 from dataclasses import dataclass
 
+from alpha_complex import SimplicialComplex
+
 
 class Topology(ABC):
 
@@ -15,12 +17,6 @@ class Topology(ABC):
     @abstractmethod
     def boundary_cycles(self):
         ...
-
-
-class AlphaComplex(ABC):
-    @abstractmethod
-    def simplices(self, dim):
-        pass
 
 
 class BoundaryCycle:
@@ -63,7 +59,7 @@ class CombinatorialMap(ABC):
 
 @dataclass
 class ConnectedTopology(Topology):
-    alpha_complex: AlphaComplex
+    alpha_complex: SimplicialComplex
     cmap: CombinatorialMap
 
     def simplices(self, dim):
