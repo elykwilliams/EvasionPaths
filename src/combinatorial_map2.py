@@ -1,6 +1,8 @@
 from abc import ABC, abstractmethod
+from math import atan2
 from typing import Iterable, Set, List
 
+import networkx as nx
 from dataclasses import dataclass, field
 
 
@@ -28,15 +30,35 @@ class BoundaryCycle2D:
 
 
 class RotationInfo2D:
-    def __init__(self):
-        pass
+    def __init__(self, points, alpha_complex):
+        graph = nx.Graph()
+        graph.add_nodes_from(alpha_complex.nodes)
+        graph.add_edges_from([edge.nodes for edge in alpha_complex.simplices(1)])
+
+        self.adj = dict()
+        for node in graph.nodes():
+            neighbors = list(graph.neighbors(node))
+            anticlockwise, clockwise = False, True
+
+            # sort w.r.t angle from x axis
+            def theta(a, center):
+                oa = (a[0] - center[0], a[1] - center[1])
+                return atan2(oa[1], oa[0])
+
+            sorted_neighbors = sorted(neighbors,
+                                      key=lambda nei: theta(points[nei], points[node]),
+                                      reverse=anticlockwise)
+            self.adj[node] = list(sorted_neighbors)
 
     def next(self, dart):
-        return dart
+        v1, v2 = dart
+        index = self.adj[v1].index(v2)
+        next_index = (index + 1) % len(self.adj[v1])
+        return v1, self.adj[v1][next_index]
 
     @property
     def all_darts(self):
-        return []
+        return set(sum(([(v1, v2) for v2 in self.adj[v1]] for v1 in self.adj), []))
 
 
 class CombinatorialMap(ABC):
@@ -45,10 +67,6 @@ class CombinatorialMap(ABC):
     @abstractmethod
     def boundary_cycles(self):
         ...
-
-    @abstractmethod
-    def alpha(self, dart):
-        pass
 
     @abstractmethod
     def get_cycle(self, dart):
@@ -64,7 +82,7 @@ class CombinatorialMap2D(CombinatorialMap):
     def __post_init__(self) -> None:
         all_darts = self.rotation_info.all_darts.copy()
         while all_darts:
-            next_dart = all_darts[0]
+            next_dart = next(iter(all_darts))
             cycle = self._generate_cycle_darts(next_dart)
             for dart in cycle:
                 all_darts.remove(dart)
