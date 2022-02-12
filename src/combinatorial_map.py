@@ -18,7 +18,7 @@ class BoundaryCycle(ABC):
 
 
 @dataclass
-class BoundaryCycle2D:
+class BoundaryCycle2D(BoundaryCycle):
     darts: frozenset
 
     def __iter__(self):
