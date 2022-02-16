@@ -1,5 +1,4 @@
 from abc import ABC, abstractmethod
-from collections import defaultdict
 from itertools import chain
 from typing import Type, Dict, Iterable
 
@@ -67,17 +66,16 @@ class LabelUpdate2D(LabelUpdate):
 
 
 class LabelUpdateFactory:
-    atomic_updates2d: Dict[tuple, Type[LabelUpdate2D]] = defaultdict(lambda: NonAtomicUpdate)
+    atomic_updates2d: Dict[tuple, Type[LabelUpdate2D]] = dict()
 
     @classmethod
     def get_update(cls, new_topology: Topology, old_topology: Topology, labelling):
         state_change = StateChange2D(new_topology, old_topology)
         if not state_change.is_valid():
             raise UpdateError("The state_change provided is not self consistent")
-        return cls.atomic_updates2d[state_change.case](state_change.simplices(1),
-                                                       state_change.simplices(2),
-                                                       state_change.boundary_cycles,
-                                                       labelling)
+        update_type = cls.atomic_updates2d.get(state_change.case, NonAtomicUpdate)
+        return update_type(state_change.simplices(1), state_change.simplices(2),
+                           state_change.boundary_cycles, labelling)
 
     @classmethod
     def register(cls, case: tuple):
