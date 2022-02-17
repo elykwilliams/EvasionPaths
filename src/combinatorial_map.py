@@ -86,7 +86,7 @@ class CombinatorialMap2D(CombinatorialMap):
         all_darts = self.rotation_info.all_darts.copy()
         while all_darts:
             next_dart = next(iter(all_darts))
-            cycle = self._generate_cycle_darts(next_dart)
+            cycle = self.generate_cycle_darts(next_dart)
             for dart in cycle:
                 all_darts.remove(dart)
             self._boundary_cycles.add(BoundaryCycle2D(frozenset(cycle)))
@@ -100,7 +100,7 @@ class CombinatorialMap2D(CombinatorialMap):
     def phi(self, dart: Dart) -> Dart:
         return self.sigma(self.alpha(dart))
 
-    def _generate_cycle_darts(self, dart: Dart) -> List[Dart]:
+    def generate_cycle_darts(self, dart: Dart) -> List[Dart]:
         cycle = [dart]
         next_dart = self.phi(dart)
         while next_dart != dart:

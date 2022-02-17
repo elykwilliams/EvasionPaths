@@ -7,7 +7,10 @@ from alpha_complex import Simplex, AlphaComplex
 from combinatorial_map import BoundaryCycle, RotationInfo2D, CombinatorialMap2D
 
 
+@dataclass
 class Topology(ABC):
+    alpha_complex: AlphaComplex
+    cmap: CombinatorialMap2D
 
     @abstractmethod
     def simplices(self, dim) -> Iterable[Simplex]:
@@ -19,10 +22,7 @@ class Topology(ABC):
         ...
 
 
-@dataclass
 class ConnectedTopology2D(Topology):
-    alpha_complex: AlphaComplex
-    cmap: CombinatorialMap2D
 
     def simplices(self, dim):
         return self.alpha_complex.simplices(dim)

@@ -68,7 +68,7 @@ class TestCombinatorialMap2D:
     @patch("combinatorial_map.CombinatorialMap2D.__post_init__", return_value=None)
     def test_generate_cycle_darts(self, _, mock_rotinfo):
         cmap = CombinatorialMap2D(mock_rotinfo)
-        darts = cmap._generate_cycle_darts((1, 0))
+        darts = cmap.generate_cycle_darts((1, 0))
         assert set(darts) == {(1, 0), (0, 5), (5, 1)}
 
     def test_post_init(self, mock_rotinfo):
