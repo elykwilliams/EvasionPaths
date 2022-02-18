@@ -8,7 +8,7 @@ from alpha_complex import Simplex
 from combinatorial_map import CombinatorialMap2D, RotationInfo2D
 from cycle_labelling import CycleLabellingDict
 from state_change import StateChange
-from topology import ConnectedTopology2D
+from topology import Topology
 from update_data import LabelUpdateFactory, Remove1SimplexUpdate2D
 
 
@@ -69,7 +69,7 @@ def topology(simplices, edges, points):
     ac = mock_alphacomplex(simplices, edges)
     rotinfo = RotationInfo2D(points, ac)
     cmap = CombinatorialMap2D(rotinfo)
-    return ConnectedTopology2D(ac, cmap)
+    return Topology(ac, cmap)
 
 
 class TestIntegrateCMap:

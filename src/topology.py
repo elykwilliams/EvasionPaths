@@ -1,33 +1,13 @@
-from abc import ABC, abstractmethod
-from typing import Iterable
-
 from dataclasses import dataclass
 
-from alpha_complex import Simplex, AlphaComplex
-from combinatorial_map import BoundaryCycle, RotationInfo2D, CombinatorialMap2D
+from alpha_complex import AlphaComplex
+from combinatorial_map import BoundaryCycle, RotationInfo2D, CombinatorialMap2D, CombinatorialMap
 
 
 @dataclass
-class Topology(ABC):
+class Topology:
     alpha_complex: AlphaComplex
-    cmap: CombinatorialMap2D
-
-    @abstractmethod
-    def simplices(self, dim) -> Iterable[Simplex]:
-        ...
-
-    @property
-    @abstractmethod
-    def boundary_cycles(self) -> Iterable[BoundaryCycle]:
-        ...
-
-    @property
-    @abstractmethod
-    def dim(self) -> int:
-        ...
-
-
-class ConnectedTopology2D(Topology):
+    cmap: CombinatorialMap
 
     def simplices(self, dim):
         return self.alpha_complex.simplices(dim)
@@ -38,7 +18,7 @@ class ConnectedTopology2D(Topology):
 
     @property
     def alpha_cycle(self) -> BoundaryCycle:
-        return self.cmap.get_cycle((0, 1))
+        return self.cmap.get_cycle(tuple(range(self.dim)))
 
     @property
     def dim(self) -> int:
@@ -47,6 +27,9 @@ class ConnectedTopology2D(Topology):
 
 def generate_topology(points, radius):
     ac = AlphaComplex(points, radius)
-    rot_info = RotationInfo2D(points, ac)
-    cmap = CombinatorialMap2D(rot_info)
-    return ConnectedTopology2D(ac, cmap)
+    if ac.dim == 2:
+        rot_info = RotationInfo2D(points, ac)
+        cmap = CombinatorialMap2D(rot_info)
+    else:
+        raise NotImplementedError(f"No Implementation for CombinatorialMap for dimension {ac.dim}")
+    return Topology(ac, cmap)
