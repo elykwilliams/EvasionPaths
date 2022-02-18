@@ -25,9 +25,15 @@ class CycleLabelling(ABC):
     def update(self, update_data: LabelUpdate):
         ...
 
+    ## Return cycle labelling.
+    # raises key error if cycle not found.
     @abstractmethod
-    def has_intruder(self) -> bool:
+    def __getitem__(self, item):
         ...
+
+    def has_intruder(self) -> bool:
+        return any(self[cycle] for cycle in self)
+
 
 class CycleLabellingDict(CycleLabelling):
 
@@ -83,6 +89,3 @@ class CycleLabellingDict(CycleLabelling):
             return False
         else:
             return True
-
-    def has_intruder(self):
-        return any(label for label in self.dict.values())
