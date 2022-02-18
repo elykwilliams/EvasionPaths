@@ -7,7 +7,7 @@ from dataclasses import dataclass
 from alpha_complex import Simplex
 from combinatorial_map import CombinatorialMap2D, RotationInfo2D
 from cycle_labelling import CycleLabellingDict
-from state_change import StateChange2D
+from state_change import StateChange
 from topology import ConnectedTopology2D
 from update_data import LabelUpdateFactory, Remove1SimplexUpdate2D
 
@@ -114,7 +114,7 @@ class TestIntegrateCMap:
         edges = [(5, 0), (0, 1), (1, 2), (2, 3), (3, 4), (4, 5), (1, 5)]
         topology2 = topology(self.simplices, edges, self.points)
 
-        sc = StateChange2D(topology2, topology1)
+        sc = StateChange(topology2, topology1)
         assert sc.case == (0, 1, 0, 0, 1, 2)
 
     def test_integrate_labelupdate(self):

@@ -1,7 +1,7 @@
 from typing import Hashable
 from unittest import mock
 
-from state_change import StateChange2D
+from state_change import StateChange
 from topology import ConnectedTopology2D, generate_topology
 from update_data import LabelUpdateFactory, RemoveSimplexPairUpdate2D
 
@@ -95,7 +95,7 @@ class TestIntegrateTopology:
              "D": frozenset({"BD", "BA", "BE", "CD", "CE"})}
         cmap = CombinatorialMap(d)
         top2 = ConnectedTopology2D(alpha_complex, cmap)
-        sc = StateChange2D(top2, top1)
+        sc = StateChange(top2, top1)
 
         assert sc.case == (0, 1, 0, 1, 1, 2)
 

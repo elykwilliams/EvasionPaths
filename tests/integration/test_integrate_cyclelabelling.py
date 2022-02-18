@@ -65,14 +65,14 @@ class TestIntegrateCycleLabellingDict:
         labelling.update(label_update)
         assert labelling.dict == {"A": True, "B": False, "C": False, "D": False, "E": True}
 
-    @patch("update_data.StateChange2D")
-    def test_mock_state_change(self, StateChange2D):
+    @patch("update_data.StateChange")
+    def test_mock_state_change(self, StateChange):
         sc = mock.Mock()
         sc.case = (0, 0, 1, 0, 0, 0)
         sc.is_valid.return_value = True
         sc.boundary_cycles = SetDifference(self.cycles, self.cycles)
         sc.simplices.return_value = SetDifference([simplexB, simplexC, simplexD], [simplexB, simplexC])
-        StateChange2D.return_value = sc
+        StateChange.return_value = sc
 
         topology = mock_topology(self.cycles, simplices=[simplexB, simplexC])
         labelling = CycleLabellingDict(topology)

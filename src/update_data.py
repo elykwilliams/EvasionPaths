@@ -2,7 +2,7 @@ from abc import ABC, abstractmethod
 from itertools import chain
 from typing import Type, Dict, Iterable
 
-from state_change import StateChange2D
+from state_change import StateChange
 from topology import Topology
 from utilities import UpdateError
 
@@ -70,7 +70,7 @@ class LabelUpdateFactory:
 
     @classmethod
     def get_update(cls, new_topology: Topology, old_topology: Topology, labelling):
-        state_change = StateChange2D(new_topology, old_topology)
+        state_change = StateChange(new_topology, old_topology)
         if not state_change.is_valid():
             raise UpdateError("The state_change provided is not self consistent")
         update_type = cls.atomic_updates2d.get(state_change.case, NonAtomicUpdate)

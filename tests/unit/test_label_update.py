@@ -357,25 +357,25 @@ class TestLabelFactory:
         case = (1, 0, 0, 0, 2, 1)
         assert LabelUpdateFactory.atomic_updates2d[case] == Add1SimplexUpdate2D
 
-    @patch("update_data.StateChange2D")
-    def test_get_add1simplex(self, StateChange2D):
-        StateChange2D.return_value = mock_state_change((1, 0, 0, 0, 2, 1), True)
+    @patch("update_data.StateChange")
+    def test_get_add1simplex(self, StateChange):
+        StateChange.return_value = mock_state_change((1, 0, 0, 0, 2, 1), True)
         labelling = mock.Mock()
         t1 = mock.Mock()
         update = LabelUpdateFactory().get_update(t1, t1, labelling)
         assert type(update) == Add1SimplexUpdate2D
 
-    @patch("update_data.StateChange2D")
-    def test_returns_nonatomic(self, StateChange2D):
-        StateChange2D.return_value = mock_state_change((1, 0, 0, 30, 2, 1), True)
+    @patch("update_data.StateChange")
+    def test_returns_nonatomic(self, StateChange):
+        StateChange.return_value = mock_state_change((1, 0, 0, 30, 2, 1), True)
         labelling = mock.Mock()
         t1 = mock.Mock()
         update = LabelUpdateFactory().get_update(t1, t1, labelling)
         assert type(update) == NonAtomicUpdate
 
-    @patch("update_data.StateChange2D")
-    def test_raise_on_invalid_state_change(self, StateChange2D):
+    @patch("update_data.StateChange")
+    def test_raise_on_invalid_state_change(self, StateChange):
         labelling = mock.Mock()
-        StateChange2D.return_value = mock_state_change((1, 0, 0, 30, 2, 1), False)
+        StateChange.return_value = mock_state_change((1, 0, 0, 30, 2, 1), False)
         t1 = mock.Mock()
         assert pytest.raises(UpdateError, LabelUpdateFactory.get_update, t1, t1, labelling)

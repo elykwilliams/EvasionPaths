@@ -2,7 +2,7 @@ from unittest import mock
 
 import pytest
 
-from state_change import StateChange2D
+from state_change import StateChange
 from update_data import LabelUpdateFactory, Add2SimplicesUpdate2D, RemoveSimplexPairUpdate2D
 
 
@@ -33,15 +33,15 @@ class TestAdd2Simplex:
     old_topology = topology(cycles, simplices=[simplexB, simplexC])
 
     def test_new_simplices(self, connected_labelling):
-        state_change = StateChange2D(self.new_topology, self.old_topology)
+        state_change = StateChange(self.new_topology, self.old_topology)
         assert state_change.simplices(2).new_list == [self.simplexB, self.simplexC, self.simplexD]
 
     def test_added_simplices(self, connected_labelling):
-        state_change = StateChange2D(self.new_topology, self.old_topology)
+        state_change = StateChange(self.new_topology, self.old_topology)
         assert state_change.simplices(2).added() == {self.simplexD}
 
     def test_case(self, connected_labelling):
-        state_change = StateChange2D(self.new_topology, self.old_topology)
+        state_change = StateChange(self.new_topology, self.old_topology)
         assert state_change.case == (0, 0, 1, 0, 0, 0)
 
     def test_factory(self, connected_labelling):
@@ -61,7 +61,7 @@ class TestRemoveSimplexPair:
     old_topology = topology(cycles, simplices=[simplexB, simplexC], edges=["cd"])
 
     def test_case(self, connected_labelling):
-        state_change = StateChange2D(self.new_topology, self.old_topology)
+        state_change = StateChange(self.new_topology, self.old_topology)
         assert state_change.case == (0, 1, 0, 1, 1, 2)
 
     def test_factory(self, connected_labelling):
