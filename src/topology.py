@@ -21,6 +21,11 @@ class Topology(ABC):
     def boundary_cycles(self) -> Iterable[BoundaryCycle]:
         ...
 
+    @property
+    @abstractmethod
+    def dim(self) -> int:
+        ...
+
 
 class ConnectedTopology2D(Topology):
 
@@ -34,6 +39,10 @@ class ConnectedTopology2D(Topology):
     @property
     def alpha_cycle(self) -> BoundaryCycle:
         return self.cmap.get_cycle((0, 1))
+
+    @property
+    def dim(self) -> int:
+        return self.alpha_complex.dim
 
 
 def generate_topology(points, radius):

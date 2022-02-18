@@ -60,6 +60,7 @@ def mock_alphacomplex(simplices, edges):
         lambda dim: [Simplex(frozenset(edge)) for edge in edges] if dim == 1 \
             else [Simplex(frozenset(simplex)) for simplex in simplices]
     ac.nodes = {0, 1, 2, 3, 4, 5}
+    ac.dim = 2
     return ac
 
 

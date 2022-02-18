@@ -35,6 +35,7 @@ class AlphaComplex:
     def __init__(self, points, radius):
         alpha_complex = gudhi.alpha_complex.AlphaComplex(points)
         self.simplex_tree = alpha_complex.create_simplex_tree(max_alpha_square=radius ** 2)
+        self.dim = len(points[0])
 
     @property
     def nodes(self):

@@ -30,6 +30,7 @@ def Simplex(name, edges=(), nodes=()):
 def AlphaComplex(simplices, edges):
     ac = mock.Mock()
     ac.simplices.side_effect = lambda dim: simplices if dim == 2 else edges
+    ac.dim = 2
     return ac
 
 

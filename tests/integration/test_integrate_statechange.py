@@ -20,6 +20,7 @@ def topology(cycles, simplices=(), edges=()):
     new_topology = mock.Mock()
     new_topology.boundary_cycles = cycles
     new_topology.simplices.side_effect = lambda dim: simplices if dim == 2 else edges
+    new_topology.dim = 2
     return new_topology
 
 

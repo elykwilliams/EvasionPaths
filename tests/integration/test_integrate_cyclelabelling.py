@@ -22,6 +22,7 @@ def Simplex(name, edges=(), nodes=()):
 def mock_AlphaComplex(simplices, edges):
     ac = mock.Mock()
     ac.simplices.side_effect = lambda dim: simplices if dim == 2 else edges
+    ac.dim = 2
     return ac
 
 
@@ -40,6 +41,7 @@ def mock_topology(cycles, simplices=(), edges=()):
     new_topology = mock.Mock()
     new_topology.boundary_cycles = cycles
     new_topology.simplices.side_effect = lambda dim: simplices if dim == 2 else edges
+    new_topology.dim = 2
     return new_topology
 
 
