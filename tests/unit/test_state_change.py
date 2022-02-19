@@ -141,6 +141,7 @@ class TestStateChange:
         t = mock.Mock()
         t.simplices.side_effect = lambda dim: ["B", "C"] if dim == 2 else ["bc"]
         t.boundary_cycles = ["B", "C"]
+        t.dim = 2
         return t
 
     @pytest.fixture
@@ -148,6 +149,7 @@ class TestStateChange:
         t = mock.Mock()
         t.simplices.side_effect = lambda dim: ["B", "C", "D"] if dim == 2 else ["bc", "cd"]
         t.boundary_cycles = ["B", "C", "D"]
+        t.dim = 2
         return t
 
     def test_init(self):
@@ -155,18 +157,6 @@ class TestStateChange:
         t2 = mock.Mock()
         sc = StateChange(t1, t2)
         assert sc.old_topology is not None and sc.new_topology is not None
-
-    @patch("state_change.SetDifference")
-    def test_simplices2(self, mock_set_diff, topology1, topology2):
-        sc = StateChange(topology2, topology1)
-        _ = sc.simplices(2)
-        mock_set_diff.assert_called_once_with(["B", "C", "D"], ["B", "C"])
-
-    @patch("state_change.SetDifference")
-    def test_simplices1(self, mock_set_diff, topology1, topology2):
-        sc = StateChange(topology2, topology1)
-        _ = sc.simplices(1)
-        mock_set_diff.assert_called_once_with(["bc", "cd"], ["bc"])
 
     @patch("state_change.SetDifference")
     def test_boundary_cycels(self, mock_set_diff, topology1, topology2):
@@ -201,7 +191,7 @@ class TestStateChange:
         topology2.dim = 2
         topology1.dim = 2
         sc = StateChange(topology2, topology1)
-        assert len(sc.simplices(2).added()) == 1 and len(sc.simplices(2).removed()) == 0
+        assert len(sc.simplices[2].added()) == 1 and len(sc.simplices[2].removed()) == 0
 
     def test_case(self, topology1, topology2):
         simplexB = Simplex("B")

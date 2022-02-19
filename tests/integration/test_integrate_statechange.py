@@ -34,11 +34,11 @@ class TestAdd2Simplex:
 
     def test_new_simplices(self, connected_labelling):
         state_change = StateChange(self.new_topology, self.old_topology)
-        assert state_change.simplices(2).new_list == [self.simplexB, self.simplexC, self.simplexD]
+        assert state_change.simplices[2].new_list == [self.simplexB, self.simplexC, self.simplexD]
 
     def test_added_simplices(self, connected_labelling):
         state_change = StateChange(self.new_topology, self.old_topology)
-        assert state_change.simplices(2).added() == {self.simplexD}
+        assert state_change.simplices[2].added() == {self.simplexD}
 
     def test_case(self, connected_labelling):
         state_change = StateChange(self.new_topology, self.old_topology)

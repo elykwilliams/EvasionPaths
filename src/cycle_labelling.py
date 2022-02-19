@@ -1,7 +1,6 @@
 from abc import ABC, abstractmethod
 
 from topology import Topology
-from update_data import LabelUpdate
 from utilities import LabellingError
 
 
@@ -22,7 +21,7 @@ class CycleLabelling(ABC):
     #   update all labels
     #   remove all old cycles
     @abstractmethod
-    def update(self, update_data: LabelUpdate):
+    def update(self, update_data):
         ...
 
     ## Return cycle labelling.
@@ -72,7 +71,7 @@ class CycleLabellingDict(CycleLabelling):
     #   add all new cycles,
     #   update all labels
     #   remove all old cycles
-    def update(self, update_data: LabelUpdate):
+    def update(self, update_data):
         if not self.is_valid(update_data):
             raise LabellingError("Invalid update provided to labelling")
 
@@ -82,7 +81,7 @@ class CycleLabellingDict(CycleLabelling):
         for cycle in update_data.cycles_removed:
             del self.dict[cycle]
 
-    def is_valid(self, update_data: LabelUpdate):
+    def is_valid(self, update_data):
         if any(cycle not in self for cycle in update_data.cycles_removed):
             return False
         elif not all(cycle in self or cycle in update_data.cycles_added for cycle in update_data.mapping):

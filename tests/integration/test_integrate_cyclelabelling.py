@@ -71,7 +71,7 @@ class TestIntegrateCycleLabellingDict:
         sc.case = (0, 0, 1, 0, 0, 0)
         sc.is_valid.return_value = True
         sc.boundary_cycles = SetDifference(self.cycles, self.cycles)
-        sc.simplices.return_value = SetDifference([simplexB, simplexC, simplexD], [simplexB, simplexC])
+        sc.simplices = {2: SetDifference([simplexB, simplexC, simplexD], [simplexB, simplexC]), 1: None}
         StateChange.return_value = sc
 
         topology = mock_topology(self.cycles, simplices=[simplexB, simplexC])

@@ -1,49 +1,19 @@
-from abc import ABC, abstractmethod
 from itertools import chain
-from typing import Type, Dict, Iterable
+from typing import Dict
 
+from dataclasses import dataclass
+
+from cycle_labelling import CycleLabelling
 from state_change import StateChange
 from topology import Topology
-from utilities import UpdateError
+from utilities import UpdateError, SetDifference
 
 
-class LabelUpdate(ABC):
-
-    @property
-    @abstractmethod
-    def cycles_added(self) -> Iterable:
-        ...
-
-    @property
-    @abstractmethod
-    def cycles_removed(self) -> Iterable:
-        ...
-
-    @property
-    def mapping(self) -> Dict:
-        return dict()
-
-    @abstractmethod
-    def is_valid(self) -> bool:
-        ...
-
-
-class LabelUpdate2D(LabelUpdate):
-    def __init__(self, edges, simplices, boundary_cycles, labels: Dict):
-        self.edges = edges
-        self.simplices = simplices
-        self.boundary_cycles = boundary_cycles
-        self.labels = labels
-
-    ## Check if update is self-consistant
-    # move to labellingTree ???
-    def is_valid(self):
-        check1 = all(cycle in self.labels for cycle in self.cycles_removed)
-        check2 = all(cycle in self.labels for cycle in self._simplex_cycles_removed)
-        return check1 and check2
-
-    def is_atomic(self):
-        return True
+@dataclass
+class LabelUpdate:
+    simplices: Dict[int, SetDifference]
+    boundary_cycles: SetDifference
+    labels: CycleLabelling
 
     @property
     def cycles_added(self):
@@ -53,51 +23,58 @@ class LabelUpdate2D(LabelUpdate):
     def cycles_removed(self):
         return self.boundary_cycles.removed()
 
-    ##
+    @property
+    def mapping(self) -> Dict:
+        return dict()
+
+    def is_atomic(self):
+        return True
+
     @property
     def _simplex_cycles_added(self):
         new_cycles = self.boundary_cycles.new_list
-        return [simplex.to_cycle(new_cycles) for simplex in self.simplices.added()]
+        dim = len(self.simplices)
+        return [simplex.to_cycle(new_cycles) for simplex in self.simplices[dim].added()]
 
     @property
     def _simplex_cycles_removed(self):
         old_cycles = self.boundary_cycles.old_list
-        return [simplex.to_cycle(old_cycles) for simplex in self.simplices.removed()]
+        dim = len(self.simplices)
+        return [simplex.to_cycle(old_cycles) for simplex in self.simplices[dim].removed()]
 
 
 class LabelUpdateFactory:
-    atomic_updates2d: Dict[tuple, Type[LabelUpdate2D]] = dict()
+    atomic_updates: Dict[tuple, LabelUpdate] = dict()
 
     @classmethod
-    def get_update(cls, new_topology: Topology, old_topology: Topology, labelling):
+    def get_update(cls, new_topology: Topology, old_topology: Topology, labelling) -> LabelUpdate:
         state_change = StateChange(new_topology, old_topology)
         if not state_change.is_valid():
             raise UpdateError("The state_change provided is not self consistent")
-        update_type = cls.atomic_updates2d.get(state_change.case, NonAtomicUpdate)
-        return update_type(state_change.simplices(1), state_change.simplices(2),
-                           state_change.boundary_cycles, labelling)
+        update_type = cls.atomic_updates.get(state_change.case, NonAtomicUpdate)
+        return update_type(state_change.simplices, state_change.boundary_cycles, labelling)
 
     @classmethod
     def register(cls, case: tuple):
         def deco(deco_cls):
-            cls.atomic_updates2d[case] = deco_cls
+            cls.atomic_updates[case] = deco_cls
             return deco_cls
 
         return deco
 
 
-class NonAtomicUpdate(LabelUpdate2D):
+class NonAtomicUpdate(LabelUpdate):
     def is_atomic(self):
         return False
 
 
 @LabelUpdateFactory.register((0, 0, 0, 0, 0, 0))
-class TrivialUpdate(LabelUpdate2D):
+class TrivialUpdate(LabelUpdate):
     pass
 
 
 @LabelUpdateFactory.register((0, 0, 1, 0, 0, 0))
-class Add2SimplicesUpdate2D(LabelUpdate2D):
+class Add2SimplicesUpdate2D(LabelUpdate):
     ## All 2-Simplices are Labeled False
     @property
     def mapping(self):
@@ -105,14 +82,14 @@ class Add2SimplicesUpdate2D(LabelUpdate2D):
 
 
 @LabelUpdateFactory.register((0, 0, 0, 1, 0, 0))
-class Remove2SimplicesUpdate2D(LabelUpdate2D):
+class Remove2SimplicesUpdate2D(LabelUpdate):
     @property
     def mapping(self):
         return {cycle: self.labels[cycle] for cycle in self._simplex_cycles_removed if cycle in self.labels}
 
 
 @LabelUpdateFactory.register((1, 0, 0, 0, 2, 1))
-class Add1SimplexUpdate2D(LabelUpdate2D):
+class Add1SimplexUpdate2D(LabelUpdate):
     ## Add edge.
     # New cycles will match the removed cycle
     @property
@@ -122,7 +99,7 @@ class Add1SimplexUpdate2D(LabelUpdate2D):
 
 
 @LabelUpdateFactory.register((0, 1, 0, 0, 1, 2))
-class Remove1SimplexUpdate2D(LabelUpdate2D):
+class Remove1SimplexUpdate2D(LabelUpdate):
     ## Remove edge.
     # added cycle will have intruder if either removed cycle has intruder
     @property
@@ -147,8 +124,8 @@ class AddSimplexPairUpdate2D(Add1SimplexUpdate2D):
     # If a 1-simplex and 2-simplex are added/removed simultaniously, then the 1-simplex
     # should be an edge of the 2-simplex
     def is_atomic(self):
-        simplex = next(iter(self.simplices.added()))
-        edge = next(iter(self.edges.added()))
+        simplex = next(iter(self.simplices[2].added()))
+        edge = next(iter(self.simplices[1].added()))
         return simplex.is_subface(edge)
 
 
@@ -159,13 +136,13 @@ class RemoveSimplexPairUpdate2D(Remove1SimplexUpdate2D):
     def is_atomic(self):
         # If a 1-simplex and 2-simplex are added/removed simultaniously, then the 1-simplex
         # should be an edge of the 2-simplex
-        simplex = next(iter(self.simplices.removed()))
-        edge = next(iter(self.edges.removed()))
+        simplex = next(iter(self.simplices[2].removed()))
+        edge = next(iter(self.simplices[1].removed()))
         return simplex.is_subface(edge)
 
 
 @LabelUpdateFactory.register((1, 1, 2, 2, 2, 2))
-class DelaunyFlipUpdate2D(LabelUpdate2D):
+class DelaunyFlipUpdate2D(LabelUpdate):
     ## Delauny Flip.
     # edge between two simplices flips resulting in two new simplices
     # Note that this can only happen with simplices.
@@ -183,16 +160,16 @@ class DelaunyFlipUpdate2D(LabelUpdate2D):
     # The set of vertices of the 1-simplices should contain the vertices of each 2-simplex
     # that is added or removed.
     def is_atomic(self):
-        old_edge = next(iter(self.edges.removed()))
-        new_edge = next(iter(self.edges.added()))
+        old_edge = next(iter(self.simplices[1].removed()))
+        new_edge = next(iter(self.simplices[1].added()))
 
-        if not all([simplex.is_subface(old_edge) for simplex in self.simplices.removed()]):
+        if not all([simplex.is_subface(old_edge) for simplex in self.simplices[2].removed()]):
             return False
-        elif not all([simplex.is_subface(new_edge) for simplex in self.simplices.added()]):
+        elif not all([simplex.is_subface(new_edge) for simplex in self.simplices[2].added()]):
             return False
 
-        old_nodes = chain(*[simplex.nodes for simplex in self.simplices.removed()])
-        new_nodes = chain(*[simplex.nodes for simplex in self.simplices.added()])
+        old_nodes = chain(*[simplex.nodes for simplex in self.simplices[2].removed()])
+        new_nodes = chain(*[simplex.nodes for simplex in self.simplices[2].added()])
         if set(old_nodes) != set(new_nodes):
             return False
         return True
