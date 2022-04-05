@@ -1,4 +1,5 @@
 from itertools import product
+import random as random
 
 import numpy as np
 
@@ -15,17 +16,50 @@ class SensorNetwork:
         self.old_pos = self.mobile_sensors
         self.old_vel = self.velocities
 
+
     def get_fence_sensors(self):
         dx = np.sqrt(3) * self.sensing_radius / 2
 
         spacing = np.arange(-dx, 1.001 + dx, self.sensing_radius)
         grid = list(product(spacing, spacing))
-        x0_face = [(-dx, y, z) for y, z in grid]
-        y0_face = [(x, -dx, z) for x, z in grid]
-        z0_face = [(x, y, -dx) for x, y in grid]
-        x1_face = [(1 + dx, y, z) for y, z in grid]
-        y1_face = [(x, 1 + dx, z) for x, z in grid]
-        z1_face = [(x, y, 1 + dx) for x, y in grid]
+        epsilon = pow(10, -5)
+        x0_face = [(-dx + random.uniform(-epsilon, epsilon),
+                    y + random.uniform(-epsilon, epsilon),
+                    z+random.uniform(-epsilon, epsilon)) for y, z in grid]
+        y0_face = [(x + random.uniform(-epsilon, epsilon),
+                    -dx + random.uniform(-epsilon, epsilon),
+                    z+random.uniform(-epsilon, epsilon)) for x, z in grid]
+        z0_face = [(x + random.uniform(-epsilon, epsilon),
+                    y + random.uniform(-epsilon, epsilon),
+                    -dx + random.uniform(-epsilon, epsilon)) for x, y in grid]
+        x1_face = [(1 + dx + random.uniform(-epsilon, epsilon),
+                    y + random.uniform(-epsilon, epsilon),
+                    z + random.uniform(-epsilon, epsilon)) for y, z in grid]
+        y1_face = [(x + random.uniform(-epsilon, epsilon),
+                    1 + dx + random.uniform(-epsilon, epsilon),
+                    z + random.uniform(-epsilon, epsilon)) for x, z in grid]
+        z1_face = [(x + random.uniform(-epsilon, epsilon),
+                    y + random.uniform(-epsilon, epsilon),
+                    1 + dx + random.uniform(-epsilon, epsilon)) for x, y in grid]
+
+        # x0_face = [(-dx,
+        #             y,
+        #             z) for y, z in grid]
+        # y0_face = [(x,
+        #             -dx,
+        #             z) for x, z in grid]
+        # z0_face = [(x,
+        #             y,
+        #             -dx) for x, y in grid]
+        # x1_face = [(1 + dx,
+        #             y,
+        #             z) for y, z in grid]
+        # y1_face = [(x,
+        #             1 + dx,
+        #             z) for x, z in grid]
+        # z1_face = [(x,
+        #             y,
+        #             1 + dx) for x, y in grid]
 
         fence_sensors = np.concatenate((x0_face, y0_face, z0_face, x1_face, y1_face, z1_face))
         fence_sensors = np.unique(fence_sensors, axis=0)
