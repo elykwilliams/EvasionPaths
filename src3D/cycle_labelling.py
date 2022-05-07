@@ -127,13 +127,13 @@ class CycleLabelling:
 
     # (0, 0, 1, 0, 0, 0, 2, 1)
     def _add_2simplex_2to1(self, removed_cycles, added_cycles):
-        self._cycle_label[added_cycles[0]] = any([self._cycle_label[s] for s in removed_cycles])
+        for cycle in added_cycles:
+            self._cycle_label[cycle] = self._cycle_label[removed_cycles[0]]
         self._delete_all(removed_cycles)
 
     # (0, 0, 0, 1, 0, 0, 1, 2)
     def _remove_2simplex_1to2(self, removed_cycles, added_cycles):
-        for cycle in added_cycles:
-            self._cycle_label[cycle] = self._cycle_label[removed_cycles[0]]
+        self._cycle_label[added_cycles[0]] = any([self._cycle_label[s] for s in removed_cycles])
         self._delete_all(removed_cycles)
 
     # (1, 0, 1, 0, 0, 0, 1, 1)

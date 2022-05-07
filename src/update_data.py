@@ -93,6 +93,7 @@ class Remove2SimplicesUpdate2D(LabelUpdate):
         return {cycle: self.labels[cycle] for cycle in self._simplex_cycles_removed if cycle in self.labels}
 
 
+@LabelUpdateFactory.register((0, 0, 1, 0, 0, 0, 2, 1))
 @LabelUpdateFactory.register((1, 0, 0, 0, 2, 1))
 class Add1SimplexUpdate2D(LabelUpdate):
     ## Add edge.
@@ -102,7 +103,7 @@ class Add1SimplexUpdate2D(LabelUpdate):
         label = self.labels[next(iter(self.cycles_removed))]
         return {cycle: label for cycle in self.cycles_added}
 
-
+@LabelUpdateFactory.register((0, 0, 0, 1, 0, 0, 1, 2))
 @LabelUpdateFactory.register((0, 1, 0, 0, 1, 2))
 class Remove1SimplexUpdate2D(LabelUpdate):
     ## Remove edge.
@@ -179,6 +180,20 @@ class DelaunyFlipUpdate2D(LabelUpdate):
             return False
         return True
 
+@LabelUpdateFactory.register((1, 0, 1, 0, 0, 0, 1, 1))
+@LabelUpdateFactory.register((0, 1, 0, 1, 0, 0, 1, 1))
+class AddSimplexPair3D(LabelUpdate):
+    @property
+    def mapping(self):
+        old_cycle = next(iter(self.cycles_removed))
+        new_cycle = next(iter(self.cycles_added))
+
+        return {new_cycle: self.labels[old_cycle]}
+    def atomic(self):
+        simplex = next(iter(self.simplices[2].added()))
+        edge = next(iter(self.simplices[1].added()))
+        return simplex.is_subface(edge)
+
 
 @LabelUpdateFactory.register((0, 0, 0, 1, 0, 0, 1, 1))
 @LabelUpdateFactory.register((0, 0, 1, 0, 0, 0, 1, 1))
@@ -189,6 +204,16 @@ class FinUpdate3D(LabelUpdate):
         new_cycle = next(iter(self.cycles_added))
 
         return {new_cycle: self.labels[old_cycle]}
+
+@LabelUpdateFactory.register((0, 0, 1, 0, 1, 0, 2, 1))
+class FillTetrahedronFace(LabelUpdate):
+    @property
+
+    def atomic(self):
+        two_simplex = next(iter(self.simplices[3].added()))
+        three_simplex = next(iter(self.simplices[2].added()))
+        return three_simplex.is_subface(two_simplex)
+
 
 # if __name__ == "__main__":
 #     T1 = TopologicalState([])
