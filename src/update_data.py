@@ -68,11 +68,15 @@ class NonAtomicUpdate(LabelUpdate):
         return False
 
 
+@LabelUpdateFactory.register((0, 0, 0, 0, 0, 0, 0, 0))
+@LabelUpdateFactory.register((1, 0, 0, 0, 0, 0, 0, 0))
+@LabelUpdateFactory.register((0, 1, 0, 0, 0, 0, 0, 0))
 @LabelUpdateFactory.register((0, 0, 0, 0, 0, 0))
 class TrivialUpdate(LabelUpdate):
     pass
 
 
+@LabelUpdateFactory.register((0, 0, 0, 0, 1, 0, 0, 0))
 @LabelUpdateFactory.register((0, 0, 1, 0, 0, 0))
 class Add2SimplicesUpdate2D(LabelUpdate):
     ## All 2-Simplices are Labeled False
@@ -81,6 +85,7 @@ class Add2SimplicesUpdate2D(LabelUpdate):
         return {cycle: False for cycle in self._simplex_cycles_added if cycle in self.labels}
 
 
+@LabelUpdateFactory.register((0, 0, 0, 0, 0, 1, 0, 0))
 @LabelUpdateFactory.register((0, 0, 0, 1, 0, 0))
 class Remove2SimplicesUpdate2D(LabelUpdate):
     @property
@@ -173,6 +178,17 @@ class DelaunyFlipUpdate2D(LabelUpdate):
         if set(old_nodes) != set(new_nodes):
             return False
         return True
+
+
+@LabelUpdateFactory.register((0, 0, 0, 1, 0, 0, 1, 1))
+@LabelUpdateFactory.register((0, 0, 1, 0, 0, 0, 1, 1))
+class FinUpdate3D(LabelUpdate):
+    @property
+    def mapping(self):
+        old_cycle = next(iter(self.cycles_removed))
+        new_cycle = next(iter(self.cycles_added))
+
+        return {new_cycle: self.labels[old_cycle]}
 
 # if __name__ == "__main__":
 #     T1 = TopologicalState([])
