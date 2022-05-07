@@ -215,15 +215,15 @@ class FillTetrahedronFace(LabelUpdate):
         return result
 
     def is_atomic(self):
-        two_simplex = next(iter(self.simplices[3].added()))
-        three_simplex = next(iter(self.simplices[2].added()))
+        two_simplex = next(iter(self.simplices[2].added()))
+        three_simplex = next(iter(self.simplices[3].added()))
         return three_simplex.is_subface(two_simplex)
 
 @LabelUpdateFactory.register((0, 0, 0, 1, 0, 1, 1, 2))
 class DrainTetrahedronFace(Remove1SimplexUpdate2D):
     def is_atomic(self):
-        two_simplex = next(iter(self.simplices[3].added()))
-        three_simplex = next(iter(self.simplices[2].added()))
+        two_simplex = next(iter(self.simplices[2].added()))
+        three_simplex = next(iter(self.simplices[3].added()))
         return three_simplex.is_subface(two_simplex)
 
 @LabelUpdateFactory.register((1, 0, 2, 0, 1, 0, 2, 1))
