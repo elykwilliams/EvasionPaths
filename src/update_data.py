@@ -220,6 +220,39 @@ class FillTetrahedronFace(LabelUpdate):
         three_simplex = next(iter(self.simplices[2].added()))
         return three_simplex.is_subface(two_simplex)
 
+@LabelUpdateFactory.register((0, 0, 0, 1, 0, 1, 1, 2))
+class DrainTetrahedronFace(LabelUpdate):
+    @property
+    def mapping(self):
+        pass
+    def is_atomic(self):
+        two_simplex = next(iter(self.simplices[3].added()))
+        three_simplex = next(iter(self.simplices[2].added()))
+        return three_simplex.is_subface(two_simplex)
+
+@LabelUpdateFactory.register((1, 0, 2, 0, 1, 0, 2, 1))
+class TetrahedronEdgeFill(LabelUpdate):
+    @property
+    def mapping(self):
+        pass
+    def is_atomic(self):
+        pass
+
+@LabelUpdateFactory.register((0, 1, 0, 2, 0, 1, 1, 2))
+class TetrahedronEdgeDrain(LabelUpdate):
+    @property
+    def mapping(self):
+        pass
+    def is_atomic(self):
+        pass
+
+@LabelUpdateFactory.register((1, 0, 3, 1, 3, 2, 3, 2))
+class Delaunay3D(LabelUpdate):
+    @property
+    def mapping(self):
+        pass
+    def is_atomic(self):
+        pass
 
 # if __name__ == "__main__":
 #     T1 = TopologicalState([])
