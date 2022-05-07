@@ -208,7 +208,11 @@ class AddSimplexPair3D(FinUpdate3D):
 class FillTetrahedronFace(LabelUpdate):
     @property
     def mapping(self):
-        pass
+        label = self.labels[next(iter(self.cycles_removed))]
+        result = {cycle: label for cycle in self.cycles_added}
+
+        result.update({cycle: False for cycle in self._simplex_cycles_added})
+        return result
 
     def is_atomic(self):
         two_simplex = next(iter(self.simplices[3].added()))
@@ -216,10 +220,7 @@ class FillTetrahedronFace(LabelUpdate):
         return three_simplex.is_subface(two_simplex)
 
 @LabelUpdateFactory.register((0, 0, 0, 1, 0, 1, 1, 2))
-class DrainTetrahedronFace(LabelUpdate):
-    @property
-    def mapping(self):
-        pass
+class DrainTetrahedronFace(Remove1SimplexUpdate2D):
     def is_atomic(self):
         two_simplex = next(iter(self.simplices[3].added()))
         three_simplex = next(iter(self.simplices[2].added()))
@@ -229,17 +230,32 @@ class DrainTetrahedronFace(LabelUpdate):
 class TetrahedronEdgeFill(LabelUpdate):
     @property
     def mapping(self):
-        pass
+        label = self.labels[next(iter(self.cycles_removed))]
+        result = {cycle: label for cycle in self.cycles_added}
+
+        result.update({cycle: False for cycle in self._simplex_cycles_added})
+        return result
     def is_atomic(self):
-        pass
+        # if all([
+        #     next(iter(self.simplices[k+1].added())).is_subface(
+        #         next(iter(self.simplices[k].added())))
+        #     for k in range(1,3)
+        # ])
+        tetrahedron = next(iter(self.simplices[3].added()))
+        edges = next(iter(self.simplices[1].added()))
+
+        return all(tetrahedron.is_subface(face) for face in self.simplices[2].added()) and tetrahedron.is_subface(edges)
+
 
 @LabelUpdateFactory.register((0, 1, 0, 2, 0, 1, 1, 2))
-class TetrahedronEdgeDrain(LabelUpdate):
-    @property
-    def mapping(self):
-        pass
+class TetrahedronEdgeDrain(Remove1SimplexUpdate2D):
     def is_atomic(self):
-        pass
+        tetrahedron = next(iter(self.simplices[3].removed()))
+        edges = next(iter(self.simplices[1].removed()))
+
+        return all(tetrahedron.is_subface(face) for face in self.simplices[2].removed()) and tetrahedron.is_subface(edges)
+
+
 
 @LabelUpdateFactory.register((1, 0, 3, 1, 3, 2, 3, 2))
 class Delaunay3D(LabelUpdate):
