@@ -258,12 +258,48 @@ class TetrahedronEdgeDrain(Remove1SimplexUpdate2D):
 
 
 @LabelUpdateFactory.register((1, 0, 3, 1, 3, 2, 3, 2))
-class Delaunay3D(LabelUpdate):
+class Delaunay3DEdgeFace(LabelUpdate):
     @property
     def mapping(self):
-        pass
+        return {cycle: False for cycle in self._simplex_cycles_added}
     def is_atomic(self):
-        pass
+        # 2D case bellow for reference
+
+        old_face = next(iter(self.simplices[2].removed()))
+        new_edges = next(iter(self.simplices[1].added()))
+
+        if not all([simplex.is_subface(old_face) for simplex in self.simplices[3].removed()]):
+            return False
+        elif not all([simplex.is_subface(new_edges) for simplex in self.simplices[3].added()]):
+            return False
+
+        old_nodes = chain(*[simplex.nodes for simplex in self.simplices[3].removed()])
+        new_nodes = chain(*[simplex.nodes for simplex in self.simplices[3].added()])
+        if set(old_nodes) != set(new_nodes):
+            return False
+
+
+@LabelUpdateFactory.register((0, 1, 1, 3, 2, 3, 2, 3))
+class Delaunay3DFaceEdge(LabelUpdate):
+    @property
+    def mapping(self):
+        return {cycle: False for cycle in self._simplex_cycles_added}
+    def is_atomic(self):
+
+        old_edge = next(iter(self.simplices[1].removed()))
+        new_faces = next(iter(self.simplices[2].added()))
+
+        if not all([simplex.is_subface(old_edge) for simplex in self.simplices[3].removed()]):
+            return False
+        elif not all([simplex.is_subface(new_faces) for simplex in self.simplices[3].added()]):
+            return False
+
+        old_nodes = chain(*[simplex.nodes for simplex in self.simplices[3].removed()])
+        new_nodes = chain(*[simplex.nodes for simplex in self.simplices[3].added()])
+        if set(old_nodes) != set(new_nodes):
+            return False
+
+
 
 # if __name__ == "__main__":
 #     T1 = TopologicalState([])
