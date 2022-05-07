@@ -6,8 +6,9 @@
 # If not, visit: https://opensource.org/licenses/BSD-3-Clause
 # ************************************************************
 
-from utilities import *
 from numpy import array
+
+from utilities import *
 
 
 ## This class contains all information local to a sensor.
@@ -116,3 +117,7 @@ class SensorNetwork:
     def update(self):
         for s in self.mobile_sensors:
             s.update()
+
+    @property
+    def points(self):
+        return [s.position for s in self]

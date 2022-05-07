@@ -5,13 +5,13 @@
 # of the BSD-3 license with this file.
 # If not, visit: https://opensource.org/licenses/BSD-3-Clause
 # ************************************************************
-
-from cycle_labelling import CycleLabelling
-from topological_state import TopologicalState, StateChange
-from sensor_network import SensorNetwork
-from utilities import *
-
 import pickle
+
+from cycle_labelling import CycleLabellingDict
+from sensor_network import SensorNetwork
+from topology import generate_topology
+from update_data import LabelUpdateFactory
+from utilities import *
 
 
 ## This class provides the main interface for running a simulation.
@@ -31,14 +31,18 @@ class EvasionPathSimulation:
         self.time = 0
 
         self.sensor_network = sensor_network
-        self.state = TopologicalState(self.sensor_network)
-        self.cycle_label = CycleLabelling(self.state)
+        self.topology = generate_topology(sensor_network.points, sensor_network.sensing_radius)
+        self.cycle_label = CycleLabellingDict(self.topology)
+        self.cycle_label[self.topology.alpha_cycle] = False
 
     ## Run until no more intruders.
     # exit if max time is set. Returns simulation time.
     def run(self) -> float:
         while self.cycle_label.has_intruder():
-            self.do_timestep()
+            try:
+                self.do_timestep()
+            except MaxRecursionDepthError:
+                raise  # do self_dump
             self.time += self.dt
             if 0 < self.Tend < self.time:
                 break
@@ -49,28 +53,29 @@ class EvasionPathSimulation:
     # If change is non-atomic, split time step in half and solve recursively.
     # Once an atomic change is found, update sensor network position, and update labelling.
     def do_timestep(self, level: int = 0) -> None:
+        if level == 25:
+            raise MaxRecursionDepthError()
 
-        dt = self.dt * 2 ** -level
+        adaptive_dt = self.dt * 2 ** -level
 
         for _ in range(2):
-            self.sensor_network.move(dt)
-            new_state = TopologicalState(self.sensor_network)
-            state_change = StateChange(self.state, new_state)
+            self.sensor_network.move(adaptive_dt)
+            new_topology = generate_topology(self.sensor_network.points, self.sensor_network.sensing_radius)
 
-            if state_change.is_atomic():
-                self.update(state_change)
-            elif level + 1 == 25:
-                raise MaxRecursionDepth(state_change)
+            label_update = LabelUpdateFactory().get_update(new_topology, self.topology, self.cycle_label)
+
+            if label_update.is_atomic():
+                self.update(label_update, new_topology)
             else:
                 self.do_timestep(level=level + 1)
 
             if level == 0:
                 return
 
-    def update(self, state_change):
-        self.cycle_label.update(state_change)
+    def update(self, label_update, new_topology):
+        self.cycle_label.update(label_update)
         self.sensor_network.update()
-        self.state = state_change.new_state
+        self.topology = new_topology
 
 
 ## Takes output from save_state() to initialize a simulation.
@@ -87,8 +92,7 @@ def load_state(filename: str) -> EvasionPathSimulation:
 
 ## Dumps current state to be resumed later.
 # This function is used to save the current state of a simulation.
-# This is useful for saving a random initial state for testing or
-# for saving an incomplete simulation to restart later.
+# This is useful for saving an incomplete simulation to restart later.
 def save_state(simulation, filename: str) -> None:
     try:
         with open(filename, 'wb') as file:

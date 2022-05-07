@@ -6,22 +6,22 @@
 # If not, visit: https://opensource.org/licenses/BSD-3-Clause
 # ************************************************************
 
-from combinatorial_map import *
-from boundary_geometry import Domain
-from time_stepping import EvasionPathSimulation
-from sensor_network import SensorNetwork
-
-import networkx as nx
 import matplotlib.pyplot as plt
+import networkx as nx
+
+from boundary_geometry import Domain
+from sensor_network import SensorNetwork
+from time_stepping import EvasionPathSimulation
 
 
 ## Show fence sensors.
 # Note that fence sensors are places slightly outside
 # of the actual domain.
-def show_boundary_points(sensors: SensorNetwork) -> None:
+
+
+def show_fence(sensors: SensorNetwork) -> None:
     axis = plt.gca()
-    xpts = [s.position[0] for s in sensors.fence_sensors]
-    ypts = [s.position[1] for s in sensors.fence_sensors]
+    xpts, ypts = zip(*[s.position for s in sensors.fence_sensors])
     axis.plot(xpts, ypts, 'k*')
 
 
@@ -38,17 +38,16 @@ def show_domain_boundary(domain: Domain) -> None:
 
 ## Show Sensor Network graph.
 def show_labelled_graph(sim: EvasionPathSimulation):
-    graph = sim.state.graph
-    points = [s.position for s in sim.sensor_network]
-    nx.draw(graph, points)
-    nx.draw_networkx_labels(graph, dict(enumerate(points)))
+    graph = nx.Graph()
+    graph.add_nodes_from(sim.topology.alpha_complex.nodes)
+    graph.add_edges_from(simplex.nodes for simplex in sim.topology.simplices(1))
+    nx.draw(graph, sim.sensor_network.points)
+    nx.draw_networkx_labels(graph, dict(enumerate(sim.sensor_network.points)))
 
 
 ## Display sensors.
 def show_sensor_points(sensors: SensorNetwork) -> None:
-    xpts = [s.position[0] for s in sensors]
-    ypts = [s.position[1] for s in sensors]
-
+    xpts, ypts = zip(*sensors.points)
     axis = plt.gca()
     axis.plot(xpts, ypts, 'k*')
 
@@ -56,34 +55,40 @@ def show_sensor_points(sensors: SensorNetwork) -> None:
 ## Display sensing disks.
 def show_sensor_radius(sensors: SensorNetwork) -> None:
     axis = plt.gca()
-    for pt in [s.position for s in sensors]:
+    for pt in sensors.points:
         axis.add_artist(plt.Circle(pt, sensors.sensing_radius, color='b', alpha=0.1, clip_on=False))
+
+
+def dart2cyclenodes(dart, cmap):
+    cycle_darts = cmap.generate_cycle_darts(dart)
+    ordered_nodes = [dart[1] for dart in cycle_darts]
+    return ordered_nodes
 
 
 ## Shade holes in AlphaComplex with possible intruder.
 def show_possible_intruder(sim: EvasionPathSimulation) -> None:
-    graph = sim.state.graph
-    points = [s.position for s in sim.sensor_network]
-    cmap = CMap(graph, points)
+    graph = nx.Graph()
+    graph.add_nodes_from(sim.topology.alpha_complex.nodes)
+    graph.add_edges_from(simplex.nodes for simplex in sim.topology.simplices(1))
+    cmap = sim.topology.cmap
 
     # get boundary cycles with nodes in correct order
     axis = plt.gca()
-    for cycle_nodes in cmap.boundary_cycle_nodes_ordered():
-
-        xpts = [points[n][0] for n in cycle_nodes]
-        ypts = [points[n][1] for n in cycle_nodes]
+    for cycle in cmap.boundary_cycles:
+        dart0 = next(iter(cycle))
+        cycle_nodes = dart2cyclenodes(dart0, cmap)
+        xpts, ypts = zip(*[sim.sensor_network.points[n] for n in cycle_nodes])
 
         # Exclude alpha-cycle
-        cycle = nodes2cycle(cycle_nodes, sim.state.boundary_cycles())
-        if cycle == alpha_cycle(sim.sensor_network.fence_sensors):
-            axis.fill(xpts, ypts, color='k', alpha=0.2)
+        if cycle == sim.topology.alpha_cycle:
+            continue
 
-        # skip disconnected cycles
+        # powered off cycles are not in labelling
         if cycle not in sim.cycle_label:
             continue
 
         # fill contaminated cycles transparent black
-        if sim.cycle_label[nodes2cycle(cycle_nodes, sim.state.boundary_cycles())]:
+        if sim.cycle_label[cycle]:
             axis.fill(xpts, ypts, color='k', alpha=0.2)
         else:
             pass
@@ -92,20 +97,16 @@ def show_possible_intruder(sim: EvasionPathSimulation) -> None:
 
 ## Display AlphaComplex.
 # Shows 0, 1, and 2 simplices.
-# TODO feat: accept SensorNetwork or simulation
 def show_alpha_complex(sim: EvasionPathSimulation) -> None:
-
-    points = [s.position for s in sim.sensor_network]
+    points = sim.sensor_network.points
     axis = plt.gca()
-    for simplex in sim.state.simplices(2):
-        xpts = [points[n][0] for n in simplex]
-        ypts = [points[n][1] for n in simplex]
-        if nodes2cycle(simplex, sim.state.boundary_cycles()) in sim.cycle_label:
+    for simplex in sim.topology.simplices(2):
+        xpts, ypts = zip(*[points[node] for node in simplex.nodes])
+        if simplex.to_cycle(sim.topology.boundary_cycles) in sim.cycle_label:
             axis.fill(xpts, ypts, color='r', alpha=0.1)
 
-    for edge in sim.state.simplices(1):
-        xpts = [points[n][0] for n in edge]
-        ypts = [points[n][1] for n in edge]
+    for edge in sim.topology.simplices(1):
+        xpts, ypts = zip(*[points[node] for node in edge.nodes])
         axis.plot(xpts, ypts, color='r', alpha=0.15)
 
     show_sensor_points(sim.sensor_network)
@@ -122,14 +123,17 @@ def show_state(sim: EvasionPathSimulation) -> None:
 
 ## Display Fat Graph/Combinatorial Map.
 def show_combinatorial_map(sim: EvasionPathSimulation) -> None:
-    graph = sim.state.graph
-    temp_dict = {edge: edge2dart(edge) for edge in graph.edges}
-    temp_dict.update({reversed(edge): edge2dart(tuple(reversed(edge))) for edge in graph.edges})
-    points = [s.position for s in sim.sensor_network]
-    nx.draw(graph, points)
-    nx.draw_networkx_labels(graph, dict(enumerate(points)))
-    nx.draw_networkx_edge_labels(graph, dict(enumerate(points)), temp_dict, label_pos=0.2)
-    pass
+    Dart = sim.topology.cmap.Dart
+    graph = nx.Graph()
+    graph.add_nodes_from(sim.topology.alpha_complex.nodes)
+    graph.add_edges_from(simplex.nodes for simplex in sim.topology.simplices(1))
+
+    temp_dict = {edge: Dart(edge) for edge in graph.edges}
+    temp_dict.update({reversed(edge): sim.topology.cmap.alpha(Dart(edge)) for edge in graph.edges})
+
+    nx.draw(graph, sim.sensor_network.points)
+    nx.draw_networkx_labels(graph, dict(enumerate(sim.sensor_network.points)))
+    nx.draw_networkx_edge_labels(graph, dict(enumerate(sim.sensor_network.points)), temp_dict, label_pos=0.2)
 
 
 if __name__ == '__main__':
@@ -148,7 +152,7 @@ if __name__ == '__main__':
     simulation = EvasionPathSimulation(sensor_network=sensor_network, dt=timestep_size)
 
     plt.figure(1)
-    show_boundary_points(simulation.sensor_network)
+    show_fence(simulation.sensor_network)
     show_domain_boundary(simulation.sensor_network.motion_model.domain)
 
     plt.figure(2)

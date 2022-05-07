@@ -1,173 +1,118 @@
-# ************************************************************
-# Copyright (c) 2021, Kyle Williams - All Rights Reserved.
-# You may use, distribute and modify this code under the
-# terms of the BSD-3 license. You should have received a copy
-# of the BSD-3 license with this file.
-# If not, visit: https://opensource.org/licenses/BSD-3-Clause
-# ************************************************************
-
+from abc import ABC, abstractmethod
 from math import atan2
-from networkx import Graph
+from typing import Iterable, Set, List
+
+import networkx as nx
+from dataclasses import dataclass, field
 
 
-## Convert and edge to a dart.
-# order of vertices is important. To get the dart in the other
-# direction swap order of nodes or use alpha function.
-def edge2dart(edge: tuple) -> str:
-    return ','.join(map(str, edge))
+class BoundaryCycle(ABC):
+    @abstractmethod
+    def __iter__(self):
+        ...
+
+    @property
+    @abstractmethod
+    def nodes(self):
+        ...
 
 
-## Get edge corresponding to given dart.
-def dart2edge(dart: str) -> tuple:
-    return tuple(map(int, dart.split(',')))
+@dataclass
+class BoundaryCycle2D(BoundaryCycle):
+    darts: frozenset
+
+    def __iter__(self):
+        return iter(self.darts)
+
+    def __hash__(self):
+        return hash(self.darts)
+
+    @property
+    def nodes(self):
+        return set(sum(self.darts, ()))
 
 
-## Get node numbers associated with given boundary cycle.
-# No specific order is guaranteed.
-def cycle2nodes(cycle: tuple) -> list:
-    return [int(dart2edge(dart)[0]) for dart in cycle]
+class RotationInfo2D:
+    def __init__(self, points, alpha_complex):
+        graph = nx.Graph()
+        graph.add_nodes_from(alpha_complex.nodes)
+        graph.add_edges_from([edge.nodes for edge in alpha_complex.simplices(1)])
 
-
-## Find boundary cycle associated with given set of nodes.
-# WARNING: This function is unsafe to use since the cycle
-# associated with a set of nodes may be non-unique. Extra
-# checks should be in place. This function will return the
-# first cycle that is found with a matching set of nodes.
-def nodes2cycle(node_list: list, boundary_cycles: list) -> tuple:
-    for cycle in boundary_cycles:
-        if set(node_list) == set(cycle2nodes(cycle)):
-            return cycle
-
-
-## This class implements a combinatorial map.
-# A 2-dimensional combinatorial map (or 2-map) is a triplet M = (D, σ, α) such that:
-#
-#     D is a finite set of darts;
-#     σ is a permutation on D;
-#     α is an involution on D with no fixed point.
-#
-# Intuitively, a 2-map corresponds to a planar graph where each edge is subdivided into two
-# darts (sometimes also called half-edges). The permutation σ gives, for each dart, the next
-# dart by turning around the vertex in the positive orientation; the other permutation α gives,
-# for each dart, the other dart of the same edge.
-#
-# α allows one to retrieve edges, and σ allows one to retrieve vertices. We define φ = σ o α
-# which gives, for each dart, the next dart of the same face.
-class CMap:
-
-    ## Initialize combinatorial map with Graph and Points list.
-    # You can optionally initialize with the rotation_data, meaning
-    # that for each node, you provide the list of edges from that node
-    # to each connected neighbor in counter-clockwise order. Leave
-    # points empty if the feature is desired. Otherwise the rotation_data
-    # will be computed from the point data.
-    def __init__(self, graph: Graph, points: list = (), rotation_data: list = ()) -> None:
-        self._sorted_darts = dict()
-        self._boundary_cycles = []
-
-        if rotation_data:
-            sorted_edges = rotation_data
-        else:
-            sorted_edges = get_rotational_data(graph, points)
-
+        self.adj = dict()
         for node in graph.nodes():
-            self._sorted_darts[node] = [edge2dart((e2, e1)) for (e1, e2) in sorted_edges[node]]
+            neighbors = list(graph.neighbors(node))
+            anticlockwise, clockwise = False, True
 
-        self.darts = [edge2dart((e1, e2)) for e1, e2 in graph.edges]
-        self.darts.extend([edge2dart((e2, e1)) for e1, e2 in graph.edges])
+            # sort w.r.t angle from x axis
+            def theta(a, center):
+                oa = (a[0] - center[0], a[1] - center[1])
+                return atan2(oa[1], oa[0])
 
-        self.set_boundary_cycles()
+            sorted_neighbors = sorted(neighbors,
+                                      key=lambda nei: theta(points[nei], points[node]),
+                                      reverse=anticlockwise)
+            self.adj[node] = list(sorted_neighbors)
 
-    ## Get next outgoing dart.
-    # For a given outgoing dart, return the next outgoing dart in counter-clockwise
-    # order.
-    def sigma(self, dart: str) -> str:
-        neighbor, node = dart2edge(dart)
-        index = self._sorted_darts[node].index(dart)
-        n_neigh = len(self._sorted_darts[node])
+    def next(self, dart):
+        v1, v2 = dart
+        index = self.adj[v1].index(v2)
+        next_index = (index + 1) % len(self.adj[v1])
+        return v1, self.adj[v1][next_index]
 
-        # Get next dart, wrap-around if out of range
-        return self._sorted_darts[node][(index + 1) % n_neigh]
+    @property
+    def all_darts(self):
+        return set(sum(([(v1, v2) for v2 in self.adj[v1]] for v1 in self.adj), []))
 
-    ## Get other half edge.
-    # for each dart, return the other dart associated with the same edge.
-    @staticmethod
-    def alpha(dart: str) -> str:
-        return edge2dart(tuple(reversed(dart2edge(dart))))
 
-    ## Get next outgoing dart.
-    # For a given incoming dart, return the next outgoing dart in counter-clockwise
-    # direction.
-    def phi(self, dart: str) -> str:
+class CombinatorialMap(ABC):
+
+    @property
+    @abstractmethod
+    def boundary_cycles(self):
+        ...
+
+    @abstractmethod
+    def get_cycle(self, dart):
+        pass
+
+
+@dataclass
+class CombinatorialMap2D(CombinatorialMap):
+    Dart = tuple
+    rotation_info: RotationInfo2D
+    _boundary_cycles: Set = field(default_factory=lambda: set())
+
+    def __post_init__(self) -> None:
+        all_darts = self.rotation_info.all_darts.copy()
+        while all_darts:
+            next_dart = next(iter(all_darts))
+            cycle = self.generate_cycle_darts(next_dart)
+            for dart in cycle:
+                all_darts.remove(dart)
+            self._boundary_cycles.add(BoundaryCycle2D(frozenset(cycle)))
+
+    def alpha(self, dart: Dart) -> Dart:
+        return self.Dart(reversed(dart))
+
+    def sigma(self, dart: Dart) -> Dart:
+        return self.rotation_info.next(dart)
+
+    def phi(self, dart: Dart) -> Dart:
         return self.sigma(self.alpha(dart))
 
-    ## compute boundary cycles.
-    # iterate on phi until all darts have been accounted for.
-    # This will produce a list of boundary cycles. These cycles
-    # are stored internally and should only be accessed through
-    # the public member functions.
-    def set_boundary_cycles(self) -> None:
-        self._boundary_cycles = []
-        all_darts = self.darts.copy()
-        
-        while all_darts:
-            cycle = [all_darts.pop()]
-            next_dart = self.phi(cycle[0])
+    def generate_cycle_darts(self, dart: Dart) -> List[Dart]:
+        cycle = [dart]
+        next_dart = self.phi(dart)
+        while next_dart != dart:
+            cycle.append(next_dart)
+            next_dart = self.phi(next_dart)
+        return cycle
 
-            while next_dart != cycle[0]:
-                all_darts.remove(next_dart)
-                cycle.append(next_dart)
-                next_dart = self.phi(next_dart)
+    @property
+    def boundary_cycles(self) -> Iterable[BoundaryCycle2D]:
+        return self._boundary_cycles
 
-            self._boundary_cycles.append(cycle)
-
-    ## Get boundary cycle nodes.
-    # The function returns the node numbers of each boundary cycle. The nodes
-    # are left in cyclic order, used mostly for plotting.
-    def boundary_cycle_nodes_ordered(self) -> list:
-        return [tuple([dart2edge(dart)[0] for dart in cycle]) for cycle in self._boundary_cycles]
-
-    ## Get Boundary Cycles.
-    # This will access the boundary cycles, and return them with each boundary cycle's darts
-    # in a sorted order for a unique representation.
-    def get_boundary_cycles(self) -> list:
-        return [tuple(sorted(cycle)) for cycle in self._boundary_cycles]
-
-
-## Construct alpha cycle.
-# The alpha cycle is the boundary cycle consisting of the fence sensors
-# around the outside of the domain. The fence sensors are guaranteed to
-# be in counter-clockwise order. Additionally when iterating through all
-# sensors, fence sensors are guaranteed to come first so the numbering here works.
-def alpha_cycle(fence_sensors):
-    n_sensors = len(fence_sensors)
-    a = [f'{(n + 1) % n_sensors},{n}' for n in range(n_sensors)]
-    return tuple(sorted(a))
-
-
-## Get Rotational Data from points.
-# This function is used to compute the rotational data from point data if not explicitly given.
-def get_rotational_data(graph, points) -> list:
-    sorted_edges = [[] for _ in range(graph.order())]
-    for node in graph.nodes():
-        neighbors = list(graph.neighbors(node))
-
-        # zip neighbors with associated coordinates for sorting
-        neighbor_zip = list(zip(neighbors, [points[n] for n in neighbors]))
-
-        anticlockwise, clockwise = False, True
-
-        # sort w.r.t angle from x axis
-        def theta(a, center):
-            oa = (a[0] - center[0], a[1] - center[1])
-            return atan2(oa[1], oa[0])
-
-        # Sort
-        sorted_zip = sorted(neighbor_zip,
-                            key=lambda pair: theta(pair[1], points[node]),
-                            reverse=anticlockwise)
-
-        # Extract sorted edges
-        sorted_edges[node] = [(node, n) for (n, _) in sorted_zip]
-
-    return sorted_edges
+    def get_cycle(self, dart: Dart) -> BoundaryCycle2D:
+        for cycle in self._boundary_cycles:
+            if dart in cycle:
+                return cycle
