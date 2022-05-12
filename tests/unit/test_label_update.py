@@ -6,7 +6,8 @@ import pytest
 from update_data import \
     LabelUpdate, NonAtomicUpdate, Add2SimplicesUpdate2D, \
     Remove2SimplicesUpdate2D, Add1SimplexUpdate2D, AddSimplexPairUpdate2D, \
-    RemoveSimplexPairUpdate2D, DelaunyFlipUpdate2D, LabelUpdateFactory, Remove1SimplexUpdate2D
+    RemoveSimplexPairUpdate2D, DelaunyFlipUpdate2D, LabelUpdateFactory, Remove1SimplexUpdate2D, FinUpdate3D, \
+    FillTetrahedronFace, DrainTetrahedronFace
 from utilities import UpdateError
 
 
@@ -342,6 +343,10 @@ class TestLabelFactory:
         case = (1, 0, 0, 0, 2, 1)
         assert LabelUpdateFactory.atomic_updates[case] == Add1SimplexUpdate2D
 
+    def test_3d_in_dict(self):
+        case = (0, 0, 0, 0, 1, 0, 0, 0)
+        assert LabelUpdateFactory.atomic_updates[case] == Add2SimplicesUpdate2D
+
     @patch("update_data.StateChange")
     def test_get_add1simplex(self, StateChange):
         StateChange.return_value = mock_state_change((1, 0, 0, 0, 2, 1), True)
@@ -364,3 +369,192 @@ class TestLabelFactory:
         StateChange.return_value = mock_state_change((1, 0, 0, 30, 2, 1), False)
         t1 = mock.Mock()
         assert pytest.raises(UpdateError, LabelUpdateFactory.get_update, t1, t1, labelling)
+
+
+class TestOnetoOne3D:
+    @pytest.fixture
+    def edges(self):
+        return mock.Mock()
+
+    @pytest.fixture
+    def simplices(self):
+        return mock.Mock()
+
+    @pytest.fixture
+    def tetrahedra(self):
+        return mock.Mock()
+
+    @pytest.fixture
+    def boundary_cycles(self):
+        cycles = mock.Mock()
+        cycles.added.return_value = {"F"}
+        cycles.removed.return_value = {"B"}
+        return cycles
+
+    def test_added_nodes(self, edges, simplices, tetrahedra, boundary_cycles, connected_labelling):
+        update = FinUpdate3D({1: edges, 2: simplices, 3: tetrahedra}, boundary_cycles, connected_labelling)
+        assert update.cycles_added == {"F"}
+
+    def test_false(self, edges, simplices, tetrahedra, boundary_cycles, connected_labelling):
+        update = FinUpdate3D({1: edges, 2: simplices, 3: tetrahedra}, boundary_cycles, connected_labelling)
+        assert update.mapping == {"F": False}
+
+    def test_true(self, edges, simplices, tetrahedra, boundary_cycles, connected_labelling):
+        boundary_cycles.removed.return_value = {"A"}
+        update = FinUpdate3D({1: edges, 2: simplices, 3: tetrahedra}, boundary_cycles, connected_labelling)
+        assert update.mapping == {"F": True}
+
+
+class TestAddSimplexPair3D:
+    @pytest.fixture
+    def edges(self):
+        edge_dif = mock.Mock()
+        edge_dif.added.return_value = {"fg"}
+        return edge_dif
+
+    @pytest.fixture
+    def simplices(self):
+        simp_dif = mock.Mock()
+        simp_dif.added.return_value = [Simplex("G", edges=["fg"])]
+        return simp_dif
+
+    @pytest.fixture
+    def tetrahedra(self):
+        return mock.Mock()
+
+    @pytest.fixture
+    def boundary_cycles(self):
+        cycles = mock.Mock()
+        cycles.new_list = {"A", "B", "C", "E", "F", "G"}
+        cycles.removed.return_value = {"D"}
+        cycles.added.return_value = {"F", "G"}
+        return cycles
+
+    def test_is_atomic(self, edges, simplices, tetrahedra, boundary_cycles, connected_labelling):
+        update = AddSimplexPairUpdate2D({1: edges, 2: simplices, 3: tetrahedra}, boundary_cycles, connected_labelling)
+        assert update.is_atomic()
+
+    def test_is_not_atomic(self, edges, simplices, tetrahedra, boundary_cycles, connected_labelling):
+        edges.added.return_value = {"bad_edge"}
+        update = AddSimplexPairUpdate2D({1: edges, 2: simplices, 3: tetrahedra}, boundary_cycles, connected_labelling)
+        assert not update.is_atomic()
+
+
+class TestFillTetrahedronFace:
+    @pytest.fixture
+    def edges(self):
+        return mock.Mock()
+
+    @pytest.fixture
+    def simplices(self):
+        face_dif = mock.Mock()
+        face_dif.added.return_value = {"fgh"}
+        return face_dif
+
+    @pytest.fixture
+    def tetrahedra(self):
+        simp_dif = mock.Mock()
+        simp_dif.added.return_value = [Simplex("G", edges=["fgh"])]
+        return simp_dif
+
+    @pytest.fixture
+    def boundary_cycles(self):
+        cycles = mock.Mock()
+        cycles.new_list = {"A", "B", "C", "E", "F", "G"}
+        cycles.removed.return_value = {"D"}
+        cycles.added.return_value = {"F", "G"}
+        return cycles
+
+    def test_split_true(self, edges, simplices, tetrahedra, boundary_cycles, connected_labelling):
+        update = FillTetrahedronFace({1: edges, 2: simplices, 3: tetrahedra}, boundary_cycles, connected_labelling)
+        assert update.mapping == {"G": False, "F": True}
+
+    def test_split_false(self, edges, simplices, tetrahedra, boundary_cycles, connected_labelling):
+        boundary_cycles.removed.return_value = {"B"}
+        update = FillTetrahedronFace({1: edges, 2: simplices, 3: tetrahedra}, boundary_cycles, connected_labelling)
+        assert update.mapping == {"G": False, "F": False}
+
+    def test_is_atomic(self, edges, simplices, tetrahedra, boundary_cycles, connected_labelling):
+        update = FillTetrahedronFace({1: edges, 2: simplices, 3: tetrahedra}, boundary_cycles, connected_labelling)
+        assert update.is_atomic()
+
+    def test_is_not_atomic(self, edges, simplices, tetrahedra, boundary_cycles, connected_labelling):
+        simplices.added.return_value = {"bad_edge"}
+        update = FillTetrahedronFace({1: edges, 2: simplices, 3: tetrahedra}, boundary_cycles, connected_labelling)
+        assert not update.is_atomic()
+
+
+class TestDrainTetrahedronFace:
+    @pytest.fixture
+    def edges(self):
+        return mock.Mock()
+
+    @pytest.fixture
+    def simplices(self):
+        simp_dif = mock.Mock()
+        simp_dif.added.return_value = ["cde"]
+        return simp_dif
+
+    @pytest.fixture
+    def tetrahedra(self):
+        tetra_dif = mock.Mock()
+        tetra_dif.added.return_value = [Simplex("C", edges=["cde"])]
+        return tetra_dif
+
+    @pytest.fixture
+    def boundary_cycles(self):
+        cycles = mock.Mock()
+        cycles.new_list = {"A", "B", "C", "E", "F"}
+        cycles.removed.return_value = {"C", "D"}
+        cycles.added.return_value = {"F"}
+        return cycles
+
+    def test_is_atomic(self, edges, simplices, tetrahedra, boundary_cycles, connected_labelling):
+        update = DrainTetrahedronFace({1: edges, 2: simplices, 3: tetrahedra}, boundary_cycles, connected_labelling)
+        assert update.is_atomic()
+
+    def test_is_not_atomic(self, edges, simplices, tetrahedra, boundary_cycles, connected_labelling):
+        simplices.added.return_value = {"bad_edge"}
+        update = DrainTetrahedronFace({1: edges, 2: simplices, 3: tetrahedra}, boundary_cycles, connected_labelling)
+        assert not update.is_atomic()
+
+
+class TestTetrahedronEdgeFill:
+    new_edge = "fgh"
+    facef1 = Simplex("fg1", edges=[new_edge])
+    facef2 = Simplex("fg1", edges=[new_edge])
+
+    @pytest.fixture
+    def edges(self):
+        edges = mock.Mock()
+        edges.added.return_value = [self.new_edge]
+        return mock.Mock()
+
+    @pytest.fixture
+    def simplices(self):
+        simp_dif = mock.Mock()
+        simp_dif.added.return_value = [self.facef1, self.facef2]
+        return simp_dif
+
+    @pytest.fixture
+    def tetrahedra(self):
+        tetra_dif = mock.Mock()
+        tetra_dif.added.return_value = [Simplex("F", edges=[self.facef1, self.facef2, self.new_edge])]
+        return tetra_dif
+
+    @pytest.fixture
+    def boundary_cycles(self):
+        cycles = mock.Mock()
+        cycles.new_list = {"A", "B", "C", "E", "F", "G"}
+        cycles.removed.return_value = {"D"}
+        cycles.added.return_value = {"F", "G"}
+        return cycles
+
+    def test_is_atomic(self, edges, simplices, tetrahedra, boundary_cycles, connected_labelling):
+        update = DrainTetrahedronFace({1: edges, 2: simplices, 3: tetrahedra}, boundary_cycles, connected_labelling)
+        assert update.is_atomic()
+
+    def test_is_not_atomic(self, edges, simplices, tetrahedra, boundary_cycles, connected_labelling):
+        simplices.added.return_value = {"bad_edge"}
+        update = DrainTetrahedronFace({1: edges, 2: simplices, 3: tetrahedra}, boundary_cycles, connected_labelling)
+        assert not update.is_atomic()

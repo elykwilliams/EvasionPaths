@@ -8,8 +8,10 @@
 
 from abc import ABC
 from math import atan2
+from typing import Iterable, Set
 
 import numpy
+from dataclasses import dataclass
 from numpy import cos, sin
 from numpy.linalg import norm
 
@@ -32,6 +34,18 @@ def set_difference(list1: list, list2: list) -> list:
 ## Determine if list is subset list.
 def is_subset(list1: list, list2: list) -> bool:
     return set(list1).issubset(set(list2))
+
+
+@dataclass
+class SetDifference:
+    new_list: Iterable
+    old_list: Iterable
+
+    def added(self) -> Set:
+        return {item for item in self.new_list if item not in self.old_list}
+
+    def removed(self) -> Set:
+        return {item for item in self.old_list if item not in self.new_list}
 
 
 ## Base Exception Class.
@@ -113,4 +127,14 @@ class TimedOutExc(Exception):
 # finishes before the given number of frames, throw this exception to exit out of the
 # animation loop.
 class SimulationOver(Exception):
+    pass
+
+
+## Error to be used when checking for discrepancies between existing labelling and requested update
+class UpdateError(EvasionPathError):
+    pass
+
+
+## Error to be raised when update data is inconsistent with current labelling.
+class LabellingError(KeyError):
     pass
