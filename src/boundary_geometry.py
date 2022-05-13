@@ -11,6 +11,8 @@ import numpy as np
 from numpy import arange, pi, array, arctan2
 from numpy.linalg import norm
 from abc import ABC, abstractmethod
+import random
+from itertools import product
 
 
 ## Specify domain geometry.
@@ -216,3 +218,109 @@ class CircularDomain(Domain):
         reflected_pt = self.reflect_point(old_pt, new_pt)
         disp_from_wall = array(reflected_pt) - boundary_pt
         return arctan2(disp_from_wall[1], disp_from_wall[0]) % (2 * pi)
+
+
+class Cube(Domain):
+
+    ## Initialize Domain.
+    # stores number of fence sensors.
+    def __init__(self, radius) -> None:
+        self.sensing_radius = radius
+        self.cached_fence = []
+
+    ## Determine if given point it in domain or not.
+    def __contains__(self, point) -> bool:
+        return (
+                0 <= point[0] <= 1
+                and 0 <= point[1] <= 1
+                and 0 <= point[2] <= 1
+        )
+
+    ## Generate boundary points in counterclockwise order.
+    # WARNING: Points must be generated in counterclockwise order so that the
+    # alpha_cycle can be easily computed.
+    def generate_fence(self):
+        if self.cached_fence:
+            return self.cached_fence
+        # check that the fence sensors are being generated properly
+        dx = np.sqrt(3) * self.sensing_radius / 2
+
+        spacing = np.arange(-dx, 1.001 + dx, self.sensing_radius)
+        grid = list(product(spacing, spacing))
+        epsilon = pow(10, -5)
+        x0_face = [(-dx + random.uniform(-epsilon, epsilon),
+                    y + random.uniform(-epsilon, epsilon),
+                    z+random.uniform(-epsilon, epsilon)) for y, z in grid]
+        y0_face = [(x + random.uniform(-epsilon, epsilon),
+                    -dx + random.uniform(-epsilon, epsilon),
+                    z+random.uniform(-epsilon, epsilon)) for x, z in grid]
+        z0_face = [(x + random.uniform(-epsilon, epsilon),
+                    y + random.uniform(-epsilon, epsilon),
+                    -dx + random.uniform(-epsilon, epsilon)) for x, y in grid]
+        x1_face = [(1 + dx + random.uniform(-epsilon, epsilon),
+                    y + random.uniform(-epsilon, epsilon),
+                    z + random.uniform(-epsilon, epsilon)) for y, z in grid]
+        y1_face = [(x + random.uniform(-epsilon, epsilon),
+                    1 + dx + random.uniform(-epsilon, epsilon),
+                    z + random.uniform(-epsilon, epsilon)) for x, z in grid]
+        z1_face = [(x + random.uniform(-epsilon, epsilon),
+                    y + random.uniform(-epsilon, epsilon),
+                    1 + dx + random.uniform(-epsilon, epsilon)) for x, y in grid]
+        fence_sensors = np.concatenate((x0_face, y0_face, z0_face, x1_face, y1_face, z1_face))
+        fence_sensors = np.unique(fence_sensors, axis=0)
+
+        epsilon_fixed = random.uniform(-epsilon, epsilon)
+        initial_sensors = [[
+            -dx + epsilon_fixed,
+            -dx + self.sensing_radius + epsilon_fixed,
+            -dx + epsilon_fixed
+        ], [
+            -dx + epsilon_fixed,
+            -dx + epsilon_fixed,
+            -dx + epsilon_fixed
+        ], [
+            -dx + self.sensing_radius + epsilon_fixed,
+            -dx + epsilon_fixed,
+            -dx + epsilon_fixed,
+        ]]
+        self.cached_fence = np.concatenate((initial_sensors, fence_sensors), axis=0)
+        return self.cached_fence
+        # return fence_sensors
+
+    ## Generate n_int sensors randomly inside the domain.
+    def generate_interior_points(self, n_int_sensors: int) -> list:
+        mobile_sensors = np.random.rand(n_int_sensors, 3)
+        return mobile_sensors
+
+    ## Return points along the physical domain.
+    # to be used for displaying the domain boundary as opposed to only
+    # the fence.
+    def domain_boundary_points(self):
+        return True
+
+    ## Reflect a point off the boundary.
+    # Should be elastic collision
+    def reflect_point(self, new_pt):
+        # old point is not needed for the calculation.
+        pt = new_pt
+        for coor in range(3):
+            if new_pt[coor] <= 0:
+                new_pt[coor] = -new_pt[coor]
+            elif new_pt[coor] >= 1:
+                new_pt[coor] = -new_pt[coor] + 2
+
+        return pt
+
+    ## Reflect a velocity off the boundary.
+    # Should be elastic collision. Leave velocity magnitude as is,
+    # and compute reflected angle.
+    def reflect_velocity(self, new_pt, new_vel):
+        vel = new_vel
+        for coor in range(3):
+            if new_pt[coor] <= 0:
+                vel[coor] = -vel[coor]
+            elif new_pt[coor] >= 1:
+                vel[coor] = -vel[coor]
+
+        return vel
+
