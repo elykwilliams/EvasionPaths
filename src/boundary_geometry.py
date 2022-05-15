@@ -5,14 +5,78 @@
 # of the BSD-3 license with this file.
 # If not, visit: https://opensource.org/licenses/BSD-3-Clause
 # ************************************************************
+import random
+from abc import ABC, abstractmethod
+from itertools import product
+
+import numpy as np
+from dataclasses import dataclass
+from numpy import arange, pi
+from numpy.linalg import norm
 
 from utilities import pol2cart
-import numpy as np
-from numpy import arange, pi, array, arctan2
-from numpy.linalg import norm
-from abc import ABC, abstractmethod
-import random
-from itertools import product
+
+
+class BoundaryReflector(ABC):
+
+    @abstractmethod
+    def reflect_point(self, sensor):
+        ...
+
+    @abstractmethod
+    def reflect_velocity(self, sensor):
+        ...
+
+
+@dataclass
+class SquareReflector(BoundaryReflector):
+    dim: int
+    min: tuple
+    max: tuple
+
+    def reflect_point(self, sensor):
+        for i in range(self.dim):
+            if sensor.pos[i] <= self.min[i]:
+                sensor.pos[i] = (self.min[i] - sensor.pos[i]) + self.min[i]
+            elif sensor.pos[i] >= self.max[i]:
+                sensor.pos[i] = 2 * self.max[i] - sensor.pos[i] + self.min[i]
+
+    def reflect_velocity(self, sensor):
+        for i in range(self.dim):
+            if sensor.pos[i] <= self.min[i] or sensor.pos[i] >= self.max[i]:
+                sensor.vel[i] = -sensor.vel[i]
+
+
+@dataclass
+class RadialReflector(BoundaryReflector):
+    radius: float
+
+    ## Compute trajectory intersection with boundary.
+    # For internal use.
+    def _get_intersection(self, old_pt, new_pt):
+        d = new_pt - old_pt
+        x0 = old_pt
+        t_vals = np.roots([norm(d) ** 2, 2 * np.dot(d, x0), norm(x0) ** 2 - self.radius ** 2])
+        t = t_vals[0] if 0 <= t_vals[0] <= 1 else t_vals[1]
+        return (1 - t) * old_pt + t * new_pt
+
+    ## reflect position if outside of domain.
+    def reflect_point(self, sensor):
+        boundary_pt = self._get_intersection(sensor.old_pos, sensor.pos)
+        disp = sensor.pos - boundary_pt
+        normal = boundary_pt / norm(boundary_pt)
+        reflected_disp = disp - 2 * np.dot(disp, normal) * normal
+        sensor.pos = boundary_pt + reflected_disp
+
+    ## Reflect velocity angle to keep velocity consistent.
+    def reflect_velocity(self, sensor):
+        boundary_pt = self._get_intersection(sensor.old_pos, sensor.pos)
+        disp = sensor.pos - boundary_pt
+        normal = boundary_pt / norm(boundary_pt)
+        reflected_disp = disp - 2 * np.dot(disp, normal) * normal
+        unit_vec = reflected_disp / norm(reflected_disp)
+
+        sensor.vel = norm(sensor.vel) * unit_vec
 
 
 ## Specify domain geometry.
@@ -20,56 +84,42 @@ from itertools import product
 # domain geometry. It should be unaware of sensors and
 # operate with strictly geometric objects. A user defined
 # domain should
-# - Initialize fence sensors
+# - Initialize fence sensor positions
 # - Determine if a point is in the domain
-# - generate sensor location inside the domain
+# - generate sensor locations inside the domain
 # - provide boundary points for plotting
-# - reflect position and velocity off boundary in elastic collision.
+@dataclass
 class Domain(ABC):
+    spacing: float
 
-    ## Initialize Domain.
-    # stores number of fence sensors.
-    def __init__(self, spacing: float) -> None:
-        self.spacing = spacing
-
-    ## Determine if given point it in domain or not.
+    @property
     @abstractmethod
-    def __contains__(self, item) -> bool:
-        return True
+    def reflector(self) -> BoundaryReflector:
+        pass
 
-    ## Generate boundary points in counterclockwise order.
-    # WARNING: Points must be generated in counterclockwise order so that the
-    # alpha_cycle can be easily computed.
+    def reflect(self, sensor):
+        self.reflector.reflect_velocity(sensor)  # Order important, uses unreflected positions
+        self.reflector.reflect_point(sensor)
+
     @abstractmethod
-    def generate_fence(self):
-        return []
+    def __contains__(self, point: tuple) -> bool:
+        ...
 
-    ## Generate n_int sensors randomly inside the domain.
+    @property
     @abstractmethod
-    def generate_interior_points(self, n_int_sensors: int) -> list:
-        return []
+    def fence(self):
+        # WARNING: Points must be generated in counterclockwise order so that the
+        # edge (0, 1, ..., dim-1) simplex is part of the fence boundary cycle
+        ...
 
-    ## Return points along the physical domain.
-    # to be used for displaying the domain boundary as opposed to only
-    # the fence.
+    @abstractmethod
+    def point_generator(self, n_sensors: int) -> list:
+        ...
+
+    ## Return points along the boundary for plotting (not the fence).
     @abstractmethod
     def domain_boundary_points(self):
-        x_pts, y_pts = [], []
-        return x_pts, y_pts
-
-    ## Reflect a point off the boundary.
-    # Should be elastic collision
-    @abstractmethod
-    def reflect_point(self, old_pt, new_pt):
-        return new_pt
-
-    ## Reflect a velocity off the boundary.
-    # Should be elastic collision. Leave velocity magnitude as is,
-    # and compute reflected angle.
-    @abstractmethod
-    def reflect_velocity(self, old_pt, new_pt):
-        vel_angle = np.arctan2(new_pt[1] - old_pt[1], new_pt[0] - old_pt[0])
-        return vel_angle
+        ...
 
 
 ## A rectangular domain.
@@ -88,172 +138,123 @@ class RectangularDomain(Domain):
     def __init__(self, spacing: float,
                  x_min: float = 0, x_max: float = 1,
                  y_min: float = 0, y_max: float = 1) -> None:
-        self.x_max, self.y_max = x_max, y_max
-        self.x_min, self.y_min = x_min, y_min
-
-        # Initialize fence position
-        self.dx = spacing * np.sin(np.pi / 6)  # virtual boundary width
-        self.vx_min, self.vx_max = self.x_min - self.dx, self.x_max + self.dx
-        self.vy_min, self.vy_max = self.y_min - self.dx, self.y_max + self.dx
-
+        self.max = (x_max, y_max)
+        self.min = (x_min, y_min)
+        self.dim = 2
+        self._reflector = SquareReflector(self.dim, self.min, self.max)
         super().__init__(spacing)
 
     ## Check if point is in domain.
     def __contains__(self, point: tuple) -> bool:
-        return (
-                self.x_min <= point[0] <= self.x_max
-                and self.y_min <= point[1] <= self.y_max
-        )
+        return all(self.min[i] <= point[i] <= self.max[i] for i in range(self.dim))
+
+    @property
+    def reflector(self):
+        return self._reflector
 
     ## Generate fence in counter-clockwise order.
-    def generate_fence(self) -> list:
+    @property
+    def fence(self) -> list:
+        # Initialize fence position
+        dx = self.spacing * np.sin(np.pi / 6)  # virtual boundary width
+        vx_min, vx_max = self.min[0] - dx, self.max[0] + dx
+        vy_min, vy_max = self.min[1] - dx, self.max[1] + dx
+
         points = []
-        points.extend([(x, self.vy_min) for x in np.arange(self.vx_min, 0.999*self.vx_max, self.spacing)])  # bottom
-        points.extend([(self.vx_max, y) for y in np.arange(self.vy_min, 0.999*self.vx_max, self.spacing)])  # right
-        points.extend([(self.x_max - x, self.vy_max)
-                       for x in np.arange(self.vx_min, 0.999*self.vx_max, self.spacing)])  # top
-        points.extend([(self.vx_min, self.y_max - y)
-                       for y in np.arange(self.vy_min, 0.999*self.vy_max, self.spacing)])  # left
+        points.extend([(x, vy_min) for x in np.arange(vx_min, 0.999 * vx_max, self.spacing)])  # bottom
+        points.extend([(vx_max, y) for y in np.arange(vy_min, 0.999 * vx_max, self.spacing)])  # right
+        points.extend([(self.max[0] - x, vy_max)
+                       for x in np.arange(vx_min, 0.999 * vx_max, self.spacing)])  # top
+        points.extend([(vx_min, self.max[1] - y)
+                       for y in np.arange(vy_min, 0.999 * vy_max, self.spacing)])  # left
         return points
 
     ## Generate points distributed (uniformly) randomly in the interior.
-    def generate_interior_points(self, n_int_sensors: int) -> list:
-        rand_x = np.random.uniform(self.x_min, self.x_max, size=n_int_sensors)
-        rand_y = np.random.uniform(self.y_min, self.y_max, size=n_int_sensors)
+    def point_generator(self, n_sensors: int) -> list:
+        rand_x = np.random.uniform(self.min[0], self.max[0], size=n_sensors)
+        rand_y = np.random.uniform(self.min[1], self.max[1], size=n_sensors)
         return list(zip(rand_x, rand_y))
 
     ## Generate points to plot domain boundary.
     def domain_boundary_points(self):
-        x_pts = [self.x_min, self.x_min, self.x_max, self.x_max, self.x_min]
-        y_pts = [self.y_min, self.y_max, self.y_max, self.y_min, self.y_min]
+        x_pts = [self.min[0], self.min[0], self.max[0], self.max[0], self.min[0]]
+        y_pts = [self.min[1], self.max[1], self.max[1], self.min[1], self.min[1]]
         return x_pts, y_pts
 
-    ## Reflect position of point outside of domain.
-    def reflect_point(self, old_pt, new_pt):
-        pt = new_pt
-        if new_pt[0] <= self.x_min:
-            pt = (self.x_min + abs(self.x_min - new_pt[0]), new_pt[1])
-        elif new_pt[0] >= self.x_max:
-            pt = (self.x_max - abs(self.x_max - new_pt[0]), new_pt[1])
 
-        new_pt = pt
-        if new_pt[1] <= self.y_min:
-            pt = (new_pt[0], self.y_min + abs(self.y_min - new_pt[1]))
-        elif new_pt[1] >= self.y_max:
-            pt = (new_pt[0], self.y_max - abs(self.y_max - new_pt[1]))
-
-        return pt
-
-    ## Reflect velocity angle to keep velocity consistent.
-    def reflect_velocity(self, old_pt, new_pt):
-        vel_angle = np.arctan2(new_pt[1] - old_pt[1], new_pt[0] - old_pt[0])
-        if new_pt[0] <= self.x_min or new_pt[0] >= self.x_max:
-            vel_angle = np.pi - vel_angle
-        if new_pt[1] <= self.y_min or new_pt[1] >= self.y_max:
-            vel_angle = - vel_angle
-        return float(vel_angle) % (2 * np.pi)
-
-
-## A circular domain.
-# This domain implements a physical boundary separate from the fence so that
-# sensors don't get too close and mess up the associated boundary cycle.
-# The input parameters specify the dimension of the desired virtual boundary
-# and the physical locations of the sensors are places slightly outside of
-# this boundary in a way that still allows interior sensors to form simplices
-# with fence sensors.
 class CircularDomain(Domain):
     def __init__(self, spacing, radius) -> None:
-
         self.radius = radius
-
-        # Initialize fence
-        self.dx = spacing
-        self.v_rad = self.radius + self.dx
-
+        self._reflector = RadialReflector(self.radius)
         super().__init__(spacing)
 
     ## Check if point is in domain.
     def __contains__(self, point: tuple) -> bool:
         return norm(point) < self.radius
 
+    @property
+    def reflector(self):
+        return self._reflector
+
     ## Generate points in counter-clockwise order.
-    def generate_fence(self) -> list:
-        return [pol2cart([self.v_rad, t]) for t in arange(0, 2 * pi, self.spacing)]
+    @property
+    def fence(self) -> list:
+        # Initialize fence
+        dx = self.spacing
+        v_rad = self.radius + dx
+        return [pol2cart([v_rad, t]) for t in arange(0, 2 * pi, self.spacing)]
 
     ## Generate points distributed randomly (uniformly) in the interior.
-    def generate_interior_points(self, n_int_sensors):
-        theta = np.random.uniform(0, 2 * pi, size=n_int_sensors)
-        radius = np.random.uniform(0, self.radius, size=n_int_sensors)
+    def point_generator(self, n_sensors):
+        theta = np.random.uniform(0, 2 * pi, size=n_sensors)
+        radius = np.random.uniform(0, self.radius, size=n_sensors)
         return [pol2cart(p) for p in zip(radius, theta)]
 
     ## Generate Points to plot domain boundary.
     def domain_boundary_points(self):
-        x_pts = [self.radius*np.cos(t) for t in arange(0, 2*pi, 0.01)]
-        y_pts = [self.radius*np.sin(t) for t in arange(0, 2*pi, 0.01)]
+        x_pts = [self.radius * np.cos(t) for t in arange(0, 2 * pi, 0.01)]
+        y_pts = [self.radius * np.sin(t) for t in arange(0, 2 * pi, 0.01)]
         return x_pts, y_pts
 
-    ## Compute trajectory intersection with boundary.
-    # For internal use.
-    def _get_intersection(self, old_pt, new_pt):
-        d = new_pt - old_pt
-        x0 = old_pt
-        t_vals = np.roots([norm(d)**2, 2*np.dot(d, x0), norm(x0)**2 - self.radius**2])
-        t = t_vals[0] if 0 <= t_vals[0] <= 1 else t_vals[1]
-        return (1-t)*old_pt + t*new_pt
 
-    ## reflect position if outside of domain.
-    def reflect_point(self, old_pt, new_pt):
-        old_pt, new_pt = array(old_pt), array(new_pt)
-        boundary_pt = self._get_intersection(old_pt, new_pt)
-        disp = new_pt - boundary_pt
-        normal = boundary_pt/norm(boundary_pt)
-        reflected_disp = disp - 2*np.dot(disp, normal)*normal
-        reflected_pt = boundary_pt + reflected_disp
-        return reflected_pt[0], reflected_pt[1]
+class UnitCube(Domain):
 
-    ## Reflect velocity angle to keep velocity consistent.
-    def reflect_velocity(self, old_pt, new_pt):
-        old_pt, new_pt = array(old_pt), array(new_pt)
-        boundary_pt = self._get_intersection(old_pt, new_pt)
-        reflected_pt = self.reflect_point(old_pt, new_pt)
-        disp_from_wall = array(reflected_pt) - boundary_pt
-        return arctan2(disp_from_wall[1], disp_from_wall[0]) % (2 * pi)
-
-
-class Cube(Domain):
-
-    ## Initialize Domain.
-    # stores number of fence sensors.
-    def __init__(self, radius) -> None:
-        self.sensing_radius = radius
+    def __init__(self, spacing) -> None:
+        super().__init__(spacing)
         self.cached_fence = []
+        self.min = (0, 0, 0)
+        self.max = (1, 1, 1)
+        self.dim = 3
+        self._reflector = SquareReflector(self.dim, self.min, self.max)
 
     ## Determine if given point it in domain or not.
     def __contains__(self, point) -> bool:
-        return (
-                0 <= point[0] <= 1
-                and 0 <= point[1] <= 1
-                and 0 <= point[2] <= 1
-        )
+        return any(0 <= point[i] <= 1 for i in range(self.dim))
+
+    @property
+    def reflector(self):
+        return self._reflector
 
     ## Generate boundary points in counterclockwise order.
     # WARNING: Points must be generated in counterclockwise order so that the
     # alpha_cycle can be easily computed.
-    def generate_fence(self):
+    @property
+    def fence(self):
         if self.cached_fence:
             return self.cached_fence
-        # check that the fence sensors are being generated properly
-        dx = np.sqrt(3) * self.sensing_radius / 2
 
-        spacing = np.arange(-dx, 1.001 + dx, self.sensing_radius)
-        grid = list(product(spacing, spacing))
+        # TODO check that domain is contained in the fence covered region
+        dx = np.sqrt(3) * self.spacing / 2
+
+        points = np.arange(-dx, 1.001 + dx, self.spacing)
+        grid = list(product(points, points))
         epsilon = pow(10, -5)
         x0_face = [(-dx + random.uniform(-epsilon, epsilon),
                     y + random.uniform(-epsilon, epsilon),
-                    z+random.uniform(-epsilon, epsilon)) for y, z in grid]
+                    z + random.uniform(-epsilon, epsilon)) for y, z in grid]
         y0_face = [(x + random.uniform(-epsilon, epsilon),
                     -dx + random.uniform(-epsilon, epsilon),
-                    z+random.uniform(-epsilon, epsilon)) for x, z in grid]
+                    z + random.uniform(-epsilon, epsilon)) for x, z in grid]
         z0_face = [(x + random.uniform(-epsilon, epsilon),
                     y + random.uniform(-epsilon, epsilon),
                     -dx + random.uniform(-epsilon, epsilon)) for x, y in grid]
@@ -272,55 +273,23 @@ class Cube(Domain):
         epsilon_fixed = random.uniform(-epsilon, epsilon)
         initial_sensors = [[
             -dx + epsilon_fixed,
-            -dx + self.sensing_radius + epsilon_fixed,
+            -dx + self.spacing + epsilon_fixed,
             -dx + epsilon_fixed
         ], [
             -dx + epsilon_fixed,
             -dx + epsilon_fixed,
             -dx + epsilon_fixed
         ], [
-            -dx + self.sensing_radius + epsilon_fixed,
+            -dx + self.spacing + epsilon_fixed,
             -dx + epsilon_fixed,
             -dx + epsilon_fixed,
         ]]
         self.cached_fence = np.concatenate((initial_sensors, fence_sensors), axis=0)
         return self.cached_fence
-        # return fence_sensors
 
     ## Generate n_int sensors randomly inside the domain.
-    def generate_interior_points(self, n_int_sensors: int) -> list:
-        mobile_sensors = np.random.rand(n_int_sensors, 3)
-        return mobile_sensors
+    def point_generator(self, n_sensors: int):
+        return np.random.rand(n_sensors, 3)
 
-    ## Return points along the physical domain.
-    # to be used for displaying the domain boundary as opposed to only
-    # the fence.
     def domain_boundary_points(self):
-        return True
-
-    ## Reflect a point off the boundary.
-    # Should be elastic collision
-    def reflect_point(self, new_pt):
-        # old point is not needed for the calculation.
-        pt = new_pt
-        for coor in range(3):
-            if new_pt[coor] <= 0:
-                new_pt[coor] = -new_pt[coor]
-            elif new_pt[coor] >= 1:
-                new_pt[coor] = -new_pt[coor] + 2
-
-        return pt
-
-    ## Reflect a velocity off the boundary.
-    # Should be elastic collision. Leave velocity magnitude as is,
-    # and compute reflected angle.
-    def reflect_velocity(self, new_pt, new_vel):
-        vel = new_vel
-        for coor in range(3):
-            if new_pt[coor] <= 0:
-                vel[coor] = -vel[coor]
-            elif new_pt[coor] >= 1:
-                vel[coor] = -vel[coor]
-
-        return vel
-
+        return []

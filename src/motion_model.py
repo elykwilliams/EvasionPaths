@@ -5,48 +5,39 @@
 # of the BSD-3 license with this file.
 # If not, visit: https://opensource.org/licenses/BSD-3-Clause
 # ************************************************************
-
-from utilities import cart2pol, pol2cart
-from boundary_geometry import Domain
+from abc import ABC, abstractmethod
 
 import numpy as np
+from dataclasses import dataclass
 from numpy import array, random
 from numpy.linalg import norm
 from scipy.integrate import solve_ivp
-from abc import ABC, abstractmethod
+
+from boundary_geometry import Domain
 
 
 ## This class provides the basic interface for a model of motion.
 # it should do two things, update the point positions, and reflect
 # points off of the boundary. Because the reflection depends on the
 # boundary, motion models and boundaries must be compatible.
+@dataclass
 class MotionModel(ABC):
+    domain: Domain
 
-    ## Initialize motion model with boundary.
-    def __init__(self, domain: Domain) -> None:
-        self.domain = domain
+    def local_update(self, sensor, dt):
+        if sensor.boundary_flag:
+            return
+        self.update_velocity(sensor, dt)
+        self.update_position(sensor, dt)
+        if sensor.pos not in self.domain:
+            self.domain.reflect(sensor)
 
-    ## Update position individual point.
-    # This function will be called on all points.
-    # Implementations should do the following:
-    #   1. move sensor
-    #   2. update velocity
-    #   3. check if reflection is needed
     @abstractmethod
     def update_position(self, sensor, dt):
-        pass
+        ...
 
-    ## Elastic reflection off boundary wall.
-    # This function should not need to be over written unless
-    # an inelastic collision is needed. This function adjusts
-    # the sensor position to where it should be, as well as the new
-    # velocity angle. This will only be updated IF NEEDED.
-    def reflect(self, sensor, new_pos):
-        if new_pos not in self.domain:
-            new_angle = self.domain.reflect_velocity(sensor.old_pos, new_pos)
-            new_pos = self.domain.reflect_point(sensor.old_pos, new_pos)
-            return new_pos, (sensor.pvel[0], new_angle)
-        return new_pos, sensor.pvel
+    def update_velocity(self, sensor, dt):
+        pass
 
     ## Compute any nonlocal updates.
     # This function should be called before update_position().
@@ -54,68 +45,53 @@ class MotionModel(ABC):
     # is a strictly local function. For example: If there any equations
     # to be solved, points and velocities should be pre-computed here,
     # then update the sensors when update_position is called.
-    def compute_update(self, all_sensors, dt):
+    def nonlocal_update(self, all_sensors, dt):
         pass
 
     ## Initialize sensor velocity.
-    # Velocity is stored in polar form. vel_mag is a parameter that
-    # can be used to indicate a scale of magnitude.
-    # generates a tuple (rho, theta)
+    # vel_mag is a parameter that can be used to indicate a scale of magnitude.
+    # generates a tuple
     @staticmethod
-    def initial_pvel(vel_mag):
-        return array([vel_mag, random.uniform(0, 2*np.pi)])
+    def initial_vel(vel_mag):
+        theta = random.uniform(0, 2 * np.pi)
+        unit_vec = np.array([np.cos(theta), np.sin(theta)])
+        return vel_mag * unit_vec
 
 
-## Provide random motion for rectangular domain.
-# Will move a point randomly with an average step
-# size of sigma*dt
-class BrownianMotion(MotionModel):
-
-    ## Initialize boundary with typical velocity.
-    def __init__(self, domain: Domain, sigma: float) -> None:
-        super().__init__(domain)
-        self.sigma = sigma
-
-    ## Random function.
-    def epsilon(self, dt) -> float:
-        return self.sigma * np.sqrt(dt) * random.normal(0, 1, 2)
-
-    ## Update a given sensors velocity.
-    def update_position(self, sensor, dt):
-        new_pos = array(sensor.old_pos) + self.epsilon(dt)
-        return self.reflect(sensor, new_pos)
-
-
-## Implement Billiard Motion for Rectangular Domain.
-# All sensors will have same velocity magnitude but
-# will have random initial angles.
-# Points will move with a displacement of vel*dt each update.
+# Velocity is constant
 class BilliardMotion(MotionModel):
-
-    ## Update point using x = x + v*dt.
-    # if sensor leaves domain, reflect angle to sensor
-    # remains in domain.
     def update_position(self, sensor, dt):
-        vel = array(pol2cart(sensor.pvel))
-        new_pos = array(sensor.old_pos) + dt*vel
-        return self.reflect(sensor, new_pos)
+        sensor.pos = sensor.old_pos + dt * sensor.vel
+
+
+## Provide random motion.
+# Will move a point randomly with an average step size of sigma*dt
+@dataclass
+class BrownianMotion(BilliardMotion):
+    sigma: float
+    large_dt: float
+
+    def epsilon(self) -> float:
+        return self.sigma * random.normal(0, 1, 2)
+
+    def update_velocity(self, sensor, dt):
+        if self.large_dt == dt:  # only sample in intervals of dt
+            sensor.vel = self.epsilon() / np.sqrt(dt)
 
 
 ## Implement randomized variant of Billiard motion.
 # Each update, a sensor has a chance of randomly changing direction.
+@dataclass
 class RunAndTumble(BilliardMotion):
-    def __init__(self, domain: Domain, dt: float):
-        super().__init__(domain)
-        self.large_dt = dt
+    large_dt: float
 
-    ## Update angles before updating points.
-    # Each update every point has a 1 : 5 chance of having its velocity
-    # angle changed. Then update as normal.
-    def compute_update(self, all_sensors, dt):
-        if self.large_dt == dt:
-            for sensor in all_sensors.mobile_sensors:
-                if random.randint(0, 5) == 4:
-                    sensor.old_pvel[1] = random.uniform(0, 2 * np.pi)
+    def update_velocity(self, sensor, dt):
+        if self.large_dt != dt:
+            return
+        if random.randint(0, 5) == 4:
+            vel = norm(sensor.vel)
+            sensor.vel = self.initial_vel(vel)
+            sensor.old_vel = sensor.vel
 
 
 ## The Viscek Model of Motion.
@@ -126,15 +102,8 @@ class RunAndTumble(BilliardMotion):
 # substeps the motion is simply billiard motion.
 # TODO find reference
 class Viscek(BilliardMotion):
-
-    ## Initialize motion model.
-    # averaging will be done in increments of dt.
-    # radius is the radius of sensors that will be averaged.
-    # This is typically the same as the sensing radius.
-    def __init__(self, domain: Domain, dt: float, radius: float):
-        super().__init__(domain)
-        self.large_dt = dt
-        self.radius = radius
+    large_dt: float  # averaging will be done in increments of large_dt
+    radius: float  # the radius of sensors that will be averaged.
 
     ## Noise function.
     # Velocity can vary by as much as pi/12 in either direction.
@@ -145,11 +114,13 @@ class Viscek(BilliardMotion):
     ## Average velocity angles at each timestep.
     # This function will set the velocity angle to be the average 
     # of the velocity angle of sensors nearby, plus some noise.
-    def compute_update(self, sensors, dt):
+    def nonlocal_update(self, sensors, dt):
         if dt == self.large_dt:
             for s1 in sensors.mobile_sensors:
-                sensor_angles = [s2.old_vel_angle for s2 in sensors.mobile_sensors if s1.dist(s2) < self.radius]
-                s1.old_pvel[1] = (np.mean(sensor_angles) + self.eta()) % (2 * np.pi)
+                sensor_angles = [np.arctan2(s2.old_vel[1], s2.old_vel[0]) for s2 in sensors.mobile_sensors
+                                 if s1.dist(s2) < self.radius]
+                theta = (np.mean(sensor_angles) + self.eta()) % (2 * np.pi)
+                s1.vel = norm(s1.vel) * np.array([np.cos(theta), np.sin(theta)])
 
 
 ## Differential equation based motion model.
@@ -177,13 +148,13 @@ class ODEMotion(MotionModel, ABC):
     ## Solve dx/dt = f(t, x) with x(t0) = old_pos.
     # Compute value x(t0 + dt) at each mobile sensor, store for later.
     # differential equation does not take fence sensors into account.
-    def compute_update(self, sensors, dt):
+    def nonlocal_update(self, sensors, dt):
         self.n_sensors = len(sensors.mobile_sensors)
         # Put into form ode solver wants [ xs | ys | vxs | vys ]
         xs = [s.old_pos[0] for s in sensors.mobile_sensors]
         ys = [s.old_pos[1] for s in sensors.mobile_sensors]
-        vxs = [pol2cart(s.old_pvel)[0] for s in sensors.mobile_sensors]
-        vys = [pol2cart(s.old_pvel)[1] for s in sensors.mobile_sensors]
+        vxs = [s.old_vel[0] for s in sensors.mobile_sensors]
+        vys = [s.old_vel[1] for s in sensors.mobile_sensors]
         init_val = xs + ys + vxs + vys
 
         # Solve with init_val as t=0, solve for values at t+dt
@@ -202,9 +173,11 @@ class ODEMotion(MotionModel, ABC):
     ## Retrieve precomputed position and velocity for given sensor.
     # This function is called *after* compute_update() has been called.
     # it will simply retrieve the precomputed position and velocities.
-    def update_position(self, sensor, dt):
-        new_pos, new_angle = self.reflect(sensor, self.points[sensor])
-        return new_pos, (cart2pol(self.velocities[sensor]), new_angle)
+    def update_position(self, sensor, _):
+        sensor.pos = self.points[sensor]
+
+    def update_velocity(self, sensor, _):
+        sensor.vel = self.velocities[sensor]
 
 
 ## Motion using the D'Orsogna model of motion.
@@ -245,7 +218,7 @@ class Dorsogna(ODEMotion):
 
     ## The right hand side function f(t, x).
     # we have the system
-    #       dx_i/dt = v_i, dx_i/dt = (1.5 - (1/2 || v_i ||**2 v_i) ) - grad(i)
+    #       dx_i/dt = v_i, dv_i/dt = (1.5 - (1/2 || v_i ||**2 v_i) ) - grad(i)
     # ode solver gives us np array in the form [xvals | yvals | vxvals | vyvals]
     # return to solver in the same format.
     def time_derivative(self, _, state):
