@@ -95,7 +95,7 @@ class SensorNetwork:
             self.motion_model.local_update(sensor, dt)
 
     ## Update each sensor's position.
-    # This should be called before moving to the next timestep.
+    # This should be called when moving to the next timestep.
     def update(self):
         for s in self.mobile_sensors:
             s.update()

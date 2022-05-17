@@ -115,12 +115,13 @@ class Viscek(BilliardMotion):
     # This function will set the velocity angle to be the average 
     # of the velocity angle of sensors nearby, plus some noise.
     def nonlocal_update(self, sensors, dt):
-        if dt == self.large_dt:
-            for s1 in sensors.mobile_sensors:
-                sensor_angles = [np.arctan2(s2.old_vel[1], s2.old_vel[0]) for s2 in sensors.mobile_sensors
-                                 if s1.dist(s2) < self.radius]
-                theta = (np.mean(sensor_angles) + self.eta()) % (2 * np.pi)
-                s1.vel = norm(s1.vel) * np.array([np.cos(theta), np.sin(theta)])
+        if dt != self.large_dt:
+            return
+        for s1 in sensors.mobile_sensors:
+            sensor_angles = [np.arctan2(s2.old_vel[1], s2.old_vel[0]) for s2 in sensors.mobile_sensors
+                             if s1.dist(s2) < self.radius]
+            theta = (np.mean(sensor_angles) + self.eta()) % (2 * np.pi)
+            s1.vel = norm(s1.vel) * np.array([np.cos(theta), np.sin(theta)])
 
 
 ## Differential equation based motion model.
@@ -132,8 +133,6 @@ class Viscek(BilliardMotion):
 # in compute_update() and then return those values when requested in update().
 class ODEMotion(MotionModel, ABC):
 
-    ## Initialize motion model.
-    # Points/velocities: sensors -> tuple()
     def __init__(self, domain):
         super().__init__(domain)
         self.n_sensors = 0

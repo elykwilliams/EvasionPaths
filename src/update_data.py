@@ -182,8 +182,6 @@ class DelaunyFlipUpdate2D(LabelUpdate):
         return True
 
 
-
-
 @LabelUpdateFactory.register((0, 0, 0, 1, 0, 0, 1, 1))
 @LabelUpdateFactory.register((0, 0, 1, 0, 0, 0, 1, 1))
 class FinUpdate3D(LabelUpdate):
@@ -219,12 +217,14 @@ class FillTetrahedronFace(LabelUpdate):
         three_simplex = next(iter(self.simplices[3].added()))
         return three_simplex.is_subface(two_simplex)
 
+
 @LabelUpdateFactory.register((0, 0, 0, 1, 0, 1, 1, 2))
 class DrainTetrahedronFace(Remove1SimplexUpdate2D):
     def is_atomic(self):
         two_simplex = next(iter(self.simplices[2].added()))
         three_simplex = next(iter(self.simplices[3].added()))
         return three_simplex.is_subface(two_simplex)
+
 
 @LabelUpdateFactory.register((1, 0, 2, 0, 1, 0, 2, 1))
 class TetrahedronEdgeFill(LabelUpdate):
@@ -235,6 +235,7 @@ class TetrahedronEdgeFill(LabelUpdate):
 
         result.update({cycle: False for cycle in self._simplex_cycles_added})
         return result
+
     def is_atomic(self):
         # if all([
         #     next(iter(self.simplices[k+1].added())).is_subface(
@@ -253,8 +254,8 @@ class TetrahedronEdgeDrain(Remove1SimplexUpdate2D):
         tetrahedron = next(iter(self.simplices[3].removed()))
         edges = next(iter(self.simplices[1].removed()))
 
-        return all(tetrahedron.is_subface(face) for face in self.simplices[2].removed()) and tetrahedron.is_subface(edges)
-
+        return all(tetrahedron.is_subface(face) for face in self.simplices[2].removed()) \
+               and tetrahedron.is_subface(edges)
 
 
 @LabelUpdateFactory.register((1, 0, 3, 1, 3, 2, 3, 2))
@@ -262,6 +263,7 @@ class Delaunay3DEdgeFace(LabelUpdate):
     @property
     def mapping(self):
         return {cycle: False for cycle in self._simplex_cycles_added}
+
     def is_atomic(self):
         # 2D case bellow for reference
 
@@ -284,6 +286,7 @@ class Delaunay3DFaceEdge(LabelUpdate):
     @property
     def mapping(self):
         return {cycle: False for cycle in self._simplex_cycles_added}
+
     def is_atomic(self):
 
         old_edge = next(iter(self.simplices[1].removed()))
@@ -298,8 +301,6 @@ class Delaunay3DFaceEdge(LabelUpdate):
         new_nodes = chain(*[simplex.nodes for simplex in self.simplices[3].added()])
         if set(old_nodes) != set(new_nodes):
             return False
-
-
 
 # if __name__ == "__main__":
 #     T1 = TopologicalState([])
