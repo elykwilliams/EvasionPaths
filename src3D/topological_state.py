@@ -16,8 +16,8 @@ class TopologicalState(object):
         for dim in range(4):
             self._simplices[dim] = [simplex for simplex, _ in simplex_tree.get_filtration() if len(simplex) == dim + 1]
 
-        cmap = CMap(sensor_network.points, self.simplices(1), self.simplices(2))
-        self.boundary_cycles = cmap.get_boundary_cycles()
+        self.cmap = CMap(sensor_network.points, self.simplices(1), self.simplices(2))
+        self.boundary_cycles = self.cmap.get_boundary_cycles()
 
     def simplices(self, dim: int):
         return self._simplices[dim]
