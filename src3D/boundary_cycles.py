@@ -58,6 +58,8 @@ class CMap:
             temp = self.incident_simplices(half_edge)
             self.rotinfo[half_edge] = sorted(temp, key=lambda simplex: self.theta(temp[0], simplex))
 
+        self.hashed_cycles = dict()
+
     def incident_simplices(self, half_edge: OrientedSimplex):
         return [simplex.orient(half_edge) for simplex in self.oriented_faces if simplex.is_edge(half_edge)]
 
@@ -83,10 +85,13 @@ class CMap:
         return result
 
     def boundary_cycle(self, simplex):
+        if simplex in self.hashed_cycles:
+            return self.hashed_cycles[simplex]
         cycle = {simplex}
         while self.flop(cycle) != cycle:
             cycle = self.flop(cycle)
-        return cycle
+        self.hashed_cycles[simplex] = frozenset(cycle)
+        return self.hashed_cycles[simplex]
 
     def get_boundary_cycles(self):
         faces = set(self.oriented_faces)
