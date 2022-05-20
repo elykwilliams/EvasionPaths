@@ -1,7 +1,7 @@
 from dataclasses import dataclass
 
 from alpha_complex import AlphaComplex
-from combinatorial_map import BoundaryCycle, RotationInfo2D, CombinatorialMap2D, CombinatorialMap
+from combinatorial_map import BoundaryCycle, RotationInfo2D, CombinatorialMap2D, CombinatorialMap, CombinatorialMap3D, OrientedSimplex3D
 
 
 @dataclass
@@ -18,7 +18,14 @@ class Topology:
 
     @property
     def alpha_cycle(self) -> BoundaryCycle:
-        return self.cmap.get_cycle(tuple(range(self.dim)))
+        if self.dim == 2:
+            face = tuple(range(self.dim))
+        elif self.dim == 3:
+            face = OrientedSimplex3D(tuple(range(self.dim)))
+        else:
+            raise NotImplementedError(f"No Implementation for CombinatorialMap for dimension {ac.dim}")
+
+        return self.cmap.get_cycle(face)
 
     @property
     def dim(self) -> int:
@@ -30,6 +37,8 @@ def generate_topology(points, radius):
     if ac.dim == 2:
         rot_info = RotationInfo2D(points, ac)
         cmap = CombinatorialMap2D(rot_info)
+    elif ac.dim == 3:
+        cmap = CombinatorialMap3D(points, ac.simplices(1), ac.simplices(2))
     else:
         raise NotImplementedError(f"No Implementation for CombinatorialMap for dimension {ac.dim}")
     return Topology(ac, cmap)
