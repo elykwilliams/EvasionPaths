@@ -1,37 +1,72 @@
 from abc import ABC, abstractmethod
 from itertools import chain
 from math import atan2
-from typing import Iterable, Set, List
+from typing import Iterable, Set, List, FrozenSet
 
 import networkx as nx
-from dataclasses import dataclass, field
 import numpy as np
+from dataclasses import dataclass, field
 
 
-class BoundaryCycle(ABC):
-    @abstractmethod
-    def __iter__(self):
-        ...
+class OrientedSimplex:
+    def __init__(self, nodes):
+        self.nodes = tuple(nodes)
 
     @property
-    @abstractmethod
-    def nodes(self):
-        ...
+    def dim(self):
+        return len(self.nodes) - 1
+
+    def alpha(self):
+        if self.dim == 1:
+            return OrientedSimplex([self.nodes[1], self.nodes[0]])
+        elif self.dim == 2:
+            return OrientedSimplex([self.nodes[0], self.nodes[2], self.nodes[1]])
+
+    def is_edge(self, half_edge):
+        if not all([n in self.nodes for n in half_edge.nodes]):
+            return False
+        i = self.nodes.index(half_edge.nodes[0])
+        return (self.nodes[i % 3], self.nodes[(i + 1) % 3]) == half_edge.nodes
+
+    @property
+    def edges(self):
+        result = []
+        for i in range(len(self.nodes)):
+            half_edge = (self.nodes[i % 3], self.nodes[(i + 1) % 3])
+            result.append(OrientedSimplex(half_edge))
+        return result
+
+    def vertices(self, points):
+        return [points[n] for n in self.nodes]
+
+    def orient(self, half_edge):
+        i = self.nodes.index(half_edge.nodes[0])
+        return OrientedSimplex(self.nodes[i:] + self.nodes[:i])
+
+    def __hash__(self):
+        i = 0 if self.dim == 1 else self.nodes.index(min(self.nodes))
+        return hash(repr(OrientedSimplex(self.nodes[i:] + self.nodes[:i])))
+
+    def __eq__(self, other):
+        return hash(self) == hash(other)
+
+    def __repr__(self):
+        return "(" + ",".join(map(str, self.nodes)) + ")"
 
 
 @dataclass
-class BoundaryCycle2D(BoundaryCycle):
-    darts: frozenset
+class BoundaryCycle:
+    oriented_simplices: FrozenSet[OrientedSimplex]
 
-    def __iter__(self):
-        return iter(self.darts)
+    def __iter__(self) -> Iterable[OrientedSimplex]:
+        return iter(self.oriented_simplices)
 
     def __hash__(self):
-        return hash(self.darts)
+        return hash(self.oriented_simplices)
 
     @property
-    def nodes(self):
-        return set(sum(self.darts, ()))
+    def nodes(self) -> Set[int]:
+        return set(chain.from_iterable([face.nodes for face in self.oriented_simplices]))
 
 
 class RotationInfo2D:
@@ -66,69 +101,6 @@ class RotationInfo2D:
         return set(sum(([(v1, v2) for v2 in self.adj[v1]] for v1 in self.adj), []))
 
 
-############### 3D Boundary Cycle ################
-
-@dataclass
-class BoundaryCycle3D(BoundaryCycle):
-    faces: frozenset
-
-    def __iter__(self):
-        return iter(self.faces)
-
-    def __hash__(self):
-        return hash(self.faces)
-
-    @property
-    def nodes(self):
-        nodes = chain(*[face.nodes for face in self.faces])
-        return set(nodes)
-
-
-class OrientedSimplex3D:
-    def __init__(self, nodes):
-        self.nodes = tuple(nodes)
-        self.dim = len(self.nodes) - 1
-
-    def alpha(self):
-        if self.dim == 1:
-            return OrientedSimplex3D([self.nodes[1], self.nodes[0]])
-        elif self.dim == 2:
-            return OrientedSimplex3D([self.nodes[0], self.nodes[2], self.nodes[1]])
-
-    def is_edge(self, half_edge):
-        if not all([n in self.nodes for n in half_edge.nodes]):
-            return False
-        i = self.nodes.index(half_edge.nodes[0])
-        return (self.nodes[i % 3], self.nodes[(i + 1) % 3]) == half_edge.nodes
-
-    @property
-    def edges(self):
-        result = []
-        for i in range(len(self.nodes)):
-            half_edge = (self.nodes[i % 3], self.nodes[(i + 1) % 3])
-            result.append(OrientedSimplex3D(half_edge))
-        return result
-
-    def vertices(self, points):
-        return [points[n] for n in self.nodes]
-
-    def orient(self, half_edge):
-        i = self.nodes.index(half_edge.nodes[0])
-        return OrientedSimplex3D(self.nodes[i:] + self.nodes[:i])
-
-    def __hash__(self):
-        i = 0 if self.dim == 1 else self.nodes.index(min(self.nodes))
-        return hash(repr(OrientedSimplex3D(self.nodes[i:] + self.nodes[:i])))
-
-    def __eq__(self, other):
-        return hash(self) == hash(other)
-
-    def __repr__(self):
-        return "(" + ",".join(map(str, self.nodes)) + ")"
-
-
-
-
 ############# Combinatorial Map ####################
 class CombinatorialMap(ABC):
 
@@ -156,7 +128,7 @@ class CombinatorialMap2D(CombinatorialMap):
             cycle = self.generate_cycle_darts(next_dart)
             for dart in cycle:
                 all_darts.remove(dart)
-            self._boundary_cycles.add(BoundaryCycle2D(frozenset(cycle)))
+            self._boundary_cycles.add(BoundaryCycle(frozenset(cycle)))
 
     def alpha(self, dart: Dart) -> Dart:
         return self.Dart(reversed(dart))
@@ -176,10 +148,10 @@ class CombinatorialMap2D(CombinatorialMap):
         return cycle
 
     @property
-    def boundary_cycles(self) -> Iterable[BoundaryCycle2D]:
+    def boundary_cycles(self) -> Iterable[BoundaryCycle]:
         return self._boundary_cycles
 
-    def get_cycle(self, dart: Dart) -> BoundaryCycle2D:
+    def get_cycle(self, dart: Dart) -> BoundaryCycle:
         for cycle in self._boundary_cycles:
             if dart in cycle:
                 return cycle
@@ -207,11 +179,11 @@ class CombinatorialMap3D(CombinatorialMap):
     def get_oriented(self, simplices):
         oriented_simplices = []
         for simplex in simplices:
-            os = OrientedSimplex3D(simplex.nodes)
+            os = OrientedSimplex(simplex.nodes)
             oriented_simplices.extend([os, os.alpha()])
         return oriented_simplices
 
-    def incident_simplices(self, half_edge: OrientedSimplex3D):
+    def incident_simplices(self, half_edge: OrientedSimplex):
         return [simplex.orient(half_edge) for simplex in self.oriented_faces if simplex.is_edge(half_edge)]
 
     def alpha(self, face):
@@ -257,13 +229,13 @@ class CombinatorialMap3D(CombinatorialMap):
         else:
             return np.arccos(dot_prod)
 
-    def get_cycle(self, simplex: OrientedSimplex3D):
+    def get_cycle(self, simplex: OrientedSimplex):
         if simplex in self.hashed_cycles:
             return self.hashed_cycles[simplex]
         cycle = {simplex}
         while self.flop(cycle) != cycle:
             cycle = self.flop(cycle)
-        self.hashed_cycles[simplex] = BoundaryCycle3D(frozenset(cycle))
+        self.hashed_cycles[simplex] = BoundaryCycle(frozenset(cycle))
         return self.hashed_cycles[simplex]
 
     @property

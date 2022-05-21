@@ -1,8 +1,9 @@
 from unittest import mock
+
 import numpy as np
 
 from alpha_complex import Simplex
-from combinatorial_map import CombinatorialMap3D, OrientedSimplex3D, BoundaryCycle3D
+from combinatorial_map import CombinatorialMap3D, OrientedSimplex, BoundaryCycle
 from topology import Topology
 
 
@@ -20,7 +21,7 @@ def test_3dcmap_lookup_bcycle():
     triangles = [(0, 1, 2), (0, 2, 3), (0, 1, 4), (0, 3, 4), (1, 2, 4), (2, 3, 4), (0, 2, 4)]
     cmap = CombinatorialMap3D(points, edges, triangles)
 
-    oriented_simplex = OrientedSimplex3D((0, 2, 1))
+    oriented_simplex = OrientedSimplex((0, 2, 1))
     assert cmap.get_cycle(oriented_simplex).nodes == {0, 1, 2, 4}
 
 
@@ -43,9 +44,9 @@ def test_3d_topology_cmap():
     cmap = CombinatorialMap3D(points, ac.simplices(1), ac.simplices(2))
     topology = Topology(ac, cmap)
 
-    bcycle1 = cmap.get_cycle(OrientedSimplex3D((0, 1, 2)))
-    bcycle2 = cmap.get_cycle(OrientedSimplex3D((0, 2, 1)))
-    bcycle3 = cmap.get_cycle(OrientedSimplex3D((0, 3, 2)))
+    bcycle1 = cmap.get_cycle(OrientedSimplex((0, 1, 2)))
+    bcycle2 = cmap.get_cycle(OrientedSimplex((0, 2, 1)))
+    bcycle3 = cmap.get_cycle(OrientedSimplex((0, 3, 2)))
 
     assert topology.boundary_cycles == {bcycle1, bcycle2, bcycle3}
 
@@ -61,5 +62,5 @@ def test_3d_topology_cmap_alphacycle():
     topology = Topology(ac, cmap)
 
     oriented_faces = [(0, 1, 2), (0, 2, 3), (0, 3, 4), (0, 4, 1), (1, 4, 2), (3, 2, 4)]
-    result = frozenset(OrientedSimplex3D(face) for face in oriented_faces)
-    assert topology.alpha_cycle == BoundaryCycle3D(result)
+    result = frozenset(OrientedSimplex(face) for face in oriented_faces)
+    assert topology.alpha_cycle == BoundaryCycle(result)
