@@ -10,6 +10,7 @@ from boundary_geometry import UnitCube
 from motion_model import BilliardMotion
 from sensor_network import SensorNetwork
 from state_change import StateChange
+from alpha_complex import AlphaComplex
 from time_stepping import EvasionPathSimulation
 
 def mock_alphacomplex(edges, faces, tets):
@@ -88,7 +89,8 @@ def test_simplex_find_boundary_cycles():
     tetrahedrons = [(0, 1, 2, 4), (0, 2, 3, 4)]
 
     ac = mock_alphacomplex(edges, triangles, tetrahedrons)
-    cmap = CombinatorialMap3D(points, ac.simplices(1), ac.simplices(2))
+    rotinfo = RotationInfo3D(points, ac)
+    cmap = CombinatorialMap3D(rotinfo)
     topology = Topology(ac, cmap)
 
     my_tetrahedron = Simplex(frozenset({0, 1, 2, 4}))
@@ -102,17 +104,18 @@ def test_simplex_find_boundary_cycles():
     tetrahedrons = [(0, 1, 2, 4), (0, 2, 3, 4)]
 
     ac = mock_alphacomplex(edges, triangles, tetrahedrons)
-    cmap = CombinatorialMap3D(points, ac.simplices(1), ac.simplices(2))
+    rotinfo = RotationInfo3D(points, ac)
+    cmap = CombinatorialMap3D(rotinfo)
     topology = Topology(ac, cmap)
 
     my_tetrahedron = Simplex(frozenset({0, 1, 2, 4}))
     boundary_cycles = my_tetrahedron.to_cycle(topology.boundary_cycles)
 
     triangle_nodes = {(0,1,4), (0,2,1), (2,4,1), (0,4,2)}
-    simplices = { OrientedSimplex3D(nodes) for nodes in triangle_nodes}
+    simplices = { OrientedSimplex(nodes) for nodes in triangle_nodes}
 
 # Struggling to create the expected boundary cycles, will come back to this later.
-    assert boundary_cycles == BoundaryCycle3D(faces=frozenset(simplices))
+    assert boundary_cycles == BoundaryCycle(frozenset(simplices))
 
 # Write a function that uses the mock alpha complex to construct a combinatorial map,
 # topology, and use the topology to initialize a Cycle Labelling object.
@@ -128,26 +131,27 @@ def test_check_cycle_labeling():
     tetrahedrons = [(0, 1, 2, 4), (0, 2, 3, 4)]
 
     ac = mock_alphacomplex(edges, triangles, tetrahedrons)
-    cmap = CombinatorialMap3D(points, ac.simplices(1), ac.simplices(2))
+    rotinfo = RotationInfo3D(points, ac)
+    cmap = CombinatorialMap3D(rotinfo)
     topology = Topology(ac, cmap)
     cycle_labeling = CycleLabellingDict(topology)
 
     check_for_invader = []
 
     t_1_triangle_nodes = {(0,1,4), (0,2,1), (2,4,1), (0,4,2)}
-    simplices = { OrientedSimplex3D(nodes) for nodes in t_1_triangle_nodes}
-    t_1_bc = BoundaryCycle3D(faces=frozenset(simplices))
+    simplices = { OrientedSimplex(nodes) for nodes in t_1_triangle_nodes}
+    t_1_bc = BoundaryCycle(frozenset(simplices))
     check_for_invader.append(cycle_labeling.dict[t_1_bc])
 
     t_2_triangle_nodes = {(0,2,4), (0,3,2), (2,3,4), (0,4,3)}
-    simplices = { OrientedSimplex3D(nodes) for nodes in t_2_triangle_nodes}
-    t_2_bc = BoundaryCycle3D(faces=frozenset(simplices))
+    simplices = { OrientedSimplex(nodes) for nodes in t_2_triangle_nodes}
+    t_2_bc = BoundaryCycle(frozenset(simplices))
     check_for_invader.append(cycle_labeling.dict[t_2_bc])
 
 
     outer_bc__triangle_nodes = {(0,3,4), (0,4,1), (1,4,2), (2,4,3), (0,2,3), (0,1,2)}
-    simplices = { OrientedSimplex3D(nodes) for nodes in outer_bc__triangle_nodes}
-    outer_bc = BoundaryCycle3D(faces=frozenset(simplices))
+    simplices = { OrientedSimplex(nodes) for nodes in outer_bc__triangle_nodes}
+    outer_bc = BoundaryCycle(frozenset(simplices))
     check_for_invader.append(cycle_labeling.dict[outer_bc])
 
     assert check_for_invader == [False, False, True]
@@ -203,7 +207,8 @@ def test_state_change():
     tetrahedrons_1 = [(0, 1, 2, 4), (0, 2, 3, 4)]
 
     ac_1 = mock_alphacomplex(edges_1, triangles_1, tetrahedrons_1)
-    cmap = CombinatorialMap3D(points_1, ac_1.simplices(1), ac_1.simplices(2))
+    rotinfo = RotationInfo3D(points_1, ac_1)
+    cmap = CombinatorialMap3D(rotinfo)
     topology_1 = Topology(ac_1, cmap)
 
     points_2 = np.array([[0, 0, 0], [1, 0, 0], [1, 1, 0], [0, 1, 0], [0, 0, 1]])
@@ -212,7 +217,8 @@ def test_state_change():
     tetrahedrons_2 = [(0, 2, 3, 4)]
 
     ac_2 = mock_alphacomplex(edges_2, triangles_2, tetrahedrons_2)
-    cmap = CombinatorialMap3D(points_2, ac_2.simplices(1), ac_2.simplices(2))
+    rotinfo = RotationInfo3D(points_2, ac_2)
+    cmap = CombinatorialMap3D(rotinfo)
     topology_2 = Topology(ac_2, cmap)
 
     state_change = StateChange(topology_2, topology_1)
