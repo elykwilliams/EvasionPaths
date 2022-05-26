@@ -17,19 +17,19 @@ class OrientedSimplex:
         return len(self.nodes) - 1
 
     def alpha(self):
-        if self.dim == 1:
-            return OrientedSimplex([self.nodes[1], self.nodes[0]])
-        elif self.dim == 2:
-            return OrientedSimplex([self.nodes[0], self.nodes[2], self.nodes[1]])
+        return OrientedSimplex(tuple(reversed(self.nodes)))
 
-    def is_edge(self, half_edge):
-        if not all([n in self.nodes for n in half_edge.nodes]):
+    def is_subsimplex(self, sub_simplex):
+        if not set(sub_simplex.nodes).issubset(set(self.nodes)):
             return False
-        i = self.nodes.index(half_edge.nodes[0])
-        return (self.nodes[i % 3], self.nodes[(i + 1) % 3]) == half_edge.nodes
+
+        # 3D specific Code
+        i = self.nodes.index(sub_simplex.nodes[0])
+        return (self.nodes[i % 3], self.nodes[(i + 1) % 3]) == sub_simplex.nodes
 
     @property
     def edges(self):
+        # 3D specific code
         result = []
         for i in range(len(self.nodes)):
             half_edge = (self.nodes[i % 3], self.nodes[(i + 1) % 3])
@@ -51,7 +51,7 @@ class OrientedSimplex:
         return hash(self) == hash(other)
 
     def __repr__(self):
-        return "(" + ",".join(map(str, self.nodes)) + ")"
+        return repr(self.nodes)
 
 
 @dataclass
@@ -66,7 +66,7 @@ class BoundaryCycle:
 
     @property
     def nodes(self) -> Set[int]:
-        return set(chain.from_iterable([face.nodes for face in self.oriented_simplices]))
+        return set(chain.from_iterable([face.nodes for face in self]))
 
 
 class RotationInfo2D:
@@ -160,15 +160,19 @@ class CombinatorialMap2D(CombinatorialMap):
 ############### 3D Combinatorial Map ##############
 class RotationInfo3D:
     def __init__(self, points, alpha_complex):
-        dim = len(points[0])
+
         self.points = points
-        self.oriented_simplices = self.get_oriented(alpha_complex.simplices(dim - 1))
-        self.sub_simplices = self.get_oriented(alpha_complex.simplices(dim - 2))
+        self.oriented_simplices = self.get_oriented(alpha_complex.simplices(self.dim - 1))
+        self.sub_simplices = self.get_oriented(alpha_complex.simplices(self.dim - 2))
 
         self.rotinfo = dict()
         for half_edge in self.sub_simplices:
             temp = self.incident_simplices(half_edge)
             self.rotinfo[half_edge] = sorted(temp, key=lambda simplex: self.theta(temp[0], simplex))
+
+    @property
+    def dim(self):
+        return len(self.points[0])
 
     def get_oriented(self, simplices):
         oriented_simplices = []
@@ -178,7 +182,7 @@ class RotationInfo3D:
         return oriented_simplices
 
     def incident_simplices(self, half_edge: OrientedSimplex):
-        return [simplex.orient(half_edge) for simplex in self.oriented_simplices if simplex.is_edge(half_edge)]
+        return [simplex.orient(half_edge) for simplex in self.oriented_simplices if simplex.is_subsimplex(half_edge)]
 
     def theta(self, simplex1, simplex2):
         # compute angle with respect to two_simplices[0]
@@ -227,7 +231,7 @@ class CombinatorialMap3D(CombinatorialMap):
         return face.alpha()
 
     def sigma(self, face, half_edge):
-        if not face.is_edge(half_edge):
+        if not face.is_subsimplex(half_edge):
             return  # maybe should be error???
         return self.rotation_info.next(half_edge, face)
 
@@ -243,20 +247,29 @@ class CombinatorialMap3D(CombinatorialMap):
     def get_cycle(self, simplex: OrientedSimplex):
         if simplex in self.cached_cycles:
             return self.cached_cycles[simplex]
-        cycle = {simplex}
-        while self.flop(cycle) != cycle:
-            cycle = self.flop(cycle)
+        cycle = fixed_point(self.flop, {simplex})
         self.cached_cycles[simplex] = BoundaryCycle(frozenset(cycle))
         return self.cached_cycles[simplex]
 
     @property
     def boundary_cycles(self):
         faces = set(self.rotation_info.oriented_simplices)
-        cycles = set()
-        while faces:
-            f = faces.pop()
-            bcycle = self.get_cycle(f)
-            faces.difference_update(bcycle)
-            cycles.add(bcycle)
+        cycles = partition(self.get_cycle, faces)
         return cycles
 
+
+def partition(equiv_class, X):
+    part = set()
+    while X:
+        x = X.pop()
+        equiv_set = equiv_class(x)
+        X.difference_update(equiv_set)
+        part.add(equiv_set)
+    return part
+
+
+def fixed_point(f, x0):
+    x, next_x = x0, f(x0)
+    while x != next_x:
+        x, next_x = next_x, f(next_x)
+    return x
