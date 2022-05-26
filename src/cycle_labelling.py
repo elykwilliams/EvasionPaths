@@ -41,7 +41,8 @@ class CycleLabellingDict(CycleLabelling):
         for cycle in topology.boundary_cycles:
             self.dict[cycle] = True
 
-        simplex_cycles = [simplex.to_cycle(topology.boundary_cycles) for simplex in topology.simplices(2)]
+        # Here I used the dim for the topology which should work.
+        simplex_cycles = [simplex.to_cycle(topology.boundary_cycles) for simplex in topology.simplices(topology.dim)]
         for cycle in simplex_cycles:
             self.dict[cycle] = False
 

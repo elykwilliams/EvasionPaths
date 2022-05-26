@@ -51,10 +51,11 @@ class MotionModel(ABC):
     ## Initialize sensor velocity.
     # vel_mag is a parameter that can be used to indicate a scale of magnitude.
     # generates a tuple
-    @staticmethod
-    def initial_vel(vel_mag):
-        theta = random.uniform(0, 2 * np.pi)
-        unit_vec = np.array([np.cos(theta), np.sin(theta)])
+    def initial_vel(self, vel_mag):
+        random_vector = np.random.rand(self.domain.dim)
+        norm = np.linalg.norm(random_vector)
+        unit_vec = random_vector / norm
+
         return vel_mag * unit_vec
 
 
