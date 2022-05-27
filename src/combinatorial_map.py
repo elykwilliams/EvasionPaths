@@ -25,16 +25,14 @@ class OrientedSimplex:
         if not set(sub_simplex.nodes).issubset(set(self.nodes)):
             return False
 
-        # 3D specific Code
         i = self.nodes.index(sub_simplex.nodes[0])
-        return (self.nodes[i % 3], self.nodes[(i + 1) % 3]) == sub_simplex.nodes
+        return (self.nodes[i], self.nodes[(i + 1) % len(self.nodes)]) == sub_simplex.nodes
 
     @property
     def edges(self):
-        # 3D specific code
         result = []
         for i in range(len(self.nodes)):
-            half_edge = (self.nodes[i % 3], self.nodes[(i + 1) % 3])
+            half_edge = (self.nodes[i], self.nodes[(i + 1) % len(self.nodes)])
             result.append(OrientedSimplex(half_edge))
         return result
 
