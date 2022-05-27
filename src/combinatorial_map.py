@@ -1,11 +1,13 @@
 from abc import ABC, abstractmethod
 from itertools import chain
 from math import atan2
-from typing import Iterable, Set, List, FrozenSet
+from typing import Iterable, Set, List, FrozenSet, Dict, Sequence
 
 import networkx as nx
 import numpy as np
 from dataclasses import dataclass, field
+
+from alpha_complex import AlphaComplex
 
 
 class OrientedSimplex:
@@ -54,6 +56,14 @@ class OrientedSimplex:
         return repr(self.nodes)
 
 
+def get_oriented(simplices):
+    oriented_simplices = set()
+    for simplex in simplices:
+        os = OrientedSimplex(simplex.nodes)
+        oriented_simplices.update({os, os.alpha()})
+    return oriented_simplices
+
+
 @dataclass
 class BoundaryCycle:
     oriented_simplices: FrozenSet[OrientedSimplex]
@@ -69,13 +79,44 @@ class BoundaryCycle:
         return set(chain.from_iterable([face.nodes for face in self]))
 
 
-class RotationInfo2D:
-    def __init__(self, points, alpha_complex):
-        graph = nx.Graph()
-        graph.add_nodes_from(alpha_complex.nodes)
-        graph.add_edges_from([edge.nodes for edge in alpha_complex.simplices(1)])
+@dataclass
+class RotationInfo(ABC):
+    points: Sequence
+    alpha_complex: AlphaComplex
+    rotinfo: Dict[OrientedSimplex, List[OrientedSimplex]] = field(default_factory=dict)
 
-        self.adj = dict()
+    def __post_init__(self):
+        self.build_rotinfo()
+
+    @abstractmethod
+    def build_rotinfo(self):
+        ...
+
+    @property
+    def oriented_simplices(self):
+        return get_oriented(self.alpha_complex.simplices(self.dim - 1))
+
+    @property
+    def sub_simplices(self):
+        return get_oriented(self.alpha_complex.simplices(self.dim - 2))
+
+    @property
+    def dim(self):
+        return len(self.points[0])
+
+    def next(self, oriented_simplex: OrientedSimplex, sub_simplex: OrientedSimplex) -> OrientedSimplex:
+        index = self.rotinfo[sub_simplex].index(oriented_simplex)
+        next_index = (index + 1) % len(self.rotinfo[sub_simplex])
+        return self.rotinfo[sub_simplex][next_index]
+
+
+class RotationInfo2D(RotationInfo):
+
+    def build_rotinfo(self):
+        graph = nx.Graph()
+        graph.add_nodes_from(self.alpha_complex.nodes)
+        graph.add_edges_from([edge.nodes for edge in self.alpha_complex.simplices(1)])
+
         for node in graph.nodes():
             neighbors = list(graph.neighbors(node))
             anticlockwise, clockwise = False, True
@@ -86,22 +127,44 @@ class RotationInfo2D:
                 return atan2(oa[1], oa[0])
 
             sorted_neighbors = sorted(neighbors,
-                                      key=lambda nei: theta(points[nei], points[node]),
+                                      key=lambda nei: theta(self.points[nei], self.points[node]),
                                       reverse=anticlockwise)
-            self.adj[node] = list(sorted_neighbors)
-
-    def next(self, dart):
-        v1, v2 = dart
-        index = self.adj[v1].index(v2)
-        next_index = (index + 1) % len(self.adj[v1])
-        return v1, self.adj[v1][next_index]
-
-    @property
-    def all_darts(self):
-        return set(sum(([(v1, v2) for v2 in self.adj[v1]] for v1 in self.adj), []))
+            self.rotinfo[OrientedSimplex((node,))] = [OrientedSimplex((node, n)) for n in sorted_neighbors]
 
 
-############# Combinatorial Map ####################
+class RotationInfo3D(RotationInfo):
+
+    def build_rotinfo(self):
+        for half_edge in self.sub_simplices:
+            temp = self.incident_simplices(half_edge)
+            self.rotinfo[half_edge] = sorted(temp, key=lambda simplex: self.theta(temp[0], simplex))
+
+    def incident_simplices(self, half_edge: OrientedSimplex):
+        return [simplex.orient(half_edge) for simplex in self.oriented_simplices if simplex.is_subsimplex(half_edge)]
+
+    def theta(self, simplex1, simplex2):
+        # compute angle with respect to two_simplices[0]
+        vertices1 = simplex1.vertices(self.points)
+        vertices2 = simplex2.vertices(self.points)
+        vector1 = vertices1[2] - vertices1[0]
+        vector2 = vertices2[2] - vertices2[0]
+        normal = vertices1[1] - vertices1[0]
+
+        projected_vector1 = vector1 - (np.dot(vector1, normal)) / (np.linalg.norm(normal) ** 2) * normal
+        projected_vector2 = vector2 - (np.dot(vector2, normal)) / (np.linalg.norm(normal) ** 2) * normal
+
+        dot_prod = np.dot(projected_vector1, projected_vector2) / (
+                np.linalg.norm(projected_vector1) * np.linalg.norm(projected_vector2))
+        if np.abs(dot_prod) - 1 > 1e-8:
+            print(f"Warning, truncating dot product from {dot_prod}")
+        dot_prod = np.clip(dot_prod, -1.0, 1.0)
+
+        if np.dot(normal, (np.cross(projected_vector1, projected_vector2))) >= 0:
+            return -np.arccos(dot_prod)
+        else:
+            return np.arccos(dot_prod)
+
+
 class CombinatorialMap(ABC):
 
     @property
@@ -113,7 +176,6 @@ class CombinatorialMap(ABC):
     def get_cycle(self, dart):
         pass
 
-########## Combinatorial Map 2D ###################
 
 @dataclass
 class CombinatorialMap2D(CombinatorialMap):
@@ -155,63 +217,6 @@ class CombinatorialMap2D(CombinatorialMap):
         for cycle in self._boundary_cycles:
             if dart in cycle:
                 return cycle
-
-
-############### 3D Combinatorial Map ##############
-class RotationInfo3D:
-    def __init__(self, points, alpha_complex):
-
-        self.points = points
-        self.oriented_simplices = self.get_oriented(alpha_complex.simplices(self.dim - 1))
-        self.sub_simplices = self.get_oriented(alpha_complex.simplices(self.dim - 2))
-
-        self.rotinfo = dict()
-        for half_edge in self.sub_simplices:
-            temp = self.incident_simplices(half_edge)
-            self.rotinfo[half_edge] = sorted(temp, key=lambda simplex: self.theta(temp[0], simplex))
-
-    @property
-    def dim(self):
-        return len(self.points[0])
-
-    def get_oriented(self, simplices):
-        oriented_simplices = []
-        for simplex in simplices:
-            os = OrientedSimplex(simplex.nodes)
-            oriented_simplices.extend([os, os.alpha()])
-        return oriented_simplices
-
-    def incident_simplices(self, half_edge: OrientedSimplex):
-        return [simplex.orient(half_edge) for simplex in self.oriented_simplices if simplex.is_subsimplex(half_edge)]
-
-    def theta(self, simplex1, simplex2):
-        # compute angle with respect to two_simplices[0]
-        vertices1 = simplex1.vertices(self.points)
-        vertices2 = simplex2.vertices(self.points)
-        vector1 = vertices1[2] - vertices1[0]
-        vector2 = vertices2[2] - vertices2[0]
-        normal = vertices1[1] - vertices1[0]
-
-        projected_vector1 = vector1 - (np.dot(vector1, normal)) / (np.linalg.norm(normal) ** 2) * normal
-        projected_vector2 = vector2 - (np.dot(vector2, normal)) / (np.linalg.norm(normal) ** 2) * normal
-
-        dot_prod = np.dot(projected_vector1, projected_vector2) / (
-                np.linalg.norm(projected_vector1) * np.linalg.norm(projected_vector2))
-        if np.abs(dot_prod) - 1 > 1e-8:
-            print(f"Warning, truncating dot product from {dot_prod}")
-        dot_prod = np.clip(dot_prod, -1.0, 1.0)
-
-        if np.dot(normal, (np.cross(projected_vector1, projected_vector2))) >= 0:
-            return -np.arccos(dot_prod)
-        else:
-            return np.arccos(dot_prod)
-
-    def next(self, sub_simplex, oriented_simplex):
-        incident_faces = self.rotinfo[sub_simplex]
-
-        for i in range(len(incident_faces)):
-            if incident_faces[i] == oriented_simplex:
-                return incident_faces[(i + 1) % len(incident_faces)]
 
 
 @dataclass

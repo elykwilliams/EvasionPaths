@@ -3,24 +3,26 @@ from unittest.mock import patch
 
 import pytest
 
-from combinatorial_map import BoundaryCycle2D, CombinatorialMap2D, RotationInfo2D
+from combinatorial_map import BoundaryCycle, CombinatorialMap2D, RotationInfo2D, OrientedSimplex
 
 
-class TestBoundaryCycle2D:
-    def test_init(self):
-        darts = [(1, 2), (2, 3), (3, 1)]
-        cycle = BoundaryCycle2D(frozenset(darts))
-        assert cycle.darts is not None
+class TestBoundaryCycle:
+    darts = [(1, 2), (2, 3), (3, 1)]
 
-    def test_iter(self):
-        darts = [(1, 2), (2, 3), (3, 1)]
-        cycle = BoundaryCycle2D(frozenset(darts))
-        assert all(d in darts for d in cycle)
+    @pytest.fixture
+    def single_cycle(self):
+        oriented_simplices = frozenset({OrientedSimplex(edge) for edge in self.darts})
+        return BoundaryCycle(oriented_simplices)
 
-    def test_nodes(self):
-        darts = [(1, 2), (2, 3), (3, 1)]
-        cycle = BoundaryCycle2D(frozenset(darts))
-        assert cycle.nodes == {1, 2, 3}
+    def test_init(self, single_cycle):
+        assert single_cycle.oriented_simplices is not None
+
+    def test_iter(self, single_cycle):
+        oriented_simplices = frozenset({OrientedSimplex(edge) for edge in self.darts})
+        assert all(s in oriented_simplices for s in single_cycle)
+
+    def test_nodes(self, single_cycle):
+        assert single_cycle.nodes == {1, 2, 3}
 
 
 @pytest.fixture
@@ -78,7 +80,7 @@ class TestCombinatorialMap2D:
     def test_get_cycle(self, mock_rotinfo):
         cmap = CombinatorialMap2D(mock_rotinfo)
         cycle = cmap.get_cycle((5, 1))
-        assert cycle == BoundaryCycle2D(frozenset({(5, 1), (1, 0), (0, 5)}))
+        assert cycle == BoundaryCycle(frozenset({(5, 1), (1, 0), (0, 5)}))
 
     def test_boundary_cycles(self, mock_rotinfo):
         cmap = CombinatorialMap2D(mock_rotinfo)
@@ -102,30 +104,30 @@ class TestRotInfo:
     @pytest.fixture
     def alpha_complex(self):
         ac = mock.Mock()
-        ac.simplices.return_value = [self.Simplex(edge) for edge in self.edges]
+        ac.simplices.side_effect = lambda dim: {
+            0: {self.Simplex((n,)) for n in range(6)},
+            1: {self.Simplex(edge) for edge in self.edges}
+        }[dim]
         ac.nodes = [0, 1, 2, 3, 4, 5]
         return ac
 
     def test_init(self, alpha_complex):
         ri = RotationInfo2D(self.points, alpha_complex)
-        assert ri.adj is not None
+        assert ri.rotinfo is not None
 
     def test_adjacency(self, alpha_complex):
         ri = RotationInfo2D(self.points, alpha_complex)
-        adj = {0: [1, 5],
-               1: [2, 3, 5, 0],
-               2: [3, 1],
-               3: [4, 1, 2],
-               4: [5, 3],
-               5: [4, 0, 1]}
-        assert all(set(ri.adj[n]) == set(adj[n]) for n in adj)
+
+        adj = {OrientedSimplex((0,)): [OrientedSimplex((0, n)) for n in (1, 5)],
+               OrientedSimplex((1,)): [OrientedSimplex((1, n)) for n in (2, 3, 5, 0)],
+               OrientedSimplex((2,)): [OrientedSimplex((2, n)) for n in (3, 1)],
+               OrientedSimplex((3,)): [OrientedSimplex((3, n)) for n in (4, 1, 2)],
+               OrientedSimplex((4,)): [OrientedSimplex((4, n)) for n in (5, 3)],
+               OrientedSimplex((5,)): [OrientedSimplex((5, n)) for n in (4, 0, 1)]}
+
+        assert all(set(ri.rotinfo[n]) == set(adj[n]) for n in adj)
 
     def test_next(self, alpha_complex):
         ri = RotationInfo2D(self.points, alpha_complex)
-        dart = ri.next((1, 5))
-        assert dart == (1, 0)
-
-    def test_all_darts(self, alpha_complex):
-        ri = RotationInfo2D(self.points, alpha_complex)
-        darts = self.edges + [edge[-1::-1] for edge in self.edges]
-        assert set(darts) == ri.all_darts
+        dart = ri.next(OrientedSimplex((1, 5)), OrientedSimplex((1,)))
+        assert dart == OrientedSimplex((1, 0))
