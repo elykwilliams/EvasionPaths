@@ -13,6 +13,8 @@ from alpha_complex import AlphaComplex
 class OrientedSimplex:
     def __init__(self, nodes):
         self.nodes = tuple(nodes)
+        i = 0 if len(self.nodes) == 2 else self.nodes.index(min(self.nodes))
+        self._hash = hash(self.nodes[i:] + self.nodes[:i])
 
     @property
     def dim(self):
@@ -44,8 +46,7 @@ class OrientedSimplex:
         return OrientedSimplex(self.nodes[i:] + self.nodes[:i])
 
     def __hash__(self):
-        i = 0 if self.dim == 1 else self.nodes.index(min(self.nodes))
-        return hash(repr(OrientedSimplex(self.nodes[i:] + self.nodes[:i])))
+        return self._hash
 
     def __eq__(self, other):
         return hash(self) == hash(other)

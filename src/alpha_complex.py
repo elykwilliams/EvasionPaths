@@ -36,10 +36,15 @@ class AlphaComplex:
         alpha_complex = gudhi.alpha_complex.AlphaComplex(points)
         self.simplex_tree = alpha_complex.create_simplex_tree(max_alpha_square=radius ** 2)
         self.dim = len(points[0])
+        self._simplices = dict()
+        for dim in range(1, self.dim + 1):
+            self._simplices[dim] = \
+                {Simplex(frozenset(nodes)) for nodes, _ in self.simplex_tree.get_skeleton(dim) if len(nodes) == dim + 1}
+        self._nodes = {nodes[0] for nodes, _ in self.simplex_tree.get_skeleton(0)}
 
     @property
     def nodes(self):
-        return {simplex[0] for simplex, _ in self.simplex_tree.get_skeleton(0)}
+        return self._nodes
 
     def simplices(self, dim):
-        return {Simplex(frozenset(nodes)) for nodes, _ in self.simplex_tree.get_skeleton(dim) if len(nodes) == dim + 1}
+        return self._simplices[dim]
