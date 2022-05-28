@@ -3,15 +3,14 @@ from unittest import mock
 import numpy as np
 
 from alpha_complex import Simplex
-from combinatorial_map import CombinatorialMap3D, OrientedSimplex, BoundaryCycle, RotationInfo3D
-from topology import Topology, generate_topology
-from cycle_labelling import CycleLabellingDict
 from boundary_geometry import UnitCube
+from combinatorial_map import CombinatorialMap3D, OrientedSimplex, BoundaryCycle, RotationInfo3D
+from cycle_labelling import CycleLabellingDict
 from motion_model import BilliardMotion
 from sensor_network import SensorNetwork
 from state_change import StateChange
-from alpha_complex import AlphaComplex
-from time_stepping import EvasionPathSimulation
+from topology import Topology, generate_topology
+
 
 def mock_alphacomplex(edges, faces, tets):
     simplices_dict = {1: edges, 2: faces, 3: tets}
@@ -33,6 +32,7 @@ def test_3dcmap_bcycle_lists():
 
     assert len(cmap.boundary_cycles) == 2
 
+
 def test_3dcmap_lookup_bcycle():
     points = np.array([[0, 0, 0], [1, 0, 0], [1, 1, 0], [0, 1, 0], [0, 0, 1]])
     edges = [(0, 1), (0, 2), (0, 3), (0, 4), (1, 2), (1, 4), (2, 3), (2, 4), (3, 4)]
@@ -43,8 +43,6 @@ def test_3dcmap_lookup_bcycle():
 
     oriented_simplex = OrientedSimplex((0, 2, 1))
     assert cmap.get_cycle(oriented_simplex).nodes == {0, 1, 2, 4}
-
-
 
 
 def test_3d_topology_cmap():
@@ -81,7 +79,6 @@ def test_3d_topology_cmap_alphacycle():
     assert topology.alpha_cycle == BoundaryCycle(result)
 
 
-
 def test_simplex_find_boundary_cycles():
     points = np.array([[0, 0, 0], [1, 0, 0], [1, 1, 0], [0, 1, 0], [0, 0, 1]])
     edges = [(0, 1), (0, 2), (0, 3), (0, 4), (1, 2), (1, 4), (2, 3), (2, 4), (3, 4)]
@@ -95,9 +92,10 @@ def test_simplex_find_boundary_cycles():
 
     my_tetrahedron = Simplex(frozenset({0, 1, 2, 4}))
 
-    assert my_tetrahedron.to_cycle(topology.boundary_cycles) != None
+    assert my_tetrahedron.to_cycle(topology.boundary_cycles) is not None
 
-def test_simplex_find_boundary_cycles():
+
+def test_simplex_find_boundary_cycles_2():
     points = np.array([[0, 0, 0], [1, 0, 0], [1, 1, 0], [0, 1, 0], [0, 0, 1]])
     edges = [(0, 1), (0, 2), (0, 3), (0, 4), (1, 2), (1, 4), (2, 3), (2, 4), (3, 4)]
     triangles = [(0, 1, 2), (0, 2, 3), (0, 1, 4), (0, 3, 4), (1, 2, 4), (2, 3, 4), (0, 2, 4)]
@@ -111,10 +109,10 @@ def test_simplex_find_boundary_cycles():
     my_tetrahedron = Simplex(frozenset({0, 1, 2, 4}))
     boundary_cycles = my_tetrahedron.to_cycle(topology.boundary_cycles)
 
-    triangle_nodes = {(0,1,4), (0,2,1), (2,4,1), (0,4,2)}
-    simplices = { OrientedSimplex(nodes) for nodes in triangle_nodes}
+    triangle_nodes = {(0, 1, 4), (0, 2, 1), (2, 4, 1), (0, 4, 2)}
+    simplices = {OrientedSimplex(nodes) for nodes in triangle_nodes}
 
-# Struggling to create the expected boundary cycles, will come back to this later.
+    # Struggling to create the expected boundary cycles, will come back to this later.
     assert boundary_cycles == BoundaryCycle(frozenset(simplices))
 
 # Write a function that uses the mock alpha complex to construct a combinatorial map,
@@ -123,6 +121,7 @@ def test_simplex_find_boundary_cycles():
 # There should be a bug here that needs fixing (bug = 2d specific code).
 #
 # Question, what is the expected labelling for the fence?
+
 
 def test_check_cycle_labeling():
     points = np.array([[0, 0, 0], [1, 0, 0], [1, 1, 0], [0, 1, 0], [0, 0, 1]])
@@ -138,19 +137,18 @@ def test_check_cycle_labeling():
 
     check_for_invader = []
 
-    t_1_triangle_nodes = {(0,1,4), (0,2,1), (2,4,1), (0,4,2)}
-    simplices = { OrientedSimplex(nodes) for nodes in t_1_triangle_nodes}
+    t_1_triangle_nodes = {(0, 1, 4), (0, 2, 1), (2, 4, 1), (0, 4, 2)}
+    simplices = {OrientedSimplex(nodes) for nodes in t_1_triangle_nodes}
     t_1_bc = BoundaryCycle(frozenset(simplices))
     check_for_invader.append(cycle_labeling.dict[t_1_bc])
 
-    t_2_triangle_nodes = {(0,2,4), (0,3,2), (2,3,4), (0,4,3)}
-    simplices = { OrientedSimplex(nodes) for nodes in t_2_triangle_nodes}
+    t_2_triangle_nodes = {(0, 2, 4), (0, 3, 2), (2, 3, 4), (0, 4, 3)}
+    simplices = {OrientedSimplex(nodes) for nodes in t_2_triangle_nodes}
     t_2_bc = BoundaryCycle(frozenset(simplices))
     check_for_invader.append(cycle_labeling.dict[t_2_bc])
 
-
-    outer_bc__triangle_nodes = {(0,3,4), (0,4,1), (1,4,2), (2,4,3), (0,2,3), (0,1,2)}
-    simplices = { OrientedSimplex(nodes) for nodes in outer_bc__triangle_nodes}
+    outer_bc__triangle_nodes = {(0, 3, 4), (0, 4, 1), (1, 4, 2), (2, 4, 3), (0, 2, 3), (0, 1, 2)}
+    simplices = {OrientedSimplex(nodes) for nodes in outer_bc__triangle_nodes}
     outer_bc = BoundaryCycle(frozenset(simplices))
     check_for_invader.append(cycle_labeling.dict[outer_bc])
 
@@ -177,7 +175,6 @@ def test_create_sensor_network():
 
     num_sensors: int = 20
     sensing_radius: float = 0.2
-    timestep_size: float = 0.01
 
     unit_square = UnitCube(spacing=sensing_radius)
 
@@ -195,11 +192,10 @@ def test_create_sensor_network():
     assert len(sensor.pos) == 3
 
 
-
-# Finally, Write a test function that creates two topologies that are only slightly different using two mock alpha complexes.
+# Finally, Write a test function that creates two topologies that are only slightly different
+# using two mock alpha complexes.
 # Use the two topologies to create a state change object. Verify that the state change has the correct case.
 # assert state_change.case == expected_result
-
 def test_state_change():
     points_1 = np.array([[0, 0, 0], [1, 0, 0], [1, 1, 0], [0, 1, 0], [0, 0, 1]])
     edges_1 = [(0, 1), (0, 2), (0, 3), (0, 4), (1, 2), (1, 4), (2, 3), (2, 4), (3, 4)]
