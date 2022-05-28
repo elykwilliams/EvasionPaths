@@ -1,11 +1,10 @@
-from typing import FrozenSet
+from itertools import chain
 from unittest import mock
 
 import pytest
-from dataclasses import dataclass
 
 from alpha_complex import Simplex
-from combinatorial_map import CombinatorialMap2D, RotationInfo2D
+from combinatorial_map import CombinatorialMap2D, RotationInfo2D, OrientedSimplex, BoundaryCycle
 from cycle_labelling import CycleLabellingDict
 from state_change import StateChange
 from topology import Topology
@@ -14,44 +13,20 @@ from update_data import LabelUpdateFactory, Remove1SimplexUpdate2D
 
 @pytest.fixture
 def mock_rotinfo():
-    adj = {0: [1, 5],
-           1: [2, 3, 5, 0],
-           2: [3, 1],
-           3: [4, 1, 2],
-           4: [5, 3],
-           5: [4, 0, 1]}
+    mock_rotinfo = mock.Mock()
+    mock_rotinfo.rotinfo = {
+        OrientedSimplex((0,)): [OrientedSimplex((0, n)) for n in (5, 1)],
+        OrientedSimplex((1,)): [OrientedSimplex((1, n)) for n in (0, 5, 3, 2)],
+        OrientedSimplex((2,)): [OrientedSimplex((2, n)) for n in (1, 3)],
+        OrientedSimplex((3,)): [OrientedSimplex((3, n)) for n in (2, 1, 4)],
+        OrientedSimplex((4,)): [OrientedSimplex((4, n)) for n in (3, 5)],
+        OrientedSimplex((5,)): [OrientedSimplex((5, n)) for n in (1, 0, 4)]
+    }
 
-    def next_dart(dart):
-        v1, v2 = dart
-        index = adj[v1].index(v2)
-        return v1, adj[v1][(index + 1) % len(adj[v1])]
+    mock_rotinfo.next.side_effect = lambda cell, node: RotationInfo2D.next(mock_rotinfo, cell, node)
+    mock_rotinfo.oriented_simplices = set(chain.from_iterable(mock_rotinfo.rotinfo.values()))
 
-    s = mock.Mock()
-    s.next.side_effect = next_dart
-
-    s.all_darts = sum(([(v1, v2) for v2 in adj[v1]] for v1 in adj), [])
-    return s
-
-
-@dataclass
-class Simplex:
-    nodes: FrozenSet[int]
-
-    def is_subface(self, subface):
-        return subface.nodes.issubset(self.nodes)
-
-    def to_cycle(self, boundary_cycles):
-        cycles_found = [cycle for cycle in boundary_cycles if self.nodes == cycle.nodes]
-        return cycles_found.pop()
-
-    def __len__(self):
-        return len(self.nodes) - 1
-
-    def __eq__(self, other):
-        return self.nodes == other.nodes
-
-    def __hash__(self):
-        return hash(self.nodes)
+    return mock_rotinfo
 
 
 def mock_alphacomplex(simplices, edges):
@@ -73,29 +48,32 @@ def topology(simplices, edges, points):
 
 
 class TestIntegrateCMap:
+    cycle1 = {OrientedSimplex(simplex) for simplex in {(0, 5), (5, 1), (1, 0)}}
+    cycle2 = {OrientedSimplex(simplex) for simplex in {(5, 0), (0, 1), (1, 2), (2, 3), (3, 4), (4, 5)}}
+    cycle3 = {OrientedSimplex(simplex) for simplex in {(2, 1), (1, 3), (3, 2)}}
+    cycle4 = {OrientedSimplex(simplex) for simplex in {(3, 1), (1, 5), (5, 4), (4, 3)}}
+
     result = {
-        frozenset({(0, 5), (5, 1), (1, 0)}),
-        frozenset({(5, 0), (0, 1), (1, 2), (2, 3), (3, 4), (4, 5)}),
-        frozenset({(2, 1), (1, 3), (3, 2)}),
-        frozenset({(3, 1), (1, 5), (5, 4), (4, 3)})
+        BoundaryCycle(frozenset(cycle1)), BoundaryCycle(frozenset(cycle2)),
+        BoundaryCycle(frozenset(cycle3)), BoundaryCycle(frozenset(cycle4))
     }
 
     simplices = [(0, 1, 5)]
     edges = [(5, 0), (0, 1), (1, 2), (2, 3), (3, 4), (4, 5), (5, 1), (1, 3)]
     points = [(2, 0), (1, 1), (0, 2), (0, 1), (0, 0), (1, 0)]
 
-    def test_mockrotinfo(self, mock_rotinfo):
+    def test_from_mockrotinfo(self, mock_rotinfo):
         cmap = CombinatorialMap2D(mock_rotinfo)
-        assert set(cycle.darts for cycle in cmap.boundary_cycles) == self.result
+        assert cmap.boundary_cycles == self.result
 
     def test_mock_alphacomplex(self):
         rotinfo = RotationInfo2D(self.points, mock_alphacomplex(self.simplices, self.edges))
         cmap = CombinatorialMap2D(rotinfo)
-        assert set(cycle.darts for cycle in cmap.boundary_cycles) == self.result
+        assert cmap.boundary_cycles == self.result
 
     def test_integrate_topology(self):
         topology1 = topology(self.simplices, self.edges, self.points)
-        assert set(cycle.darts for cycle in topology1.boundary_cycles) == self.result
+        assert topology1.boundary_cycles == self.result
 
     def test_integrate_labelling(self):
         topology1 = topology(self.simplices, self.edges, self.points)
@@ -105,7 +83,7 @@ class TestIntegrateCMap:
     def test_integrate_labelling_false(self):
         topology1 = topology(self.simplices, self.edges, self.points)
         labelling = CycleLabellingDict(topology1)
-        cycle = topology1.cmap.get_cycle((0, 5))
+        cycle = topology1.cmap.get_cycle(OrientedSimplex((0, 5)))
         assert not labelling[cycle]
 
     def test_integrate_sc(self):
@@ -148,6 +126,6 @@ class TestIntegrateCMap:
         label_update = LabelUpdateFactory().get_update(topology2, topology1, labelling)
         labelling.update(label_update)
 
-        cycle1 = topology2.cmap.get_cycle((0, 5))
-        cycle2 = topology2.cmap.get_cycle((3, 2))
+        cycle1 = topology2.cmap.get_cycle(OrientedSimplex((0, 5)))
+        cycle2 = topology2.cmap.get_cycle(OrientedSimplex((2, 3)))
         assert (not labelling[cycle1]) and labelling[cycle2]

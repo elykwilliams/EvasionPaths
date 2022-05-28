@@ -1,5 +1,5 @@
+from itertools import chain
 from unittest import mock
-from unittest.mock import patch
 
 import pytest
 
@@ -25,70 +25,54 @@ class TestBoundaryCycle:
         assert single_cycle.nodes == {1, 2, 3}
 
 
-@pytest.fixture
-def mock_rotinfo():
-    adj = {0: [1, 5],
-           1: [2, 3, 5, 0],
-           2: [3, 1],
-           3: [4, 1, 2],
-           4: [5, 3],
-           5: [4, 0, 1]}
-
-    def next_dart(dart):
-        v1, v2 = dart
-        index = adj[v1].index(v2)
-        return v1, adj[v1][(index + 1) % len(adj[v1])]
-
-    s = mock.Mock()
-    s.next.side_effect = next_dart
-
-    s.all_darts = sum(([(v1, v2) for v2 in adj[v1]] for v1 in adj), [])
-    return s
-
-
 class TestCombinatorialMap2D:
-    @patch("combinatorial_map.CombinatorialMap2D.__post_init__", return_value=None)
-    def test_init(self, mock_rotinfo):
+    def test_init(self):
+        mock_rotinfo = mock.Mock()
         cmap = CombinatorialMap2D(mock_rotinfo)
-        assert cmap._boundary_cycles is not None
+        assert not cmap._boundary_cycles
 
-    @patch("combinatorial_map.CombinatorialMap2D.__post_init__", return_value=None)
-    def test_alpha(self, m, mock_rotinfo):
-        cmap = CombinatorialMap2D(mock_rotinfo)
-        assert cmap.alpha((1, 0)) == (0, 1)
+    def test_alpha(self):
+        assert CombinatorialMap2D.alpha(OrientedSimplex((1, 0))) == OrientedSimplex((0, 1))
 
-    @patch("combinatorial_map.CombinatorialMap2D.__post_init__", return_value=None)
-    def test_sigma(self, _, mock_rotinfo):
+    def test_phi(self):
+        mock_rotinfo = mock.Mock()
+        mock_rotinfo.next.return_value = OrientedSimplex((1, 5))
         cmap = CombinatorialMap2D(mock_rotinfo)
-        assert cmap.sigma((1, 0)) == (1, 2)
+        assert cmap.phi(OrientedSimplex((1, 0)), OrientedSimplex((1,))) == OrientedSimplex((5, 1))
 
-    @patch("combinatorial_map.CombinatorialMap2D.__post_init__", return_value=None)
-    def test_phi(self, _, mock_rotinfo):
+    def test_get_cycle(self):
+        expected_cycle = [OrientedSimplex((0, 5)), OrientedSimplex((5, 1)), OrientedSimplex((1, 0))]
+        mock_rotinfo = mock.Mock()
+        mock_rotinfo.next.side_effect = [simplex.alpha() for simplex in expected_cycle]
         cmap = CombinatorialMap2D(mock_rotinfo)
-        assert cmap.phi((1, 0)) == (0, 5)
+        cycle = cmap.get_cycle(OrientedSimplex((1, 0)))
+        assert cycle == BoundaryCycle(frozenset(expected_cycle))
 
-    @patch("combinatorial_map.CombinatorialMap2D.__post_init__", return_value=None)
-    def test_generate_cycle_darts(self, _, mock_rotinfo):
+    def test_get_cycle_cached_all_simplices(self):
+        expected_cycle = [OrientedSimplex((0, 5)), OrientedSimplex((5, 1)), OrientedSimplex((1, 0))]
+        mock_rotinfo = mock.Mock()
+        mock_rotinfo.next.side_effect = [simplex.alpha() for simplex in expected_cycle]
         cmap = CombinatorialMap2D(mock_rotinfo)
-        darts = cmap.generate_cycle_darts((1, 0))
-        assert set(darts) == {(1, 0), (0, 5), (5, 1)}
+        cmap.get_cycle(OrientedSimplex((1, 0)))
+        assert all(s in cmap._hashed_simplices for s in expected_cycle)
 
-    def test_post_init(self, mock_rotinfo):
-        cmap = CombinatorialMap2D(mock_rotinfo)
-        assert len(cmap._boundary_cycles) == 4
+    def test_boundary_cycles(self):
+        mock_rotinfo = mock.Mock()
+        mock_rotinfo.rotinfo = {
+            OrientedSimplex((0,)): [OrientedSimplex((0, n)) for n in (1, 5)],
+            OrientedSimplex((1,)): [OrientedSimplex((1, n)) for n in (2, 3, 5, 0)],
+            OrientedSimplex((2,)): [OrientedSimplex((2, n)) for n in (3, 1)],
+            OrientedSimplex((3,)): [OrientedSimplex((3, n)) for n in (4, 1, 2)],
+            OrientedSimplex((4,)): [OrientedSimplex((4, n)) for n in (5, 3)],
+            OrientedSimplex((5,)): [OrientedSimplex((5, n)) for n in (4, 0, 1)]
+        }
 
-    def test_get_cycle(self, mock_rotinfo):
-        cmap = CombinatorialMap2D(mock_rotinfo)
-        cycle = cmap.get_cycle((5, 1))
-        assert cycle == BoundaryCycle(frozenset({(5, 1), (1, 0), (0, 5)}))
+        mock_rotinfo.next.side_effect = lambda cell, node: RotationInfo2D.next(mock_rotinfo, cell, node)
+        mock_rotinfo.oriented_simplices = set(chain.from_iterable(mock_rotinfo.rotinfo.values()))
 
-    def test_boundary_cycles(self, mock_rotinfo):
         cmap = CombinatorialMap2D(mock_rotinfo)
-        c1 = frozenset({(0, 5), (5, 1), (1, 0)})
-        c2 = frozenset({(5, 0), (0, 1), (1, 2), (2, 3), (3, 4), (4, 5)})
-        c3 = frozenset({(2, 1), (1, 3), (3, 2)})
-        c4 = frozenset({(3, 1), (1, 5), (5, 4), (4, 3)})
-        assert set(cycle.darts for cycle in cmap.boundary_cycles) == {c1, c2, c3, c4}
+        cycles = cmap.boundary_cycles
+        assert len(cycles) == 4
 
 
 class TestRotInfo:
@@ -118,16 +102,17 @@ class TestRotInfo:
     def test_adjacency(self, alpha_complex):
         ri = RotationInfo2D(self.points, alpha_complex)
 
-        adj = {OrientedSimplex((0,)): [OrientedSimplex((0, n)) for n in (1, 5)],
-               OrientedSimplex((1,)): [OrientedSimplex((1, n)) for n in (2, 3, 5, 0)],
-               OrientedSimplex((2,)): [OrientedSimplex((2, n)) for n in (3, 1)],
-               OrientedSimplex((3,)): [OrientedSimplex((3, n)) for n in (4, 1, 2)],
-               OrientedSimplex((4,)): [OrientedSimplex((4, n)) for n in (5, 3)],
-               OrientedSimplex((5,)): [OrientedSimplex((5, n)) for n in (4, 0, 1)]}
-
+        adj = {
+            OrientedSimplex((0,)): [OrientedSimplex((0, n)) for n in (5, 1)],
+            OrientedSimplex((1,)): [OrientedSimplex((1, n)) for n in (0, 5, 3, 2)],
+            OrientedSimplex((2,)): [OrientedSimplex((2, n)) for n in (1, 3)],
+            OrientedSimplex((3,)): [OrientedSimplex((3, n)) for n in (2, 1, 4)],
+            OrientedSimplex((4,)): [OrientedSimplex((4, n)) for n in (3, 5)],
+            OrientedSimplex((5,)): [OrientedSimplex((5, n)) for n in (1, 0, 4)]
+        }
         assert all(set(ri.rotinfo[n]) == set(adj[n]) for n in adj)
 
     def test_next(self, alpha_complex):
         ri = RotationInfo2D(self.points, alpha_complex)
-        dart = ri.next(OrientedSimplex((1, 5)), OrientedSimplex((1,)))
-        assert dart == OrientedSimplex((1, 0))
+        dart = ri.next(OrientedSimplex((5, 0)), OrientedSimplex((5,)))
+        assert dart == OrientedSimplex((5, 4))

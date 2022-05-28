@@ -1,7 +1,7 @@
 from abc import ABC, abstractmethod
 from itertools import chain
 from math import atan2
-from typing import Iterable, Set, List, FrozenSet, Dict, Sequence
+from typing import Set, List, FrozenSet, Dict, Sequence, Collection, Iterator
 
 import networkx as nx
 import numpy as np
@@ -66,11 +66,17 @@ def get_oriented(simplices):
 class BoundaryCycle:
     oriented_simplices: FrozenSet[OrientedSimplex]
 
-    def __iter__(self) -> Iterable[OrientedSimplex]:
+    def __iter__(self) -> Iterator[OrientedSimplex]:
         return iter(self.oriented_simplices)
 
     def __hash__(self):
         return hash(self.oriented_simplices)
+
+    def __len__(self):
+        return len(self.nodes)
+
+    def __repr__(self):
+        return f"BoundaryCycle[{','.join([repr(s) for s in self.oriented_simplices])}]"
 
     @property
     def nodes(self) -> Set[int]:
@@ -126,7 +132,7 @@ class RotationInfo2D(RotationInfo):
 
             sorted_neighbors = sorted(neighbors,
                                       key=lambda nei: theta(self.points[nei], self.points[node]),
-                                      reverse=anticlockwise)
+                                      reverse=clockwise)
             self.rotinfo[OrientedSimplex((node,))] = [OrientedSimplex((node, n)) for n in sorted_neighbors]
 
 
@@ -163,83 +169,69 @@ class RotationInfo3D(RotationInfo):
             return np.arccos(dot_prod)
 
 
+@dataclass
 class CombinatorialMap(ABC):
-
-    @property
-    @abstractmethod
-    def boundary_cycles(self):
-        ...
+    rotation_info: RotationInfo
+    _boundary_cycles: Collection[BoundaryCycle] = frozenset()
+    _hashed_simplices: Dict[OrientedSimplex, BoundaryCycle] \
+        = field(default_factory=dict)
 
     @abstractmethod
     def get_cycle(self, dart):
         pass
 
+    @staticmethod
+    def alpha(simplex: OrientedSimplex) -> OrientedSimplex:
+        return OrientedSimplex(reversed(simplex.nodes))
 
-@dataclass
-class CombinatorialMap2D(CombinatorialMap):
-    Dart = tuple
-    rotation_info: RotationInfo2D
-    _boundary_cycles: Set = field(default_factory=lambda: set())
+    def sigma(self, simplex: OrientedSimplex,
+              sub_simplex: OrientedSimplex) -> OrientedSimplex:
+        return self.rotation_info.next(simplex, sub_simplex)
 
-    def __post_init__(self) -> None:
-        all_darts = self.rotation_info.all_darts.copy()
-        while all_darts:
-            next_dart = next(iter(all_darts))
-            cycle = self.generate_cycle_darts(next_dart)
-            for dart in cycle:
-                all_darts.remove(dart)
-            self._boundary_cycles.add(BoundaryCycle(frozenset(cycle)))
-
-    def alpha(self, dart: Dart) -> Dart:
-        return self.Dart(reversed(dart))
-
-    def sigma(self, dart: Dart) -> Dart:
-        return self.rotation_info.next(dart)
-
-    def phi(self, dart: Dart) -> Dart:
-        return self.sigma(self.alpha(dart))
-
-    def generate_cycle_darts(self, dart: Dart) -> List[Dart]:
-        cycle = [dart]
-        next_dart = self.phi(dart)
-        while next_dart != dart:
-            cycle.append(next_dart)
-            next_dart = self.phi(next_dart)
-        return cycle
+    def phi(self, simplex: OrientedSimplex,
+            sub_simplex: OrientedSimplex) -> OrientedSimplex:
+        return self.alpha(self.sigma(simplex, sub_simplex))
 
     @property
-    def boundary_cycles(self) -> Iterable[BoundaryCycle]:
+    def boundary_cycles(self) -> Collection[BoundaryCycle]:
+        if self._boundary_cycles:
+            return self._boundary_cycles
+
+        simplices = self.rotation_info.oriented_simplices.copy()
+        cycles = partition(self.get_cycle, simplices)
+        self._boundary_cycles = cycles
         return self._boundary_cycles
 
-    def get_cycle(self, dart: Dart) -> BoundaryCycle:
-        for cycle in self._boundary_cycles:
-            if dart in cycle:
-                return cycle
+
+class CombinatorialMap2D(CombinatorialMap):
+
+    def get_cycle(self, simplex: OrientedSimplex) -> BoundaryCycle:
+        if simplex in self._hashed_simplices:
+            return self._hashed_simplices[simplex]
+
+        cycle = {simplex}
+        next_simplex = self.phi(simplex, OrientedSimplex((simplex.nodes[0],)))
+        while next_simplex != simplex:
+            cycle.add(next_simplex)
+            pivot = OrientedSimplex((next_simplex.nodes[0],))
+            next_simplex = self.phi(next_simplex, pivot)
+
+        for s in cycle:
+            self._hashed_simplices[s] = BoundaryCycle(frozenset(cycle))
+        return self._hashed_simplices[simplex]
+
+    def get_cycle_nodes(self, simplex):
+        nodes = [simplex.nodes[0]]
+        next_simplex = self.phi(simplex, OrientedSimplex((simplex.nodes[0],)))
+        while next_simplex != simplex:
+            pivot = OrientedSimplex((next_simplex.nodes[0],))
+            nodes.append(next_simplex.nodes[0])
+            next_simplex = self.phi(next_simplex, pivot)
+        return nodes
 
 
 @dataclass
 class CombinatorialMap3D(CombinatorialMap):
-    def __init__(self, rotation_info):
-        self.rotation_info = rotation_info
-        self.cached_cycles = dict()
-
-    def get_oriented(self, simplices):
-        oriented_simplices = []
-        for simplex in simplices:
-            os = OrientedSimplex(simplex.nodes)
-            oriented_simplices.extend([os, os.alpha()])
-        return oriented_simplices
-
-    def alpha(self, face):
-        return face.alpha()
-
-    def sigma(self, face, half_edge):
-        if not face.is_subsimplex(half_edge):
-            return  # maybe should be error???
-        return self.rotation_info.next(half_edge, face)
-
-    def phi(self, simplex, half_edge):
-        return self.alpha(self.sigma(simplex, half_edge))
 
     def flop(self, simplices):
         result = set(simplices)
@@ -248,20 +240,16 @@ class CombinatorialMap3D(CombinatorialMap):
         return result
 
     def get_cycle(self, simplex: OrientedSimplex):
-        if simplex in self.cached_cycles:
-            return self.cached_cycles[simplex]
-        cycle = fixed_point(self.flop, {simplex})
-        self.cached_cycles[simplex] = BoundaryCycle(frozenset(cycle))
-        return self.cached_cycles[simplex]
+        if simplex in self._hashed_simplices:
+            return self._hashed_simplices[simplex]
 
-    @property
-    def boundary_cycles(self):
-        faces = set(self.rotation_info.oriented_simplices)
-        cycles = partition(self.get_cycle, faces)
-        return cycles
+        cycle = frozenset(fixed_point(self.flop, {simplex}))
+
+        self._hashed_simplices.update({s: BoundaryCycle(cycle) for s in cycle})
+        return self._hashed_simplices[simplex]
 
 
-def partition(equiv_class, X):
+def partition(equiv_class, X: Set):
     part = set()
     while X:
         x = X.pop()

@@ -10,6 +10,7 @@ import matplotlib.pyplot as plt
 import networkx as nx
 
 from boundary_geometry import Domain
+from combinatorial_map import OrientedSimplex
 from sensor_network import SensorNetwork
 from time_stepping import EvasionPathSimulation
 
@@ -21,7 +22,7 @@ from time_stepping import EvasionPathSimulation
 
 def show_fence(sensors: SensorNetwork) -> None:
     axis = plt.gca()
-    xpts, ypts = zip(*[s.position for s in sensors.fence_sensors])
+    xpts, ypts = zip(*[s.pos for s in sensors.fence_sensors])
     axis.plot(xpts, ypts, 'k*')
 
 
@@ -59,12 +60,6 @@ def show_sensor_radius(sensors: SensorNetwork) -> None:
         axis.add_artist(plt.Circle(pt, sensors.sensing_radius, color='b', alpha=0.1, clip_on=False))
 
 
-def dart2cyclenodes(dart, cmap):
-    cycle_darts = cmap.generate_cycle_darts(dart)
-    ordered_nodes = [dart[1] for dart in cycle_darts]
-    return ordered_nodes
-
-
 ## Shade holes in AlphaComplex with possible intruder.
 def show_possible_intruder(sim: EvasionPathSimulation) -> None:
     graph = nx.Graph()
@@ -75,8 +70,7 @@ def show_possible_intruder(sim: EvasionPathSimulation) -> None:
     # get boundary cycles with nodes in correct order
     axis = plt.gca()
     for cycle in cmap.boundary_cycles:
-        dart0 = next(iter(cycle))
-        cycle_nodes = dart2cyclenodes(dart0, cmap)
+        cycle_nodes = cmap.get_cycle_nodes(list(cycle).pop())
         xpts, ypts = zip(*[sim.sensor_network.points[n] for n in cycle_nodes])
 
         # Exclude alpha-cycle
@@ -123,13 +117,12 @@ def show_state(sim: EvasionPathSimulation) -> None:
 
 ## Display Fat Graph/Combinatorial Map.
 def show_combinatorial_map(sim: EvasionPathSimulation) -> None:
-    Dart = sim.topology.cmap.Dart
     graph = nx.Graph()
     graph.add_nodes_from(sim.topology.alpha_complex.nodes)
     graph.add_edges_from(simplex.nodes for simplex in sim.topology.simplices(1))
 
-    temp_dict = {edge: Dart(edge) for edge in graph.edges}
-    temp_dict.update({reversed(edge): sim.topology.cmap.alpha(Dart(edge)) for edge in graph.edges})
+    temp_dict = {edge: OrientedSimplex(edge) for edge in graph.edges}
+    temp_dict.update({reversed(edge): sim.topology.cmap.alpha(OrientedSimplex(edge)) for edge in graph.edges})
 
     nx.draw(graph, sim.sensor_network.points)
     nx.draw_networkx_labels(graph, dict(enumerate(sim.sensor_network.points)))
@@ -148,7 +141,7 @@ if __name__ == '__main__':
 
     unit_square = RectangularDomain(spacing=sensing_radius)
     brownian_motion = BilliardMotion(domain=unit_square)
-    sensor_network = SensorNetwork(brownian_motion, unit_square, sensing_radius, num_sensors)
+    sensor_network = SensorNetwork(brownian_motion, unit_square, sensing_radius, num_sensors, 0.1)
     simulation = EvasionPathSimulation(sensor_network=sensor_network, dt=timestep_size)
 
     plt.figure(1)
