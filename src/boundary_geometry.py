@@ -16,6 +16,8 @@ from numpy.linalg import norm
 
 from utilities import pol2cart
 
+import pandas as pd
+
 
 class BoundaryReflector(ABC):
 
@@ -293,3 +295,53 @@ class UnitCube(Domain):
 
     def domain_boundary_points(self):
         return []
+
+
+class ImportedFence(Domain):
+    def __init__(self, spacing, route) -> None:
+        super().__init__(spacing)
+        self.cached_fence = []
+        self.min = (0, 0, 0)
+        self.max = (1, 1, 1)
+        self.dim = 3
+        self._reflector = SquareReflector(self.dim, self.min, self.max)
+        self.route = route
+
+    ## Determine if given point it in domain or not.
+    def __contains__(self, point) -> bool:
+        return any(0 <= point[i] <= 1 for i in range(self.dim))
+
+    # Ask Kyle about how these reflectors work and whether or not the perturbations affect them
+
+    @property
+    def reflector(self):
+        return self._reflector
+
+    ## Generate boundary points in counterclockwise order.
+    # WARNING: Points must be generated in counterclockwise order so that the
+    # alpha_cycle can be easily computed.
+
+    # Question about this warning ^ for tomorrow. Did the original 3D code do this? I did not write it.
+    # The array is constructed in the same exact way as the old 3d code so hopefully that is good.
+    @property
+    def fence(self):
+        fence = self.from_file()
+
+        self.cached_fence = fence
+        return self.cached_fence
+
+    ## Generate n_int sensors randomly inside the domain.
+    def point_generator(self, n_sensors: int):
+        return np.random.rand(n_sensors, 3)
+
+    def domain_boundary_points(self):
+        return []
+    def from_file(self):
+        fence = []
+        # For the data we can use something like route: "../setup_data/fence.csv"
+        df = pd.read_csv(self.route)
+        for col in range(len(df.columns)):
+            entry = df.iloc[0, col][1:-1].split()
+            coordinates = list(map(float, entry))
+            fence.append(coordinates)
+        return fence
