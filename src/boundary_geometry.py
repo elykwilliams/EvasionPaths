@@ -10,13 +10,12 @@ from abc import ABC, abstractmethod
 from itertools import product
 
 import numpy as np
-from dataclasses import dataclass
+import pandas as pd
+from dataclasses import dataclass, field
 from numpy import arange, pi
 from numpy.linalg import norm
 
 from utilities import pol2cart
-
-import pandas as pd
 
 
 class BoundaryReflector(ABC):
@@ -92,7 +91,8 @@ class RadialReflector(BoundaryReflector):
 # - provide boundary points for plotting
 @dataclass
 class Domain(ABC):
-    spacing: float
+    spacing: float = 0
+    cached_fence: np.array = field(default_factory=lambda: np.array([]))
 
     @property
     @abstractmethod
@@ -122,6 +122,15 @@ class Domain(ABC):
     @abstractmethod
     def domain_boundary_points(self):
         ...
+
+    def from_file(self, filename):
+        fence = []
+        df = pd.read_csv(filename)
+        for col in range(len(df.columns)):
+            entry = df.iloc[0, col][1:-1].split()
+            coordinates = list(map(float, entry))
+            fence.append(coordinates)
+        self.cached_fence = fence
 
 
 ## A rectangular domain.
@@ -221,9 +230,8 @@ class CircularDomain(Domain):
 
 class UnitCube(Domain):
 
-    def __init__(self, spacing) -> None:
+    def __init__(self, spacing: float = 0) -> None:
         super().__init__(spacing)
-        self.cached_fence = []
         self.min = (0, 0, 0)
         self.max = (1, 1, 1)
         self.dim = 3
@@ -231,7 +239,7 @@ class UnitCube(Domain):
 
     ## Determine if given point it in domain or not.
     def __contains__(self, point) -> bool:
-        return all(0 <= point[i] <= 1 for i in range(self.dim))
+        return any(0 <= px <= 1 for px in point)
 
     @property
     def reflector(self):
@@ -296,52 +304,3 @@ class UnitCube(Domain):
     def domain_boundary_points(self):
         return []
 
-
-class ImportedFence(Domain):
-    def __init__(self, spacing, route) -> None:
-        super().__init__(spacing)
-        self.cached_fence = []
-        self.min = (0, 0, 0)
-        self.max = (1, 1, 1)
-        self.dim = 3
-        self._reflector = SquareReflector(self.dim, self.min, self.max)
-        self.route = route
-
-    ## Determine if given point it in domain or not.
-    def __contains__(self, point) -> bool:
-        return all(0 <= point[i] <= 1 for i in range(self.dim))
-
-    # Ask Kyle about how these reflectors work and whether or not the perturbations affect them
-
-    @property
-    def reflector(self):
-        return self._reflector
-
-    ## Generate boundary points in counterclockwise order.
-    # WARNING: Points must be generated in counterclockwise order so that the
-    # alpha_cycle can be easily computed.
-
-    # Question about this warning ^ for tomorrow. Did the original 3D code do this? I did not write it.
-    # The array is constructed in the same exact way as the old 3d code so hopefully that is good.
-    @property
-    def fence(self):
-        fence = self.from_file()
-
-        self.cached_fence = fence
-        return self.cached_fence
-
-    ## Generate n_int sensors randomly inside the domain.
-    def point_generator(self, n_sensors: int):
-        return np.random.rand(n_sensors, 3)
-
-    def domain_boundary_points(self):
-        return []
-    def from_file(self):
-        fence = []
-        # For the data we can use something like route: "../setup_data/fence.csv"
-        df = pd.read_csv(self.route)
-        for col in range(len(df.columns)):
-            entry = df.iloc[0, col][1:-1].split()
-            coordinates = list(map(float, entry))
-            fence.append(coordinates)
-        return fence
