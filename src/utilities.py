@@ -60,13 +60,10 @@ class EvasionPathError(Exception, ABC):
 # happen simultaneously. This is sometimes a problem for manufactured
 # simulations. It can also indicate that a sensor has broken free of the
 # virtual boundary and is interfering with the fence boundary cycle.
-class MaxRecursionDepth(EvasionPathError):
-    def __init__(self, state_change):
-        self.state_change = state_change
-
+class MaxRecursionDepthError(EvasionPathError):
     def __str__(self):
         return (
-            f'{self.message}Max Recursion depth exceeded!\n\n{self.state_change}.\n\n'
+            f'{self.message}Max Recursion depth exceeded!'
             f'This exception was raised because the adaptive timestep was unable to resolve' 
             f'a small enough time step so that the topological change is atomic. This may be ' 
             f'because your timestep was too large. It can also often be likely in manufactured ' 

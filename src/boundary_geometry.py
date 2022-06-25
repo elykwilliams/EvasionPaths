@@ -231,7 +231,7 @@ class UnitCube(Domain):
 
     ## Determine if given point it in domain or not.
     def __contains__(self, point) -> bool:
-        return any(0 <= point[i] <= 1 for i in range(self.dim))
+        return all(0 <= point[i] <= 1 for i in range(self.dim))
 
     @property
     def reflector(self):
@@ -309,7 +309,7 @@ class ImportedFence(Domain):
 
     ## Determine if given point it in domain or not.
     def __contains__(self, point) -> bool:
-        return any(0 <= point[i] <= 1 for i in range(self.dim))
+        return all(0 <= point[i] <= 1 for i in range(self.dim))
 
     # Ask Kyle about how these reflectors work and whether or not the perturbations affect them
 

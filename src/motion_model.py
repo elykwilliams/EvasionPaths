@@ -7,8 +7,9 @@
 # ************************************************************
 from abc import ABC, abstractmethod
 
+import pandas as pd
 import numpy as np
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from numpy import array, random
 from numpy.linalg import norm
 from scipy.integrate import solve_ivp
@@ -237,3 +238,39 @@ class Dorsogna(ODEMotion):
 
         dvdt = {dim: [accelerate(sensor, dim) for sensor in range(self.n_sensors)] for dim in 'xy'}
         return np.concatenate([v['x'], v['y'], dvdt['x'], dvdt['y']])
+
+@dataclass
+class TimeseriesData(MotionModel):
+    filename: str
+    large_dt: float
+    step_no: int = 1
+    df: pd.DataFrame = pd.DataFrame(())
+    next_time_positions: np.array = field(default_factory=lambda: np.array([]))
+
+    def __post_init__(self):
+        self.df = pd.read_csv(self.filename)
+        self.current_row = self.from_dataframe(0)
+
+    def update_position(self, sensor_i, _):
+        return
+
+    def nonlocal_update(self, sensor_network, dt):
+        if dt == self.large_dt:
+            self.next_time_positions = self.from_dataframe(self.step_no)
+            self.step_no += 1
+
+        for i, sensor in enumerate(sensor_network.mobile_sensors):
+            old_position = np.array(sensor.pos)
+            new_position = np.array(self.next_time_positions[i])
+            sensor.pos = new_position * dt + (1-dt) * old_position
+
+    def from_dataframe(self, row):
+        sensors = []
+        # For the data we can use something like route: "../setup_data/fence.csv"
+        for col in range(len(self.df.columns)):
+            entry = self.df.iloc[row, col][1:-1].split()
+            coordinates = list(map(float, entry))
+            sensors.append(coordinates)
+        return sensors
+
+
