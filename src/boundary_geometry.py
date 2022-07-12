@@ -10,8 +10,7 @@ from abc import ABC, abstractmethod
 from itertools import product
 
 import numpy as np
-import pandas as pd
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from numpy import arange, pi
 from numpy.linalg import norm
 
@@ -92,7 +91,6 @@ class RadialReflector(BoundaryReflector):
 @dataclass
 class Domain(ABC):
     spacing: float = 0
-    cached_fence: np.array = field(default_factory=lambda: np.array([]))
 
     @property
     @abstractmethod
@@ -107,30 +105,16 @@ class Domain(ABC):
     def __contains__(self, point: tuple) -> bool:
         ...
 
-    @property
-    @abstractmethod
-    def fence(self):
-        # WARNING: Points must be generated in counterclockwise order so that the
-        # edge (0, 1, ..., dim-1) simplex is part of the fence boundary cycle
-        ...
-
     @abstractmethod
     def point_generator(self, n_sensors: int) -> list:
         ...
 
     ## Return points along the boundary for plotting (not the fence).
+    # Move to plotting tools
     @abstractmethod
     def domain_boundary_points(self):
         ...
 
-    def from_file(self, filename):
-        fence = []
-        df = pd.read_csv(filename)
-        for col in range(len(df.columns)):
-            entry = df.iloc[0, col][1:-1].split()
-            coordinates = list(map(float, entry))
-            fence.append(coordinates)
-        self.cached_fence = fence
 
 
 ## A rectangular domain.
@@ -250,9 +234,6 @@ class UnitCube(Domain):
     # alpha_cycle can be easily computed.
     @property
     def fence(self):
-        if self.cached_fence:
-            return self.cached_fence
-
         # TODO check that domain is contained in the fence covered region
         dx = np.sqrt(3) * self.spacing / 2
 
@@ -294,8 +275,7 @@ class UnitCube(Domain):
             -dx + epsilon_fixed,
             -dx + epsilon_fixed,
         ]]
-        self.cached_fence = np.concatenate((initial_sensors, fence_sensors), axis=0)
-        return self.cached_fence
+        return np.concatenate((initial_sensors, fence_sensors), axis=0)
 
     ## Generate n_int sensors randomly inside the domain.
     def point_generator(self, n_sensors: int):
