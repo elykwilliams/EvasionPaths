@@ -103,7 +103,7 @@ class Fence:
 
     @classmethod
     def from_file(cls, filename):
-        sensor_dataFrame = pd.read_csv(filename, index_col=0)
+        sensor_dataFrame = pd.read_csv(filename, index_col=0, skiprows=1)
 
         fence = []
         for sensor_id in sensor_dataFrame:
