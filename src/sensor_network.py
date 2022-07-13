@@ -134,7 +134,7 @@ def generate_mobile_sensors(domain, n_sensors, sensing_radius, vel_mag):
     velocities = (initial_vel(domain, vel_mag) for _ in points)
     sensors = []
     for sensor in range(n_sensors):
-        s = Sensor(np.array(points), np.array(velocities), sensing_radius, vel_mag, False)
+        s = Sensor(np.array(points), np.array(velocities), sensing_radius)
         sensors.append(s)
     return sensors
 
