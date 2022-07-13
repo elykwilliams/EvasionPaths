@@ -214,8 +214,7 @@ class CircularDomain(Domain):
 
 class UnitCube(Domain):
 
-    def __init__(self, spacing: float = 0) -> None:
-        super().__init__(spacing)
+    def __init__(self) -> None:
         self.min = (0, 0, 0)
         self.max = (1, 1, 1)
         self.dim = 3
@@ -229,40 +228,6 @@ class UnitCube(Domain):
     def reflector(self):
         return self._reflector
 
-    ## Generate boundary points in counterclockwise order.
-    # WARNING: Points must be generated in counterclockwise order so that the
-    # alpha_cycle can be easily computed.
-    @property
-    def fence(self):
-        # TODO check that domain is contained in the fence covered region
-        dx = np.sqrt(3) * self.spacing / 2
-
-        points = np.arange(-dx, 1.001 + dx, self.spacing)
-        grid = list(product(points, points))
-        epsilon = pow(10, -5)
-        x0_face = [(-dx + random.uniform(-epsilon, epsilon),
-                    y + random.uniform(-epsilon, epsilon),
-                    z + random.uniform(-epsilon, epsilon)) for y, z in grid]
-        y0_face = [(x + random.uniform(-epsilon, epsilon),
-                    -dx + random.uniform(-epsilon, epsilon),
-                    z + random.uniform(-epsilon, epsilon)) for x, z in grid]
-        z0_face = [(x + random.uniform(-epsilon, epsilon),
-                    y + random.uniform(-epsilon, epsilon),
-                    -dx + random.uniform(-epsilon, epsilon)) for x, y in grid]
-        x1_face = [(1 + dx + random.uniform(-epsilon, epsilon),
-                    y + random.uniform(-epsilon, epsilon),
-                    z + random.uniform(-epsilon, epsilon)) for y, z in grid]
-        y1_face = [(x + random.uniform(-epsilon, epsilon),
-                    1 + dx + random.uniform(-epsilon, epsilon),
-                    z + random.uniform(-epsilon, epsilon)) for x, z in grid]
-        z1_face = [(x + random.uniform(-epsilon, epsilon),
-                    y + random.uniform(-epsilon, epsilon),
-                    1 + dx + random.uniform(-epsilon, epsilon)) for x, y in grid]
-        fence_sensors = np.concatenate((x0_face, y0_face, z0_face, x1_face, y1_face, z1_face))
-        fence_sensors = np.unique(fence_sensors, axis=0)
-
-        return fence_sensors
-
     ## Generate n_int sensors randomly inside the domain.
     def point_generator(self, n_sensors: int):
         return np.random.rand(n_sensors, 3)
@@ -270,3 +235,34 @@ class UnitCube(Domain):
     def domain_boundary_points(self):
         return []
 
+
+## Generate boundary points in counterclockwise order.
+# WARNING: Points must be generated in counterclockwise order so that the
+# alpha_cycle can be easily computed.
+def UnitCubeFence(spacing):
+    # TODO check that domain is contained in the fence covered region
+    dx = np.sqrt(3) * spacing / 2
+
+    points = np.arange(-dx, 1.001 + dx, spacing)
+    grid = list(product(points, points))
+    epsilon = pow(10, -5)
+    x0_face = [(-dx + random.uniform(-epsilon, epsilon),
+                y + random.uniform(-epsilon, epsilon),
+                z + random.uniform(-epsilon, epsilon)) for y, z in grid]
+    y0_face = [(x + random.uniform(-epsilon, epsilon),
+                -dx + random.uniform(-epsilon, epsilon),
+                z + random.uniform(-epsilon, epsilon)) for x, z in grid]
+    z0_face = [(x + random.uniform(-epsilon, epsilon),
+                y + random.uniform(-epsilon, epsilon),
+                -dx + random.uniform(-epsilon, epsilon)) for x, y in grid]
+    x1_face = [(1 + dx + random.uniform(-epsilon, epsilon),
+                y + random.uniform(-epsilon, epsilon),
+                z + random.uniform(-epsilon, epsilon)) for y, z in grid]
+    y1_face = [(x + random.uniform(-epsilon, epsilon),
+                1 + dx + random.uniform(-epsilon, epsilon),
+                z + random.uniform(-epsilon, epsilon)) for x, z in grid]
+    z1_face = [(x + random.uniform(-epsilon, epsilon),
+                y + random.uniform(-epsilon, epsilon),
+                1 + dx + random.uniform(-epsilon, epsilon)) for x, y in grid]
+    fence_sensors = np.concatenate((x0_face, y0_face, z0_face, x1_face, y1_face, z1_face))
+    return np.unique(fence_sensors, axis=0)
