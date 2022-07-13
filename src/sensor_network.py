@@ -119,8 +119,31 @@ class Fence:
         return iter(self.sensors)
 
 
-def generate_mobile_sensors(motion_model, domain, n_sensors, vel_mag):
+def initial_vel(d, vel_magnitude):
+    random_vector = np.random.rand(d.dim)
+    norm_v = np.linalg.norm(random_vector)
+    unit_vec = random_vector / norm_v
+
+    return vel_magnitude * unit_vec
+
+
+def generate_mobile_sensors(domain, n_sensors, sensing_radius, vel_mag):
     # Initialize sensor positions
     points = domain.point_generator(n_sensors)
-    velocities = (motion_model.initial_vel(vel_mag) for _ in points)
-    return points, velocities
+
+    velocities = (initial_vel(domain, vel_mag) for _ in points)
+    sensors = []
+    for sensor in range(n_sensors):
+        s = Sensor(np.array(points), np.array(velocities), sensing_radius, vel_mag, False)
+        sensors.append(s)
+    return sensors
+
+
+def read_mobile_sensors(filename, sensing_radius):
+    sensor_dataFrame = pd.read_csv(filename, index_col=0)
+
+    sensors = []
+    for sensor_id in sensor_dataFrame:
+        s = Sensor(np.array(sensor_dataFrame[sensor_id][0:3]), np.array(sensor_dataFrame[sensor_id][3:]), sensing_radius, False)
+        sensors.append(s)
+    return sensors

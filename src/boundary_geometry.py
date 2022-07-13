@@ -261,21 +261,7 @@ class UnitCube(Domain):
         fence_sensors = np.concatenate((x0_face, y0_face, z0_face, x1_face, y1_face, z1_face))
         fence_sensors = np.unique(fence_sensors, axis=0)
 
-        epsilon_fixed = random.uniform(-epsilon, epsilon)
-        initial_sensors = [[
-            -dx + epsilon_fixed,
-            -dx + self.spacing + epsilon_fixed,
-            -dx + epsilon_fixed
-        ], [
-            -dx + epsilon_fixed,
-            -dx + epsilon_fixed,
-            -dx + epsilon_fixed
-        ], [
-            -dx + self.spacing + epsilon_fixed,
-            -dx + epsilon_fixed,
-            -dx + epsilon_fixed,
-        ]]
-        return np.concatenate((initial_sensors, fence_sensors), axis=0)
+        return fence_sensors
 
     ## Generate n_int sensors randomly inside the domain.
     def point_generator(self, n_sensors: int):
