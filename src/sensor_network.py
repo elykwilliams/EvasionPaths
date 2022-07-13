@@ -105,10 +105,10 @@ def generate_mobile_sensors(domain, n_sensors, sensing_radius, vel_mag):
     # Initialize sensor positions
     points = domain.point_generator(n_sensors)
 
-    velocities = (initial_vel(domain, vel_mag) for _ in points)
     sensors = []
     for sensor in range(n_sensors):
-        s = Sensor(np.array(points), np.array(velocities), sensing_radius)
+        velocity = initial_vel(domain, vel_mag)
+        s = Sensor(np.array(points[sensor]), np.array(velocity), sensing_radius)
         sensors.append(s)
     return sensors
 
@@ -131,4 +131,4 @@ def read_fence(filename, radius):
     for sensor_id in sensor_dataFrame:
         s = Sensor(np.array(sensor_dataFrame[sensor_id]), (0, 0, 0), radius, True)
         fence.append(s)
-    return Fence(fence)
+    return fence
