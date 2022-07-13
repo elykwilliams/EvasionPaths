@@ -222,7 +222,7 @@ class UnitCube(Domain):
 
     ## Determine if given point it in domain or not.
     def __contains__(self, point) -> bool:
-        return any(0 <= px <= 1 for px in point)
+        return all(0 <= px <= 1 for px in point)
 
     @property
     def reflector(self):
