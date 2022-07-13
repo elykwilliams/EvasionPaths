@@ -5,7 +5,6 @@
 # of the BSD-3 license with this file.
 # If not, visit: https://opensource.org/licenses/BSD-3-Clause
 # ************************************************************
-from typing import List
 
 import numpy as np
 import pandas as pd
@@ -94,33 +93,8 @@ class SensorNetwork:
         return [s.pos for s in self]
 
 
-class Fence:
-    # WARNING: Points must be generated in counterclockwise order so that the
-    # edge (0, 1, ..., dim-1) simplex is part of the fence boundary cycle
-
-    def __init__(self, sensors: List[Sensor]):
-        self.sensors = sensors
-
-    @classmethod
-    def from_file(cls, filename):
-        sensor_dataFrame = pd.read_csv(filename, index_col=0, skiprows=1)
-
-        fence = []
-        for sensor_id in sensor_dataFrame:
-            s = Sensor(np.array(sensor_dataFrame[sensor_id]), (0, 0, 0), 0.2, True)
-            fence.append(s)
-        return Fence(fence)
-
-    @property
-    def points(self):
-        return [s.pos for s in self]
-
-    def __iter__(self):
-        return iter(self.sensors)
-
-
-def initial_vel(d, vel_magnitude):
-    random_vector = np.random.rand(d.dim)
+def initial_vel(domain, vel_magnitude):
+    random_vector = np.random.rand(domain.dim)
     norm_v = np.linalg.norm(random_vector)
     unit_vec = random_vector / norm_v
 
@@ -144,6 +118,17 @@ def read_mobile_sensors(filename, sensing_radius):
 
     sensors = []
     for sensor_id in sensor_dataFrame:
-        s = Sensor(np.array(sensor_dataFrame[sensor_id][0:3]), np.array(sensor_dataFrame[sensor_id][3:]), sensing_radius, False)
+        s = Sensor(np.array(sensor_dataFrame[sensor_id][0:3]), np.array(sensor_dataFrame[sensor_id][3:]),
+                   sensing_radius, False)
         sensors.append(s)
     return sensors
+
+
+def read_fence(filename, radius):
+    sensor_dataFrame = pd.read_csv(filename, index_col=0, skiprows=1)
+
+    fence = []
+    for sensor_id in sensor_dataFrame:
+        s = Sensor(np.array(sensor_dataFrame[sensor_id]), (0, 0, 0), radius, True)
+        fence.append(s)
+    return Fence(fence)
