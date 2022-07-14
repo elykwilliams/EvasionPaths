@@ -89,8 +89,11 @@ class RotationInfo(ABC):
     points: Sequence
     alpha_complex: AlphaComplex
     rotinfo: Dict[OrientedSimplex, List[OrientedSimplex]] = field(default_factory=dict)
+    _oriented_simplices: Dict[int, Set[OrientedSimplex]] = field(default_factory=dict)
 
     def __post_init__(self):
+        self._oriented_simplices[self.dim - 1] = get_oriented(self.alpha_complex.simplices(self.dim - 1))
+        self._oriented_simplices[self.dim - 2] = get_oriented(self.alpha_complex.simplices(self.dim - 2))
         self.build_rotinfo()
 
     @abstractmethod
@@ -99,11 +102,11 @@ class RotationInfo(ABC):
 
     @property
     def oriented_simplices(self):
-        return get_oriented(self.alpha_complex.simplices(self.dim - 1))
+        return self._oriented_simplices[self.dim - 1]
 
     @property
     def sub_simplices(self):
-        return get_oriented(self.alpha_complex.simplices(self.dim - 2))
+        return self._oriented_simplices[self.dim - 2]
 
     @property
     def dim(self):
