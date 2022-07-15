@@ -37,7 +37,7 @@ class OrientedSimplex:
         self.dim = len(nodes) - 1
 
     def alpha(self) -> "OrientedSimplex":
-        return OrientedSimplex(tuple(reversed(self.nodes)))
+        return OrientedSimplex(self.nodes[::-1])
 
     def is_subsimplex(self, sub_simplex: "OrientedSimplex") -> bool:
         return sub_simplex in self.subsimplices
@@ -212,7 +212,7 @@ class CombinatorialMap(ABC):
 
     @staticmethod
     def alpha(simplex: OrientedSimplex) -> OrientedSimplex:
-        return OrientedSimplex(tuple(reversed(simplex.nodes)))
+        return OrientedSimplex(simplex.nodes[::-1])
 
     def sigma(self, simplex: OrientedSimplex,
               sub_simplex: OrientedSimplex) -> OrientedSimplex:
