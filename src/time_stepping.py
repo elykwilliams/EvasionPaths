@@ -33,7 +33,6 @@ class EvasionPathSimulation:
         self.sensor_network = sensor_network
         self.topology = generate_topology(sensor_network.points, sensor_network.sensing_radius)
         self.cycle_label = CycleLabellingDict(self.topology)
-        self.cycle_label[self.topology.alpha_cycle] = False
 
     ## Run until no more intruders.
     # exit if max time is set. Returns simulation time.

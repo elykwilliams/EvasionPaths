@@ -1,5 +1,6 @@
 from abc import ABC, abstractmethod
 
+from alpha_complex import Simplex
 from topology import Topology
 from utilities import LabellingError
 
@@ -39,12 +40,11 @@ class CycleLabellingDict(CycleLabelling):
     def __init__(self, topology: Topology):
         self.dict = dict()
         for cycle in topology.boundary_cycles:
-            self.dict[cycle] = True
-
-        # Here I used the dim for the topology which should work.
-        simplex_cycles = [simplex.to_cycle(topology.boundary_cycles) for simplex in topology.simplices(topology.dim)]
-        for cycle in simplex_cycles:
-            self.dict[cycle] = False
+            if Simplex(cycle.nodes) in topology.simplices(topology.dim):
+                self.dict[cycle] = False
+            else:
+                self.dict[cycle] = True
+        self.dict[topology.alpha_cycle] = False
 
     ## Check if cycle has label.
     def __contains__(self, item):

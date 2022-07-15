@@ -84,8 +84,8 @@ class BoundaryCycle:
         return f"BoundaryCycle[{','.join([repr(s) for s in self.oriented_simplices])}]"
 
     @property
-    def nodes(self) -> Set[int]:
-        return set(chain.from_iterable([face.nodes for face in self]))
+    def nodes(self) -> FrozenSet[int]:
+        return frozenset(chain.from_iterable([face.nodes for face in self]))
 
 
 @dataclass
