@@ -2,7 +2,7 @@ from abc import ABC, abstractmethod
 from collections import defaultdict
 from itertools import chain
 from math import atan2
-from typing import Set, List, FrozenSet, Dict, Sequence, Collection, Iterator
+from typing import Set, List, FrozenSet, Dict, Sequence, Collection, Iterator, Callable, TypeVar
 
 import networkx as nx
 import numpy as np
@@ -19,35 +19,31 @@ class OrientedSimplex:
         self._dim = len(self.nodes) - 1
 
     @property
-    def dim(self):
+    def dim(self) -> int:
         return self._dim
 
-    def alpha(self):
+    def alpha(self) -> "OrientedSimplex":
         return OrientedSimplex(tuple(reversed(self.nodes)))
 
-    def is_subsimplex(self, sub_simplex):
-        if not set(sub_simplex.nodes).issubset(set(self.nodes)):
-            return False
-
-        i = self.nodes.index(sub_simplex.nodes[0])
-        return (self.nodes[i], self.nodes[(i + 1) % (self.dim + 1)]) == sub_simplex.nodes
+    def is_subsimplex(self, sub_simplex: "OrientedSimplex") -> bool:
+        return sub_simplex in self.subsimplices
 
     @property
-    def subsimplices(self):
-        return [OrientedSimplex(self.nodes[(i + k) % (self.dim + 1)] for k in range(self.dim)) for i in
-                range(self.dim + 1)]
+    def subsimplices(self) -> Collection["OrientedSimplex"]:
+        return [OrientedSimplex(tuple(self.nodes[(i + k) % (self._dim + 1)] for k in range(self._dim)))
+                for i in range(self._dim + 1)]
 
-    def vertices(self, points):
+    def vertices(self, points) -> Sequence:
         return [points[n] for n in self.nodes]
 
-    def orient(self, half_edge):
+    def orient(self, half_edge: "OrientedSimplex") -> "OrientedSimplex":
         i = self.nodes.index(half_edge.nodes[0])
         return OrientedSimplex(self.nodes[i:] + self.nodes[:i])
 
-    def __hash__(self):
+    def __hash__(self) -> int:
         return self._hash
 
-    def __eq__(self, other):
+    def __eq__(self, other) -> bool:
         return hash(self) == hash(other)
 
     def __repr__(self):
@@ -57,7 +53,7 @@ class OrientedSimplex:
 def get_oriented(simplices):
     oriented_simplices = set()
     for simplex in simplices:
-        os = OrientedSimplex(simplex.nodes)
+        os = OrientedSimplex(tuple(simplex.nodes))
         oriented_simplices.update({os, os.alpha()})
     return oriented_simplices
 
@@ -206,7 +202,7 @@ class CombinatorialMap(ABC):
 
     @staticmethod
     def alpha(simplex: OrientedSimplex) -> OrientedSimplex:
-        return OrientedSimplex(reversed(simplex.nodes))
+        return OrientedSimplex(tuple(reversed(simplex.nodes)))
 
     def sigma(self, simplex: OrientedSimplex,
               sub_simplex: OrientedSimplex) -> OrientedSimplex:
