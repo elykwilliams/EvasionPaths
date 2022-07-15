@@ -121,9 +121,10 @@ class RotationInfo(ABC):
         return len(self.points[0])
 
     def next(self, oriented_simplex: OrientedSimplex, sub_simplex: OrientedSimplex) -> OrientedSimplex:
-        index = self.rotinfo[sub_simplex].index(oriented_simplex)
-        next_index = (index + 1) % len(self.rotinfo[sub_simplex])
-        return self.rotinfo[sub_simplex][next_index]
+        ordered_simplices = self.rotinfo[sub_simplex]
+        index = ordered_simplices.index(oriented_simplex)
+        next_index = (index + 1) % len(ordered_simplices)
+        return ordered_simplices[next_index]
 
 
 class RotationInfo2D(RotationInfo):
