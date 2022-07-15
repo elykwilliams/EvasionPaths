@@ -10,17 +10,30 @@ from dataclasses import dataclass, field
 
 from alpha_complex import AlphaComplex
 
+_memoized = {}
 
+
+def memoize(f):
+    def memoized(nodes: tuple):
+        try:
+            return _memoized[nodes]
+        except KeyError:
+            new_f = f(nodes)
+            if len(nodes) > 2:
+                for k in range(len(nodes)):
+                    _memoized[nodes[k:] + nodes[:k]] = new_f
+            else:
+                _memoized[nodes] = new_f
+            return _memoized[nodes]
+
+    return memoized
+
+
+@memoize
 class OrientedSimplex:
-    def __init__(self, nodes):
-        self.nodes = tuple(nodes)
-        i = 0 if len(self.nodes) == 2 else self.nodes.index(min(self.nodes))
-        self._hash = hash(self.nodes[i:] + self.nodes[:i])
-        self._dim = len(self.nodes) - 1
-
-    @property
-    def dim(self) -> int:
-        return self._dim
+    def __init__(self, nodes: tuple):
+        self.nodes = nodes
+        self.dim = len(nodes) - 1
 
     def alpha(self) -> "OrientedSimplex":
         return OrientedSimplex(tuple(reversed(self.nodes)))
@@ -36,15 +49,9 @@ class OrientedSimplex:
     def vertices(self, points) -> Sequence:
         return [points[n] for n in self.nodes]
 
-    def orient(self, half_edge: "OrientedSimplex") -> "OrientedSimplex":
+    def oriented_nodes(self, half_edge: "OrientedSimplex") -> tuple:
         i = self.nodes.index(half_edge.nodes[0])
-        return OrientedSimplex(self.nodes[i:] + self.nodes[:i])
-
-    def __hash__(self) -> int:
-        return self._hash
-
-    def __eq__(self, other) -> bool:
-        return hash(self) == hash(other)
+        return self.nodes[i:] + self.nodes[:i]
 
     def __repr__(self):
         return repr(self.nodes)
@@ -85,7 +92,7 @@ class RotationInfo(ABC):
     alpha_complex: AlphaComplex
     rotinfo: Dict[OrientedSimplex, List[OrientedSimplex]] = field(default_factory=dict)
     _oriented_simplices: Dict[int, Set[OrientedSimplex]] = field(default_factory=dict)
-    incident_simplices: Dict[OrientedSimplex, List[OrientedSimplex]] = field(default_factory=lambda: defaultdict(list))
+    incident_simplices: Dict[OrientedSimplex, List[tuple]] = field(default_factory=lambda: defaultdict(list))
 
     def __post_init__(self):
         self._oriented_simplices[self.dim - 1] = get_oriented(self.alpha_complex.simplices(self.dim - 1))
@@ -93,7 +100,7 @@ class RotationInfo(ABC):
 
         for simplex in self._oriented_simplices[self.dim - 1]:
             for edge in simplex.subsimplices:
-                self.incident_simplices[edge].append(simplex.orient(edge))
+                self.incident_simplices[edge].append(simplex.oriented_nodes(edge))
         for edge in self._oriented_simplices[self.dim - 2]:
             if edge not in self.incident_simplices:
                 self.incident_simplices[edge] = []
@@ -150,12 +157,13 @@ class RotationInfo3D(RotationInfo):
     def build_rotinfo(self):
         for half_edge in self.sub_simplices:
             temp = self.incident_simplices[half_edge]
-            self.rotinfo[half_edge] = sorted(temp, key=lambda s: self.theta(temp[0], s))
+            self.rotinfo[half_edge] = [OrientedSimplex(nodes) for nodes in
+                                       sorted(temp, key=lambda s: self.theta(temp[0], s))]
 
-    def theta(self, simplex1, simplex2):
+    def theta(self, simplex1_nodes, simplex2_nodes):
         # compute angle with respect to two_simplices[0]
-        vertices1 = [self.points[n] for n in simplex1.nodes]
-        vertices2 = [self.points[n] for n in simplex2.nodes]
+        vertices1 = [self.points[n] for n in simplex1_nodes]
+        vertices2 = [self.points[n] for n in simplex2_nodes]
 
         v1 = vertices1[2] - vertices1[0]
         v2 = vertices2[2] - vertices2[0]
