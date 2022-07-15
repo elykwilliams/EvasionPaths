@@ -1,8 +1,9 @@
 from abc import ABC, abstractmethod
 from collections import defaultdict
+from functools import lru_cache
 from itertools import chain
 from math import atan2
-from typing import Set, List, FrozenSet, Dict, Sequence, Collection, Iterator, Callable, TypeVar
+from typing import Set, List, FrozenSet, Dict, Sequence, Collection, Iterator
 
 import networkx as nx
 import numpy as np
@@ -42,9 +43,10 @@ class OrientedSimplex:
         return sub_simplex in self.subsimplices
 
     @property
+    @lru_cache(maxsize=None)
     def subsimplices(self) -> Collection["OrientedSimplex"]:
-        return [OrientedSimplex(tuple(self.nodes[(i + k) % (self._dim + 1)] for k in range(self._dim)))
-                for i in range(self._dim + 1)]
+        return [OrientedSimplex(tuple(self.nodes[(i + k) % (self.dim + 1)] for k in range(self.dim)))
+                for i in range(self.dim + 1)]
 
     def vertices(self, points) -> Sequence:
         return [points[n] for n in self.nodes]
