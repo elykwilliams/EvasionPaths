@@ -158,26 +158,31 @@ class RotationInfo3D(RotationInfo):
 
     def theta(self, simplex1, simplex2):
         # compute angle with respect to two_simplices[0]
-        vertices1 = simplex1.vertices(self.points)
-        vertices2 = simplex2.vertices(self.points)
+        vertices1 = [self.points[n] for n in simplex1.nodes]
+        vertices2 = [self.points[n] for n in simplex2.nodes]
 
         v1 = vertices1[2] - vertices1[0]
         v2 = vertices2[2] - vertices2[0]
 
+        # shared half edge defines the normal vector
         n = vertices1[1] - vertices1[0]
         norm_sqr = n[0] ** 2 + n[1] ** 2 + n[2] ** 2
 
+        # compute orthogonal projection onto unit normal: pv = v - (v . un) un
         pv1 = v1 - (v1[0] * n[0] + v1[1] * n[1] + v1[2] * n[2]) * n / norm_sqr
         pv2 = v2 - (v2[0] * n[0] + v2[1] * n[1] + v2[2] * n[2]) * n / norm_sqr
 
+        # cos(theta) = (pv1 . pv2)/(|pv1| |pv2|)
         cos_theta = pv1[0] * pv2[0] + pv1[1] * pv2[1] + pv1[2] * pv2[2]
         cos_theta /= np.sqrt(pv1[0] ** 2 + pv1[1] ** 2 + pv1[2] ** 2)
         cos_theta /= np.sqrt(pv2[0] ** 2 + pv2[1] ** 2 + pv2[2] ** 2)
 
+        # Make sure cos_theta is in domain of arccos
         if np.abs(cos_theta) > 1.0:
             # print(f"Warning, truncating dot product from {dot_prod}")
             cos_theta /= np.abs(cos_theta)
 
+        # orientation is determined wrt normal by n . (pv1 x pv2)
         orientation = n[0] * (pv1[1] * pv2[2] - pv1[2] * pv2[1]) \
                       + n[1] * (pv1[2] * pv2[0] - pv1[0] * pv2[2]) \
                       + n[2] * (pv1[0] * pv2[1] - pv1[1] * pv2[0])
