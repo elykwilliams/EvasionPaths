@@ -153,32 +153,38 @@ class RotationInfo3D(RotationInfo):
     def build_rotinfo(self):
         for half_edge in self.sub_simplices:
             temp = self.incident_simplices[half_edge]
-            self.rotinfo[half_edge] = sorted(temp, key=lambda simplex: self.theta(temp[0], simplex))
-
-    # def incident_simplices(self, half_edge: OrientedSimplex):
-    #     return [simplex.orient(half_edge) for simplex in self.oriented_simplices if simplex.is_subsimplex(half_edge)]
+            self.rotinfo[half_edge] = sorted(temp, key=lambda s: self.theta(temp[0], s))
 
     def theta(self, simplex1, simplex2):
         # compute angle with respect to two_simplices[0]
         vertices1 = simplex1.vertices(self.points)
         vertices2 = simplex2.vertices(self.points)
-        vector1 = vertices1[2] - vertices1[0]
-        vector2 = vertices2[2] - vertices2[0]
-        normal = vertices1[1] - vertices1[0]
 
-        projected_vector1 = vector1 - (np.dot(vector1, normal)) / (np.linalg.norm(normal) ** 2) * normal
-        projected_vector2 = vector2 - (np.dot(vector2, normal)) / (np.linalg.norm(normal) ** 2) * normal
+        v1 = vertices1[2] - vertices1[0]
+        v2 = vertices2[2] - vertices2[0]
 
-        dot_prod = np.dot(projected_vector1, projected_vector2) / (
-                np.linalg.norm(projected_vector1) * np.linalg.norm(projected_vector2))
-        if np.abs(dot_prod) - 1 > 1e-8:
-            print(f"Warning, truncating dot product from {dot_prod}")
-        dot_prod = np.clip(dot_prod, -1.0, 1.0)
+        n = vertices1[1] - vertices1[0]
+        norm_sqr = n[0] ** 2 + n[1] ** 2 + n[2] ** 2
 
-        if np.dot(normal, (np.cross(projected_vector1, projected_vector2))) >= 0:
-            return -np.arccos(dot_prod)
+        pv1 = v1 - (v1[0] * n[0] + v1[1] * n[1] + v1[2] * n[2]) * n / norm_sqr
+        pv2 = v2 - (v2[0] * n[0] + v2[1] * n[1] + v2[2] * n[2]) * n / norm_sqr
+
+        cos_theta = pv1[0] * pv2[0] + pv1[1] * pv2[1] + pv1[2] * pv2[2]
+        cos_theta /= np.sqrt(pv1[0] ** 2 + pv1[1] ** 2 + pv1[2] ** 2)
+        cos_theta /= np.sqrt(pv2[0] ** 2 + pv2[1] ** 2 + pv2[2] ** 2)
+
+        if np.abs(cos_theta) > 1.0:
+            # print(f"Warning, truncating dot product from {dot_prod}")
+            cos_theta /= np.abs(cos_theta)
+
+        orientation = n[0] * (pv1[1] * pv2[2] - pv1[2] * pv2[1]) \
+                      + n[1] * (pv1[2] * pv2[0] - pv1[0] * pv2[2]) \
+                      + n[2] * (pv1[0] * pv2[1] - pv1[1] * pv2[0])
+
+        if orientation >= 0:
+            return -np.arccos(cos_theta)
         else:
-            return np.arccos(dot_prod)
+            return np.arccos(cos_theta)
 
 
 @dataclass
