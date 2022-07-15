@@ -203,8 +203,10 @@ class RotationInfo3D(RotationInfo):
 class CombinatorialMap(ABC):
     rotation_info: RotationInfo
     _boundary_cycles: Collection[BoundaryCycle] = frozenset()
-    _hashed_simplices: Dict[OrientedSimplex, BoundaryCycle] \
+    _cached_simplices: Dict[OrientedSimplex, BoundaryCycle] \
         = field(default_factory=dict)
+
+    _phi_cache = dict()
 
     @abstractmethod
     def get_cycle(self, dart):
@@ -220,7 +222,11 @@ class CombinatorialMap(ABC):
 
     def phi(self, simplex: OrientedSimplex,
             sub_simplex: OrientedSimplex) -> OrientedSimplex:
-        return self.alpha(self.sigma(simplex, sub_simplex))
+        try:
+            return self._phi_cache[(simplex, sub_simplex)]
+        except KeyError:
+            self._phi_cache[(simplex, sub_simplex)] = self.alpha(self.sigma(simplex, sub_simplex))
+            return self._phi_cache[(simplex, sub_simplex)]
 
     @property
     def boundary_cycles(self) -> Collection[BoundaryCycle]:
@@ -230,14 +236,15 @@ class CombinatorialMap(ABC):
         simplices = self.rotation_info.oriented_simplices.copy()
         cycles = partition(self.get_cycle, simplices)
         self._boundary_cycles = cycles
+        self._phi_cache.clear()
         return self._boundary_cycles
 
 
 class CombinatorialMap2D(CombinatorialMap):
 
     def get_cycle(self, simplex: OrientedSimplex) -> BoundaryCycle:
-        if simplex in self._hashed_simplices:
-            return self._hashed_simplices[simplex]
+        if simplex in self._cached_simplices:
+            return self._cached_simplices[simplex]
 
         cycle = {simplex}
         next_simplex = self.phi(simplex, OrientedSimplex((simplex.nodes[0],)))
@@ -247,8 +254,8 @@ class CombinatorialMap2D(CombinatorialMap):
             next_simplex = self.phi(next_simplex, pivot)
 
         for s in cycle:
-            self._hashed_simplices[s] = BoundaryCycle(frozenset(cycle))
-        return self._hashed_simplices[simplex]
+            self._cached_simplices[s] = BoundaryCycle(frozenset(cycle))
+        return self._cached_simplices[simplex]
 
     def get_cycle_nodes(self, simplex):
         nodes = [simplex.nodes[0]]
@@ -260,7 +267,6 @@ class CombinatorialMap2D(CombinatorialMap):
         return nodes
 
 
-@dataclass
 class CombinatorialMap3D(CombinatorialMap):
 
     def flop(self, simplices):
@@ -270,13 +276,12 @@ class CombinatorialMap3D(CombinatorialMap):
         return result
 
     def get_cycle(self, simplex: OrientedSimplex):
-        if simplex in self._hashed_simplices:
-            return self._hashed_simplices[simplex]
+        if simplex in self._cached_simplices:
+            return self._cached_simplices[simplex]
 
-        cycle = frozenset(fixed_point(self.flop, {simplex}))
-
-        self._hashed_simplices.update({s: BoundaryCycle(cycle) for s in cycle})
-        return self._hashed_simplices[simplex]
+        cycle = frozenset(fixed_point(self.flop, frozenset({simplex})))
+        self._cached_simplices.update({s: BoundaryCycle(cycle) for s in cycle})
+        return self._cached_simplices[simplex]
 
 
 def partition(equiv_class, X: Set):
