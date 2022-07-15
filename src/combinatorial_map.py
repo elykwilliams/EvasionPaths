@@ -1,4 +1,5 @@
 from abc import ABC, abstractmethod
+from collections import defaultdict
 from itertools import chain
 from math import atan2
 from typing import Set, List, FrozenSet, Dict, Sequence, Collection, Iterator
@@ -31,10 +32,10 @@ class OrientedSimplex:
         return (self.nodes[i], self.nodes[(i + 1) % len(self.nodes)]) == sub_simplex.nodes
 
     @property
-    def edges(self):
+    def subsimplices(self):
         result = []
         for i in range(len(self.nodes)):
-            half_edge = (self.nodes[i], self.nodes[(i + 1) % len(self.nodes)])
+            half_edge = tuple(self.nodes[(i + k) % len(self.nodes)] for k in range(self.dim))
             result.append(OrientedSimplex(half_edge))
         return result
 
@@ -90,10 +91,19 @@ class RotationInfo(ABC):
     alpha_complex: AlphaComplex
     rotinfo: Dict[OrientedSimplex, List[OrientedSimplex]] = field(default_factory=dict)
     _oriented_simplices: Dict[int, Set[OrientedSimplex]] = field(default_factory=dict)
+    incident_simplices: Dict[OrientedSimplex, List[OrientedSimplex]] = field(default_factory=lambda: defaultdict(list))
 
     def __post_init__(self):
         self._oriented_simplices[self.dim - 1] = get_oriented(self.alpha_complex.simplices(self.dim - 1))
         self._oriented_simplices[self.dim - 2] = get_oriented(self.alpha_complex.simplices(self.dim - 2))
+
+        for simplex in self._oriented_simplices[self.dim - 1]:
+            for edge in simplex.subsimplices:
+                self.incident_simplices[edge].append(simplex.orient(edge))
+        for edge in self._oriented_simplices[self.dim - 2]:
+            if edge not in self.incident_simplices:
+                self.incident_simplices[edge] = []
+
         self.build_rotinfo()
 
     @abstractmethod
@@ -144,11 +154,11 @@ class RotationInfo3D(RotationInfo):
 
     def build_rotinfo(self):
         for half_edge in self.sub_simplices:
-            temp = self.incident_simplices(half_edge)
+            temp = self.incident_simplices[half_edge]
             self.rotinfo[half_edge] = sorted(temp, key=lambda simplex: self.theta(temp[0], simplex))
 
-    def incident_simplices(self, half_edge: OrientedSimplex):
-        return [simplex.orient(half_edge) for simplex in self.oriented_simplices if simplex.is_subsimplex(half_edge)]
+    # def incident_simplices(self, half_edge: OrientedSimplex):
+    #     return [simplex.orient(half_edge) for simplex in self.oriented_simplices if simplex.is_subsimplex(half_edge)]
 
     def theta(self, simplex1, simplex2):
         # compute angle with respect to two_simplices[0]
@@ -240,7 +250,7 @@ class CombinatorialMap3D(CombinatorialMap):
     def flop(self, simplices):
         result = set(simplices)
         for simplex in simplices:
-            result.update([self.phi(simplex, e) for e in simplex.edges])
+            result.update([self.phi(simplex, e) for e in simplex.subsimplices])
         return result
 
     def get_cycle(self, simplex: OrientedSimplex):

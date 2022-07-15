@@ -81,7 +81,7 @@ class CMap:
     def flop(self, simplices):
         result = set(simplices)
         for simplex in simplices:
-            result.update([self.phi(simplex, e) for e in simplex.edges])
+            result.update([self.phi(simplex, e) for e in simplex.subsimplices])
         return result
 
     def boundary_cycle(self, simplex):
