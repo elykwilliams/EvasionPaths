@@ -16,10 +16,11 @@ class OrientedSimplex:
         self.nodes = tuple(nodes)
         i = 0 if len(self.nodes) == 2 else self.nodes.index(min(self.nodes))
         self._hash = hash(self.nodes[i:] + self.nodes[:i])
+        self._dim = len(self.nodes) - 1
 
     @property
     def dim(self):
-        return len(self.nodes) - 1
+        return self._dim
 
     def alpha(self):
         return OrientedSimplex(tuple(reversed(self.nodes)))
@@ -29,15 +30,12 @@ class OrientedSimplex:
             return False
 
         i = self.nodes.index(sub_simplex.nodes[0])
-        return (self.nodes[i], self.nodes[(i + 1) % len(self.nodes)]) == sub_simplex.nodes
+        return (self.nodes[i], self.nodes[(i + 1) % (self.dim + 1)]) == sub_simplex.nodes
 
     @property
     def subsimplices(self):
-        result = []
-        for i in range(len(self.nodes)):
-            half_edge = tuple(self.nodes[(i + k) % len(self.nodes)] for k in range(self.dim))
-            result.append(OrientedSimplex(half_edge))
-        return result
+        return [OrientedSimplex(self.nodes[(i + k) % (self.dim + 1)] for k in range(self.dim)) for i in
+                range(self.dim + 1)]
 
     def vertices(self, points):
         return [points[n] for n in self.nodes]
