@@ -3,7 +3,7 @@ from collections import defaultdict
 from functools import lru_cache
 from itertools import chain
 from math import atan2
-from typing import Set, List, FrozenSet, Dict, Sequence, Collection, Iterator, Tuple
+from typing import Set, List, FrozenSet, Dict, Sequence, Collection, Tuple
 
 import networkx as nx
 import numpy as np
@@ -11,7 +11,7 @@ from dataclasses import dataclass, field
 
 from alpha_complex import AlphaComplex
 
-_memoized = {}
+_memoized = {}  # LEAK should be refreshed regularly
 
 
 def memoize(f):
@@ -43,7 +43,7 @@ class OrientedSimplex:
         return sub_simplex in self.subsimplices
 
     @property
-    @lru_cache(maxsize=None)
+    @lru_cache(maxsize=None)  # LEAK should simple cache instead of lru_cache
     def subsimplices(self) -> Collection["OrientedSimplex"]:
         return [OrientedSimplex(tuple(self.nodes[(i + k) % (self.dim + 1)] for k in range(self.dim)))
                 for i in range(self.dim + 1)]
@@ -67,21 +67,10 @@ def get_oriented(simplices):
     return oriented_simplices
 
 
-@dataclass
-class BoundaryCycle:
-    oriented_simplices: FrozenSet[OrientedSimplex]
-
-    def __iter__(self) -> Iterator[OrientedSimplex]:
-        return iter(self.oriented_simplices)
-
-    def __hash__(self):
-        return hash(self.oriented_simplices)
-
-    def __len__(self):
-        return len(self.nodes)
+class BoundaryCycle(frozenset):
 
     def __repr__(self):
-        return f"BoundaryCycle[{','.join([repr(s) for s in self.oriented_simplices])}]"
+        return f"BoundaryCycle[{super()}]"
 
     @property
     def nodes(self) -> FrozenSet[int]:
@@ -93,8 +82,8 @@ class RotationInfo(ABC):
     points: Sequence
     alpha_complex: AlphaComplex
     rotinfo: Dict[OrientedSimplex, List[OrientedSimplex]] = field(default_factory=dict)
-    _oriented_simplices: Set[OrientedSimplex] = field(default_factory=dict)
     incident_simplices: Dict[OrientedSimplex, List[tuple]] = field(default_factory=lambda: defaultdict(list))
+    _oriented_simplices: Set[OrientedSimplex] = field(default_factory=dict)
 
     def __post_init__(self):
         self._oriented_simplices = get_oriented(self.alpha_complex.simplices(self.dim - 1))
@@ -194,13 +183,11 @@ class RotationInfo3D(RotationInfo):
 class CombinatorialMap(ABC):
     rotation_info: RotationInfo
     _boundary_cycles: Collection[BoundaryCycle] = frozenset()
-    _cached_simplices: Dict[OrientedSimplex, BoundaryCycle] \
-        = field(default_factory=dict)
-
+    _simplices_map: Dict[OrientedSimplex, BoundaryCycle] = field(default_factory=dict)
     _phi_cache: Dict[Tuple, OrientedSimplex] = field(default_factory=dict)
 
     @abstractmethod
-    def get_cycle(self, dart):
+    def get_cycle(self, simplex: OrientedSimplex):
         pass
 
     @staticmethod
@@ -234,8 +221,8 @@ class CombinatorialMap(ABC):
 class CombinatorialMap2D(CombinatorialMap):
 
     def get_cycle(self, simplex: OrientedSimplex) -> BoundaryCycle:
-        if simplex in self._cached_simplices:
-            return self._cached_simplices[simplex]
+        if simplex in self._simplices_map:
+            return self._simplices_map[simplex]
 
         cycle = {simplex}
         next_simplex = self.phi(simplex, OrientedSimplex((simplex.nodes[0],)))
@@ -245,8 +232,8 @@ class CombinatorialMap2D(CombinatorialMap):
             next_simplex = self.phi(next_simplex, pivot)
 
         for s in cycle:
-            self._cached_simplices[s] = BoundaryCycle(frozenset(cycle))
-        return self._cached_simplices[simplex]
+            self._simplices_map[s] = BoundaryCycle(frozenset(cycle))
+        return self._simplices_map[simplex]
 
     def get_cycle_nodes(self, simplex):
         nodes = [simplex.nodes[0]]
@@ -267,12 +254,12 @@ class CombinatorialMap3D(CombinatorialMap):
         return result
 
     def get_cycle(self, simplex: OrientedSimplex):
-        if simplex in self._cached_simplices:
-            return self._cached_simplices[simplex]
+        if simplex in self._simplices_map:
+            return self._simplices_map[simplex]
 
         cycle = frozenset(fixed_point(self.flop, frozenset({simplex})))
-        self._cached_simplices.update({s: BoundaryCycle(cycle) for s in cycle})
-        return self._cached_simplices[simplex]
+        self._simplices_map.update({s: BoundaryCycle(cycle) for s in cycle})
+        return self._simplices_map[simplex]
 
 
 def partition(equiv_class, X: Set):
