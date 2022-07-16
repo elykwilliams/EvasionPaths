@@ -40,7 +40,7 @@ class OrientedSimplex:
         return sub_simplex in self.subsimplices
 
     @property
-    @lru_cache(maxsize=None)  # MEMORY LEAK should simple cache instead of lru_cache
+    @lru_cache(maxsize=None)  # MEMORY LEAK should be a simple cache instead of lru_cache
     def subsimplices(self) -> Collection["OrientedSimplex"]:
         return [OrientedSimplex(tuple(self.nodes[(i + k) % (self.dim + 1)] for k in range(self.dim)))
                 for i in range(self.dim + 1)]
@@ -120,7 +120,7 @@ class RotationInfo2D(RotationInfo):
             neighbors = list(graph.neighbors(node))
             anticlockwise, clockwise = False, True
 
-            # sort w.r.t angle from x axis
+            # sort w.r.t angle from x-axis
             def theta(a, center):
                 oa = (a[0] - center[0], a[1] - center[1])
                 return atan2(oa[1], oa[0])
