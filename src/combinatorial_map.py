@@ -93,19 +93,15 @@ class RotationInfo(ABC):
     points: Sequence
     alpha_complex: AlphaComplex
     rotinfo: Dict[OrientedSimplex, List[OrientedSimplex]] = field(default_factory=dict)
-    _oriented_simplices: Dict[int, Set[OrientedSimplex]] = field(default_factory=dict)
+    _oriented_simplices: Set[OrientedSimplex] = field(default_factory=dict)
     incident_simplices: Dict[OrientedSimplex, List[tuple]] = field(default_factory=lambda: defaultdict(list))
 
     def __post_init__(self):
-        self._oriented_simplices[self.dim - 1] = get_oriented(self.alpha_complex.simplices(self.dim - 1))
-        self._oriented_simplices[self.dim - 2] = get_oriented(self.alpha_complex.simplices(self.dim - 2))
+        self._oriented_simplices = get_oriented(self.alpha_complex.simplices(self.dim - 1))
 
-        for simplex in self._oriented_simplices[self.dim - 1]:
+        for simplex in self._oriented_simplices:
             for edge in simplex.subsimplices:
                 self.incident_simplices[edge].append(simplex.oriented_nodes(edge))
-        for edge in self._oriented_simplices[self.dim - 2]:
-            if edge not in self.incident_simplices:
-                self.incident_simplices[edge] = []
 
         self.build_rotinfo()
 
@@ -115,11 +111,7 @@ class RotationInfo(ABC):
 
     @property
     def oriented_simplices(self):
-        return self._oriented_simplices[self.dim - 1]
-
-    @property
-    def sub_simplices(self):
-        return self._oriented_simplices[self.dim - 2]
+        return self._oriented_simplices
 
     @property
     def dim(self):
@@ -157,8 +149,7 @@ class RotationInfo2D(RotationInfo):
 class RotationInfo3D(RotationInfo):
 
     def build_rotinfo(self):
-        for half_edge in self.sub_simplices:
-            temp = self.incident_simplices[half_edge]
+        for half_edge, temp in self.incident_simplices.items():
             self.rotinfo[half_edge] = [OrientedSimplex(nodes) for nodes in
                                        sorted(temp, key=lambda s: self.theta(temp[0], s))]
 
