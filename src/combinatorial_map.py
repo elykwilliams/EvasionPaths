@@ -165,9 +165,10 @@ class RotationInfo3D(RotationInfo):
             cos_theta /= np.abs(cos_theta)
 
         # orientation is determined wrt normal by n . (pv1 x pv2)
-        orientation = n[0] * (pv1[1] * pv2[2] - pv1[2] * pv2[1]) \
-                      + n[1] * (pv1[2] * pv2[0] - pv1[0] * pv2[2]) \
-                      + n[2] * (pv1[0] * pv2[1] - pv1[1] * pv2[0])
+        orientation \
+            = n[0] * (pv1[1] * pv2[2] - pv1[2] * pv2[1]) \
+            + n[1] * (pv1[2] * pv2[0] - pv1[0] * pv2[2]) \
+            + n[2] * (pv1[0] * pv2[1] - pv1[1] * pv2[0])
 
         if orientation >= 0:
             return -np.arccos(cos_theta)
