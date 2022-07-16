@@ -43,7 +43,8 @@ class TestCombinatorialMap2D:
     def test_get_cycle(self):
         expected_cycle = [OrientedSimplex((0, 5)), OrientedSimplex((5, 1)), OrientedSimplex((1, 0))]
         mock_rotinfo = mock.Mock()
-        mock_rotinfo.next.side_effect = [simplex.alpha() for simplex in expected_cycle]
+        mock_rotinfo.next.side_effect = [OrientedSimplex((1, 5)), OrientedSimplex((5, 0)), OrientedSimplex((0, 1))]
+
         cmap = CombinatorialMap2D(mock_rotinfo)
         cycle = cmap.get_cycle(OrientedSimplex((1, 0)))
         assert cycle == BoundaryCycle(frozenset(expected_cycle))

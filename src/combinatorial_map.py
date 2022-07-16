@@ -3,7 +3,7 @@ from collections import defaultdict
 from functools import lru_cache
 from itertools import chain
 from math import atan2
-from typing import Set, List, FrozenSet, Dict, Sequence, Collection, Iterator
+from typing import Set, List, FrozenSet, Dict, Sequence, Collection, Iterator, Tuple
 
 import networkx as nx
 import numpy as np
@@ -206,7 +206,7 @@ class CombinatorialMap(ABC):
     _cached_simplices: Dict[OrientedSimplex, BoundaryCycle] \
         = field(default_factory=dict)
 
-    _phi_cache = dict()
+    _phi_cache: Dict[Tuple, OrientedSimplex] = field(default_factory=dict)
 
     @abstractmethod
     def get_cycle(self, dart):
