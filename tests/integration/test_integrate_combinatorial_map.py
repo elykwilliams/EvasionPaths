@@ -128,4 +128,4 @@ class TestIntegrateCMap:
 
         cycle1 = topology2.cmap.get_cycle(OrientedSimplex((0, 5)))
         cycle2 = topology2.cmap.get_cycle(OrientedSimplex((2, 3)))
-        assert (not labelling[cycle1]) and labelling[cycle2]
+        assert (not labelling[cycle1]) and (not labelling[cycle2])
