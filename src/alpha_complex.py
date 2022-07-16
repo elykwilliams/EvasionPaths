@@ -1,3 +1,4 @@
+from collections import defaultdict
 from typing import FrozenSet
 
 import gudhi
@@ -36,11 +37,13 @@ class AlphaComplex:
         alpha_complex = gudhi.alpha_complex.AlphaComplex(points)
         self.simplex_tree = alpha_complex.create_simplex_tree(max_alpha_square=radius ** 2)
         self.dim = len(points[0])
-        self._simplices = dict()
-        for dim in range(1, self.dim + 1):
-            self._simplices[dim] = \
-                {Simplex(frozenset(nodes)) for nodes, _ in self.simplex_tree.get_skeleton(dim) if len(nodes) == dim + 1}
-        self._nodes = {nodes[0] for nodes, _ in self.simplex_tree.get_skeleton(0)}
+
+        self._simplices = defaultdict(set)
+        self._nodes = set()
+        for nodes, _ in self.simplex_tree.get_filtration():
+            self._simplices[len(nodes) - 1].add(Simplex(frozenset(nodes)))
+            if len(nodes) == 1:
+                self._nodes.add(nodes[0])
 
     @property
     def nodes(self):
