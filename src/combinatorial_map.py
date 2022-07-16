@@ -11,7 +11,7 @@ from dataclasses import dataclass, field
 
 from alpha_complex import AlphaComplex
 
-_memoized = {}  # LEAK should be refreshed regularly
+_memoized = {}  # MEMORY LEAK should be refreshed regularly
 
 
 def memoize(f):
@@ -36,20 +36,14 @@ class OrientedSimplex:
         self.nodes = nodes
         self.dim = len(nodes) - 1
 
-    def alpha(self) -> "OrientedSimplex":
-        return OrientedSimplex(self.nodes[::-1])
-
     def is_subsimplex(self, sub_simplex: "OrientedSimplex") -> bool:
         return sub_simplex in self.subsimplices
 
     @property
-    @lru_cache(maxsize=None)  # LEAK should simple cache instead of lru_cache
+    @lru_cache(maxsize=None)  # MEMORY LEAK should simple cache instead of lru_cache
     def subsimplices(self) -> Collection["OrientedSimplex"]:
         return [OrientedSimplex(tuple(self.nodes[(i + k) % (self.dim + 1)] for k in range(self.dim)))
                 for i in range(self.dim + 1)]
-
-    def vertices(self, points) -> Sequence:
-        return [points[n] for n in self.nodes]
 
     def oriented_nodes(self, half_edge: "OrientedSimplex") -> tuple:
         i = self.nodes.index(half_edge.nodes[0])
@@ -62,8 +56,10 @@ class OrientedSimplex:
 def get_oriented(simplices):
     oriented_simplices = set()
     for simplex in simplices:
-        os = OrientedSimplex(tuple(simplex.nodes))
-        oriented_simplices.update({os, os.alpha()})
+        nodes = tuple(simplex.nodes)
+        os = OrientedSimplex(nodes)
+        os_alpha = OrientedSimplex(nodes[::-1])
+        oriented_simplices.update({os, os_alpha})
     return oriented_simplices
 
 
