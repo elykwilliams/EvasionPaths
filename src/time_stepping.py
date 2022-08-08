@@ -34,6 +34,8 @@ class EvasionPathSimulation:
         self.topology = generate_topology(sensor_network.points, sensor_network.sensing_radius)
         self.cycle_label = CycleLabellingDict(self.topology)
 
+        self.stack = []
+
     ## Run until no more intruders.
     # exit if max time is set. Returns simulation time.
     def run(self) -> float:
@@ -51,25 +53,33 @@ class EvasionPathSimulation:
     # Will attempt to move sensors forward and test if atomic topological change happens.
     # If change is non-atomic, split time step in half and solve recursively.
     # Once an atomic change is found, update sensor network position, and update labelling.
-    def do_timestep(self, level: int = 0) -> None:
-        if level == 25:
+    def do_timestep(self):
+        if len(self.stack) == 25:
             raise MaxRecursionDepthError()
 
-        adaptive_dt = self.dt * 2 ** -level
+        adaptive_dt = self.dt * 2 ** -len(self.stack)
+        self.sensor_network.move(adaptive_dt)
+        new_topology = generate_topology(self.sensor_network.points, self.sensor_network.sensing_radius)
+        self.stack.append(new_topology)
 
         for _ in range(2):
-            self.sensor_network.move(adaptive_dt)
-            new_topology = generate_topology(self.sensor_network.points, self.sensor_network.sensing_radius)
+            if not self.stack:
+                return
 
-            label_update = LabelUpdateFactory().get_update(new_topology, self.topology, self.cycle_label)
+            new_top = self.stack.pop()
+            label_update = LabelUpdateFactory().get_update(new_top, self.topology, self.cycle_label)
 
             if label_update.is_atomic():
-                self.update(label_update, new_topology)
+                self.update(label_update, new_top)
             else:
-                self.do_timestep(level=level + 1)
+                self.stack.append(new_top)
+                self.do_timestep()
+        return
 
-            if level == 0:
-                return
+
+
+
+
 
     def update(self, label_update, new_topology):
         self.cycle_label.update(label_update)
