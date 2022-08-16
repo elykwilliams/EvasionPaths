@@ -59,27 +59,21 @@ class EvasionPathSimulation:
 
         adaptive_dt = self.dt * 2 ** -len(self.stack)
         self.sensor_network.move(adaptive_dt)
-        new_topology = generate_topology(self.sensor_network.points, self.sensor_network.sensing_radius)
-        self.stack.append(new_topology)
+        topology = generate_topology(self.sensor_network.points, self.sensor_network.sensing_radius)
+        self.stack.append(topology)
 
         for _ in range(2):
             if not self.stack:
                 return
 
-            new_top = self.stack.pop()
-            label_update = LabelUpdateFactory().get_update(new_top, self.topology, self.cycle_label)
+            new_topology = self.stack.pop()
+            label_update = LabelUpdateFactory().get_update(new_topology, self.topology, self.cycle_label)
 
             if label_update.is_atomic():
-                self.update(label_update, new_top)
+                self.update(label_update, new_topology)
             else:
-                self.stack.append(new_top)
+                self.stack.append(new_topology)
                 self.do_timestep()
-        return
-
-
-
-
-
 
     def update(self, label_update, new_topology):
         self.cycle_label.update(label_update)
