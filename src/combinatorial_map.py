@@ -244,17 +244,14 @@ class CombinatorialMap2D(CombinatorialMap):
 
 class CombinatorialMap3D(CombinatorialMap):
 
-    def flop(self, simplices):
-        result = set(simplices)
-        for simplex in simplices:
-            result.update([self.phi(simplex, e) for e in simplex.subsimplices])
-        return result
+    def flop(self, simplex):
+        return {self.phi(simplex, e) for e in simplex.subsimplices}
 
     def get_cycle(self, simplex: OrientedSimplex):
         if simplex in self._simplices_map:
             return self._simplices_map[simplex]
 
-        cycle = frozenset(fixed_point(self.flop, frozenset({simplex})))
+        cycle = frozenset(generate_invariant(self.flop, simplex))
         self._simplices_map.update({s: BoundaryCycle(cycle) for s in cycle})
         return self._simplices_map[simplex]
 
@@ -274,3 +271,13 @@ def fixed_point(f, x0):
     while x != next_x:
         x, next_x = next_x, f(next_x)
     return x
+
+
+def generate_invariant(f, x0):
+    # Generate the invariant set of f containing x0
+    result = set()
+    new = {x0}
+    while new:
+        new = set.union(*[f(x) for x in new]).difference(result)
+        result.update(new)
+    return result
