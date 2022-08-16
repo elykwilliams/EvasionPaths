@@ -5,7 +5,7 @@
 
 # Style
 
-- Use consistent list/tuple/array/set
+- Use consistent types
 
 # Features:
 

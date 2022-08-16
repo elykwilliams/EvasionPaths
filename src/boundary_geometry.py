@@ -239,6 +239,7 @@ class UnitCube(Domain):
 ## Generate boundary points in counterclockwise order.
 # WARNING: Points must be generated in counterclockwise order so that the
 # alpha_cycle can be easily computed.
+# Note: this function will not produce a fence suitable for computation and needs to be preprocessed, see warning
 def UnitCubeFence(spacing):
     # TODO check that domain is contained in the fence covered region
     dx = np.sqrt(3) * spacing / 2
