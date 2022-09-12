@@ -25,10 +25,10 @@ class Sensor:
     # Position as (x, y), velocity as (vx, vy)
     # boundary_sensor indicates that it is part of the fence.
     def __init__(self, position, vel, sensing_radius, boundary_sensor=False):
-        self.pos = position
-        self.old_pos = position
-        self.vel = vel
-        self.old_vel = vel
+        self.pos = np.array(position)
+        self.old_pos = self.pos
+        self.vel = np.array(vel)
+        self.old_vel = self.vel
         self.radius = sensing_radius
         self.boundary_flag = boundary_sensor
 
