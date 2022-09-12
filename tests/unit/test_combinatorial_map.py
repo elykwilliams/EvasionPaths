@@ -11,15 +11,7 @@ class TestBoundaryCycle:
 
     @pytest.fixture
     def single_cycle(self):
-        oriented_simplices = frozenset({OrientedSimplex(edge) for edge in self.darts})
-        return BoundaryCycle(oriented_simplices)
-
-    def test_init(self, single_cycle):
-        assert single_cycle.oriented_simplices is not None
-
-    def test_iter(self, single_cycle):
-        oriented_simplices = frozenset({OrientedSimplex(edge) for edge in self.darts})
-        assert all(s in oriented_simplices for s in single_cycle)
+        return BoundaryCycle({OrientedSimplex(edge) for edge in self.darts})
 
     def test_nodes(self, single_cycle):
         assert single_cycle.nodes == {1, 2, 3}
