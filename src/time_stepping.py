@@ -63,7 +63,8 @@ class EvasionPathSimulation:
             s = StateChange(self.stack[-1], self.topology)
             raise MaxRecursionDepthError(s)
 
-        adaptive_dt = self.dt * 2 ** -len(self.stack)
+        adaptive_dt = self.dt * 2 **-level
+
         self.sensor_network.move(adaptive_dt)
         topology = generate_topology(self.sensor_network.points, self.sensor_network.sensing_radius)
         self.stack.append(topology)
@@ -76,15 +77,17 @@ class EvasionPathSimulation:
             label_update = LabelUpdateFactory().get_update(new_topology, self.topology, self.cycle_label)
 
             if label_update.is_atomic():
-                self.update(label_update, new_topology)
+                self.update(label_update, new_topology, adaptive_dt)
             else:
                 self.stack.append(new_topology)
-                self.do_timestep()
+                self.do_timestep(level+1)
 
-    def update(self, label_update, new_topology):
+    def update(self, label_update, new_topology, adaptive_dt):
         self.cycle_label.update(label_update)
+        self.sensor_network.move(adaptive_dt)
         self.sensor_network.update()
         self.topology = new_topology
+        self.time += adaptive_dt
 
 
 ## Takes output from save_state() to initialize a simulation.
