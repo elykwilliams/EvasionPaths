@@ -6,9 +6,14 @@
 # If not, visit: https://opensource.org/licenses/BSD-3-Clause
 # ************************************************************
 import pickle
+from copy import deepcopy
 
+from termcolor import colored
+
+from alpha_complex import Simplex
 from cycle_labelling import CycleLabellingDict
 from sensor_network import SensorNetwork
+from state_change import StateChange
 from topology import generate_topology
 from update_data import LabelUpdateFactory
 from utilities import *
@@ -53,9 +58,10 @@ class EvasionPathSimulation:
     # Will attempt to move sensors forward and test if atomic topological change happens.
     # If change is non-atomic, split time step in half and solve recursively.
     # Once an atomic change is found, update sensor network position, and update labelling.
-    def do_timestep(self):
-        if len(self.stack) == 25:
-            raise MaxRecursionDepthError()
+    def do_timestep(self, level=0):
+        if level == 25:
+            s = StateChange(self.stack[-1], self.topology)
+            raise MaxRecursionDepthError(s)
 
         adaptive_dt = self.dt * 2 ** -len(self.stack)
         self.sensor_network.move(adaptive_dt)

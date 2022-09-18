@@ -61,6 +61,9 @@ class EvasionPathError(Exception, ABC):
 # simulations. It can also indicate that a sensor has broken free of the
 # virtual boundary and is interfering with the fence boundary cycle.
 class MaxRecursionDepthError(EvasionPathError):
+    def __init__(self, state_change):
+        self.state_change = state_change
+
     def __str__(self):
         return (
             f'{self.message}Max Recursion depth exceeded!'
