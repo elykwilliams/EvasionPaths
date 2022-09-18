@@ -40,6 +40,7 @@ class EvasionPathSimulation:
         self.cycle_label = CycleLabellingDict(self.topology)
 
         self.stack = []
+        self.history = [(deepcopy(self.make_hole_dict()), 'Initialization', 0)]
 
     ## Run until no more intruders.
     # exit if max time is set. Returns simulation time.
@@ -89,6 +90,20 @@ class EvasionPathSimulation:
         self.topology = new_topology
         self.time += adaptive_dt
 
+        self.history.append((deepcopy(self.make_hole_dict()), type(label_update).__name__, self.time))
+
+
+
+    def make_hole_dict(self):
+        d = {}
+        for cycle, val in self.cycle_label.dict.items():
+            if cycle == self.topology.alpha_cycle:
+                continue
+            elif len(cycle) > 4:
+                d[cycle] = val
+            elif Simplex(cycle.nodes) not in self.topology.simplices(self.topology.dim):
+                d[cycle] = val
+        return d
 
 ## Takes output from save_state() to initialize a simulation.
 # WARNING: Only use pickle files created by this software on a specific machine.
