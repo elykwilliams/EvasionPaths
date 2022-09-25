@@ -287,6 +287,8 @@ class Delaunay3DEdgeFace(LabelUpdate):
         if set(old_nodes) != set(new_nodes):
             return False
 
+        return True
+
 
 @LabelUpdateFactory.register((0, 1, 1, 3, 2, 3, 2, 3))
 class Delaunay3DFaceEdge(LabelUpdate):
@@ -308,6 +310,8 @@ class Delaunay3DFaceEdge(LabelUpdate):
         new_nodes = chain(*[simplex.nodes for simplex in self.simplices[3].added()])
         if set(old_nodes) != set(new_nodes):
             return False
+
+        return True
 
 # if __name__ == "__main__":
 #     T1 = TopologicalState([])
