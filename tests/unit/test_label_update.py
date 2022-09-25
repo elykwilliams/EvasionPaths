@@ -7,7 +7,7 @@ from update_data import \
     LabelUpdate, NonAtomicUpdate, Add2SimplicesUpdate2D, \
     Remove2SimplicesUpdate2D, Add1SimplexUpdate2D, AddSimplexPairUpdate2D, \
     RemoveSimplexPairUpdate2D, DelaunyFlipUpdate2D, LabelUpdateFactory, Remove1SimplexUpdate2D, FinUpdate3D, \
-    FillTetrahedronFace, DrainTetrahedronFace
+    FillTetrahedronFace, DrainTetrahedronFace, RemoveSimplexPair3D, AddSimplexPair3D
 from utilities import UpdateError
 
 
@@ -431,14 +431,48 @@ class TestAddSimplexPair3D:
         return cycles
 
     def test_is_atomic(self, edges, simplices, tetrahedra, boundary_cycles, connected_labelling):
-        update = AddSimplexPairUpdate2D({1: edges, 2: simplices, 3: tetrahedra}, boundary_cycles, connected_labelling)
+        update = AddSimplexPair3D({1: edges, 2: simplices, 3: tetrahedra}, boundary_cycles, connected_labelling)
         assert update.is_atomic()
 
     def test_is_not_atomic(self, edges, simplices, tetrahedra, boundary_cycles, connected_labelling):
         edges.added.return_value = {"bad_edge"}
-        update = AddSimplexPairUpdate2D({1: edges, 2: simplices, 3: tetrahedra}, boundary_cycles, connected_labelling)
+        update = AddSimplexPair3D({1: edges, 2: simplices, 3: tetrahedra}, boundary_cycles, connected_labelling)
         assert not update.is_atomic()
 
+
+class TestRemoveSimplexPair3D:
+    @pytest.fixture
+    def edges(self):
+        edge_dif = mock.Mock()
+        edge_dif.removed.return_value = {"fg"}
+        return edge_dif
+
+    @pytest.fixture
+    def simplices(self):
+        simp_dif = mock.Mock()
+        simp_dif.removed.return_value = [Simplex("G", edges=["fg"])]
+        return simp_dif
+
+    @pytest.fixture
+    def tetrahedra(self):
+        return mock.Mock()
+
+    @pytest.fixture
+    def boundary_cycles(self):
+        cycles = mock.Mock()
+        cycles.new_list = {"A", "B", "C", "E", "F", "G"}
+        cycles.added.return_value = {"D"}
+        cycles.removed.return_value = {"F", "G"}
+        return cycles
+
+    def test_is_atomic(self, edges, simplices, tetrahedra, boundary_cycles, connected_labelling):
+        update = RemoveSimplexPair3D({1: edges, 2: simplices, 3: tetrahedra}, boundary_cycles, connected_labelling)
+        assert update.is_atomic()
+
+    def test_is_not_atomic(self, edges, simplices, tetrahedra, boundary_cycles, connected_labelling):
+        edges.removed.return_value = {"bad_edge"}
+        update = RemoveSimplexPair3D({1: edges, 2: simplices, 3: tetrahedra}, boundary_cycles, connected_labelling)
+        assert not update.is_atomic()
 
 class TestFillTetrahedronFace:
     @pytest.fixture
@@ -558,3 +592,6 @@ class TestTetrahedronEdgeFill:
         simplices.added.return_value = {"bad_edge"}
         update = DrainTetrahedronFace({1: edges, 2: simplices, 3: tetrahedra}, boundary_cycles, connected_labelling)
         assert not update.is_atomic()
+
+
+# Need to test 3D delauny flip

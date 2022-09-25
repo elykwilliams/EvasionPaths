@@ -194,11 +194,18 @@ class FinUpdate3D(LabelUpdate):
 
 
 @LabelUpdateFactory.register((1, 0, 1, 0, 0, 0, 1, 1))
-@LabelUpdateFactory.register((0, 1, 0, 1, 0, 0, 1, 1))
 class AddSimplexPair3D(FinUpdate3D):
     def is_atomic(self):
         simplex = next(iter(self.simplices[2].added()))
         edge = next(iter(self.simplices[1].added()))
+        return simplex.is_subface(edge)
+
+
+@LabelUpdateFactory.register((0, 1, 0, 1, 0, 0, 1, 1))
+class RemoveSimplexPair3D(FinUpdate3D):
+    def is_atomic(self):
+        simplex = next(iter(self.simplices[2].removed()))
+        edge = next(iter(self.simplices[1].removed()))
         return simplex.is_subface(edge)
 
 
