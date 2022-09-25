@@ -7,7 +7,7 @@ from update_data import \
     LabelUpdate, NonAtomicUpdate, Add2SimplicesUpdate2D, \
     Remove2SimplicesUpdate2D, Add1SimplexUpdate2D, AddSimplexPairUpdate2D, \
     RemoveSimplexPairUpdate2D, DelaunyFlipUpdate2D, LabelUpdateFactory, Remove1SimplexUpdate2D, FinUpdate3D, \
-    FillTetrahedronFace, DrainTetrahedronFace, RemoveSimplexPair3D, AddSimplexPair3D
+    FillTetrahedronFace, DrainTetrahedronFace, RemoveSimplexPair3D, AddSimplexPair3D, TetrahedronEdgeFill
 from utilities import UpdateError
 
 
@@ -556,13 +556,13 @@ class TestDrainTetrahedronFace:
 class TestTetrahedronEdgeFill:
     new_edge = "fgh"
     facef1 = Simplex("fg1", edges=[new_edge])
-    facef2 = Simplex("fg1", edges=[new_edge])
+    facef2 = Simplex("fg2", edges=[new_edge])
 
     @pytest.fixture
     def edges(self):
         edges = mock.Mock()
         edges.added.return_value = [self.new_edge]
-        return mock.Mock()
+        return edges
 
     @pytest.fixture
     def simplices(self):
@@ -585,12 +585,12 @@ class TestTetrahedronEdgeFill:
         return cycles
 
     def test_is_atomic(self, edges, simplices, tetrahedra, boundary_cycles, connected_labelling):
-        update = DrainTetrahedronFace({1: edges, 2: simplices, 3: tetrahedra}, boundary_cycles, connected_labelling)
+        update = TetrahedronEdgeFill({1: edges, 2: simplices, 3: tetrahedra}, boundary_cycles, connected_labelling)
         assert update.is_atomic()
 
     def test_is_not_atomic(self, edges, simplices, tetrahedra, boundary_cycles, connected_labelling):
-        simplices.added.return_value = {"bad_edge"}
-        update = DrainTetrahedronFace({1: edges, 2: simplices, 3: tetrahedra}, boundary_cycles, connected_labelling)
+        edges.added.return_value = {"bad_edge"}
+        update = TetrahedronEdgeFill({1: edges, 2: simplices, 3: tetrahedra}, boundary_cycles, connected_labelling)
         assert not update.is_atomic()
 
 
