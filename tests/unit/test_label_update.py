@@ -474,6 +474,7 @@ class TestRemoveSimplexPair3D:
         update = RemoveSimplexPair3D({1: edges, 2: simplices, 3: tetrahedra}, boundary_cycles, connected_labelling)
         assert not update.is_atomic()
 
+
 class TestFillTetrahedronFace:
     @pytest.fixture
     def edges(self):
