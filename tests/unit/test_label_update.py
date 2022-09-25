@@ -492,13 +492,13 @@ class TestDrainTetrahedronFace:
     @pytest.fixture
     def simplices(self):
         simp_dif = mock.Mock()
-        simp_dif.added.return_value = ["cde"]
+        simp_dif.removed.return_value = ["cde"]
         return simp_dif
 
     @pytest.fixture
     def tetrahedra(self):
         tetra_dif = mock.Mock()
-        tetra_dif.added.return_value = [Simplex("C", edges=["cde"])]
+        tetra_dif.removed.return_value = [Simplex("C", edges=["cde"])]
         return tetra_dif
 
     @pytest.fixture
@@ -514,7 +514,7 @@ class TestDrainTetrahedronFace:
         assert update.is_atomic()
 
     def test_is_not_atomic(self, edges, simplices, tetrahedra, boundary_cycles, connected_labelling):
-        simplices.added.return_value = {"bad_edge"}
+        simplices.removed.return_value = {"bad_edge"}
         update = DrainTetrahedronFace({1: edges, 2: simplices, 3: tetrahedra}, boundary_cycles, connected_labelling)
         assert not update.is_atomic()
 
