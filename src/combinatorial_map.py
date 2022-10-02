@@ -1,5 +1,6 @@
 from abc import ABC, abstractmethod
 from collections import defaultdict
+from dataclasses import dataclass, field
 from functools import lru_cache
 from itertools import chain
 from math import atan2
@@ -7,7 +8,6 @@ from typing import Set, List, FrozenSet, Dict, Sequence, Collection, Tuple
 
 import networkx as nx
 import numpy as np
-from dataclasses import dataclass, field
 
 from alpha_complex import AlphaComplex
 
@@ -64,9 +64,6 @@ def get_oriented(simplices):
 
 
 class BoundaryCycle(frozenset):
-
-    def __repr__(self):
-        return f"BoundaryCycle[{super()}]"
 
     @property
     def nodes(self) -> FrozenSet[int]:
