@@ -1,16 +1,20 @@
-name: EvasionPaths-env
+name: EvasionPathsEnv
 channels:
   - conda-forge
+  - defaults
 dependencies:
-  - ffmpeg
-  - gudhi=3.0.0
-  - matplotlib
+# Interpreter
+  - python >=3.10
+  - setuptools
+  - pytest
+# Core
+  - gudhi >=3.6
   - networkx
   - numpy
-  - numpy-base
-  - python=3.6.9
   - scipy
-  - setuptools
-  - joblib
+  - pandas
   - treelib
-
+# Apps
+  - joblib
+  - ffmpeg
+  - matplotlib
