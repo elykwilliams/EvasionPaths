@@ -6,14 +6,14 @@
 # If not, visit: https://opensource.org/licenses/BSD-3-Clause
 # ************************************************************
 
-from plotting_tools import *
-from utilities import *
-from motion_model import ODEMotion
-from time_stepping import EvasionPathSimulation
-from boundary_geometry import RectangularDomain
-
 import numpy as np
 from matplotlib.animation import FuncAnimation
+
+from boundary_geometry import RectangularDomain
+from motion_model import ODEMotion
+from plotting_tools import *
+from sensor_network import generate_fence_sensors, generate_mobile_sensors
+from time_stepping import EvasionPathSimulation
 
 
 ## This is a sample script to show how to create animations using matplotlib.
@@ -22,15 +22,9 @@ from matplotlib.animation import FuncAnimation
 # that the simulation object should be in the global namespace so that it saves
 # its state (i.e. not passed by value into the update function).
 class GravityMotion(ODEMotion):
-    def __init__(self, domain, n_sensors, radius, gravity):
+    def __init__(self, domain, gravity):
         super().__init__(domain)
-        self.n_sensors = n_sensors
-        self.sensing_radius = radius
         self.G = gravity
-
-    @staticmethod
-    def initial_pvel(vel_mag):
-        return cart2pol(np.random.uniform(-vel_mag, vel_mag, 2))
 
     def gradient(self, *_):
         return np.zeros(self.n_sensors), self.G*np.ones(self.n_sensors)
@@ -50,22 +44,25 @@ class GravityMotion(ODEMotion):
 num_sensors = 20
 sensing_radius = 0.2
 timestep_size = 0.01
+sensor_velocity = 1
 
 filename_base = "SampleAnimation"
 
-unit_square = RectangularDomain(spacing=sensing_radius)
+unit_square = RectangularDomain()
 
-motion_model = GravityMotion(domain=unit_square, radius=sensing_radius, gravity=5, n_sensors=num_sensors)
+billiard = GravityMotion(unit_square, 10)
 
-sensor_network = SensorNetwork(motion_model, unit_square, sensing_radius, num_sensors, vel_mag=0.25)
+fence = generate_fence_sensors(unit_square, sensing_radius)
+mobile_sensors = generate_mobile_sensors(unit_square, num_sensors, sensing_radius, sensor_velocity)
 
-sim = EvasionPathSimulation(sensor_network=sensor_network, dt=timestep_size)
+sensor_network = SensorNetwork(mobile_sensors, billiard, fence, sensing_radius)
+
+sim = EvasionPathSimulation(sensor_network, timestep_size)
 
 
 # Update takes the frame number as an argument by default, other arguments
 # can be added by specifying fargs= ... in the FuncAnimation parameters
 def update(_):
-
     # Update simulation
     sim.sensor_network.move(sim.dt)
     sim.time += sim.dt
@@ -79,8 +76,8 @@ def update(_):
     axis.set_title(title_str, loc="left")
 
     # plot
-    show_sensor_radius(sim)
-    show_sensor_points(sim)
+    show_sensor_radius(sim.sensor_network)
+    show_sensor_points(sim.sensor_network)
 
     sim.sensor_network.update()
 
@@ -95,7 +92,7 @@ def animate():
     ms_per_frame = 2000*timestep_size
 
     fig = plt.figure(1)
-    FuncAnimation(fig, update, interval=ms_per_frame, frames=n_steps)
+    _ = FuncAnimation(fig, update, interval=ms_per_frame, frames=n_steps)
     plt.show()
 
     # See sample_animation.py for how to save animation

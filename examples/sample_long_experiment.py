@@ -5,13 +5,15 @@
 # of the BSD-3 license with this file.
 # If not, visit: https://opensource.org/licenses/BSD-3-Clause
 # ************************************************************
-
-from time_stepping import *
-from boundary_geometry import RectangularDomain
-from motion_model import BilliardMotion
+import os
 
 from joblib import Parallel, delayed
-import os
+
+from boundary_geometry import RectangularDomain
+from motion_model import BilliardMotion
+from sensor_network import generate_mobile_sensors, generate_fence_sensors, SensorNetwork
+from time_stepping import EvasionPathSimulation
+from utilities import EvasionPathError
 
 ## When running a simulation that will run for a long time, care must be taken to
 # make sure that the simulation to not exit out in the middle, and that if there are
@@ -20,18 +22,7 @@ import os
 num_sensors: int = 20
 sensing_radius: float = 0.2
 timestep_size: float = 0.01
-
-unit_square = RectangularDomain(spacing=sensing_radius)
-
-# noinspection PyTypeChecker
-billiard = BilliardMotion(domain=unit_square)
-
-sensor_network = SensorNetwork(motion_model=billiard,
-                               domain=unit_square,
-                               sensing_radius=sensing_radius,
-                               n_sensors=num_sensors,
-                               vel_mag=1)
-
+sensor_velocity = 1
 
 output_dir: str = "./output"
 filename_base: str = "data"
@@ -39,9 +30,15 @@ filename_base: str = "data"
 n_runs: int = 10
 
 
-def simulate() -> float:
+domain = RectangularDomain()
+motion_model = BilliardMotion(domain)
+fence = generate_fence_sensors(domain, sensing_radius)
 
-    simulation = EvasionPathSimulation(sensor_network=sensor_network, dt=timestep_size)
+
+def simulate() -> float:
+    mobile_sensors = generate_mobile_sensors(domain, num_sensors, sensing_radius, sensor_velocity)
+    sensor_network = SensorNetwork(mobile_sensors, motion_model, fence, sensing_radius)
+    simulation = EvasionPathSimulation(sensor_network, timestep_size)
 
     try:
         data = simulation.run()
@@ -74,12 +71,8 @@ def run_experiment() -> None:
     output_data(filename, times)
 
 
-def main() -> None:
+if __name__ == "__main__":
     if not os.path.exists(output_dir):
         os.mkdir(output_dir)
 
     run_experiment()
-
-
-if __name__ == "__main__":
-    main()
