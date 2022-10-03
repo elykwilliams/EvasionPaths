@@ -7,11 +7,11 @@
 # ************************************************************
 
 from abc import ABC
+from dataclasses import dataclass
 from math import atan2
 from typing import Iterable, Set
 
 import numpy
-from dataclasses import dataclass
 from numpy import cos, sin
 from numpy.linalg import norm
 
@@ -22,8 +22,8 @@ def cart2pol(p: numpy.array) -> list:
 
 
 ## Convert Polar coordinates to cartesian.
-def pol2cart(p: list) -> list:
-    return [p[0] * cos(p[1]), p[0] * sin(p[1])]
+def pol2cart(p: tuple) -> tuple:
+    return p[0] * cos(p[1]), p[0] * sin(p[1])
 
 
 ## Compute the set theoretic difference between two lists.

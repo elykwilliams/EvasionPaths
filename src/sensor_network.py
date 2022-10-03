@@ -94,7 +94,7 @@ class SensorNetwork:
 
 
 def initial_vel(domain, vel_magnitude):
-    random_vector = np.random.rand(domain.dim)
+    random_vector = 2*np.random.rand(domain.dim)-1
     norm_v = np.linalg.norm(random_vector)
     unit_vec = random_vector / norm_v
 
@@ -132,3 +132,7 @@ def read_fence(filename, radius):
         s = Sensor(np.array(sensor_dataFrame[sensor_id]), (0, 0, 0), radius, True)
         fence.append(s)
     return fence
+
+
+def generate_fence_sensors(domain, radius):
+    return [Sensor(point, (0, 0, 0), radius, True) for point in domain.fence(radius)]

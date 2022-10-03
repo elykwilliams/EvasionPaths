@@ -6,10 +6,10 @@
 # If not, visit: https://opensource.org/licenses/BSD-3-Clause
 # ************************************************************
 from abc import ABC, abstractmethod
+from dataclasses import dataclass, field
 
 import numpy as np
 import pandas as pd
-from dataclasses import dataclass, field
 from numpy import array, random
 from numpy.linalg import norm
 from scipy.integrate import solve_ivp
@@ -155,7 +155,7 @@ class ODEMotion(MotionModel, ABC):
         solution = solution.y[:, 0]
 
         # split state back into position and velocity,
-        xs, ys, v = [[val for val in solution[i * self.n_sensors:(i + 1) * self.n_sensors]] for i in range(4)]
+        xs, ys, *v = [[val for val in solution[i * self.n_sensors:(i + 1) * self.n_sensors]] for i in range(4)]
 
         # zip into list of tuples
         self.velocities = dict(zip(sensors.mobile_sensors, zip(*v)))
@@ -165,10 +165,10 @@ class ODEMotion(MotionModel, ABC):
     # This function is called *after* compute_update() has been called.
     # it will simply retrieve the precomputed position and velocities.
     def update_position(self, sensor, _):
-        sensor.pos = self.points[sensor]
+        sensor.pos = np.array(self.points[sensor])
 
     def update_velocity(self, sensor, _):
-        sensor.vel = self.velocities[sensor]
+        sensor.vel = np.array(self.velocities[sensor])
 
 
 ## Motion using the D'Orsogna model of motion.

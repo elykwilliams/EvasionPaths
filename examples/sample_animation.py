@@ -6,12 +6,14 @@
 # If not, visit: https://opensource.org/licenses/BSD-3-Clause
 # ************************************************************
 
-from plotting_tools import *
-from time_stepping import *
-from motion_model import BilliardMotion
-from boundary_geometry import RectangularDomain
-
 from matplotlib.animation import FuncAnimation
+
+from boundary_geometry import RectangularDomain
+from motion_model import BilliardMotion
+from plotting_tools import *
+from sensor_network import generate_mobile_sensors, generate_fence_sensors
+from time_stepping import EvasionPathSimulation
+from utilities import SimulationOver
 
 ## This is a sample script to show how to create animations using matplotlib.
 # In creating an animaiton, the timestepping must be done manually, and plotted
@@ -22,21 +24,20 @@ from matplotlib.animation import FuncAnimation
 num_sensors = 20
 sensing_radius = 0.2
 timestep_size = 0.01
+sensor_velocity = 1
 
 filename_base = "SampleAnimation"
 
-unit_square = RectangularDomain(spacing=sensing_radius)
+unit_square = RectangularDomain()
 
-billiard = BilliardMotion(domain=unit_square)
+billiard = BilliardMotion(unit_square)
 
-sensor_network = SensorNetwork(motion_model=billiard,
-                               domain=unit_square,
-                               sensing_radius=sensing_radius,
-                               vel_mag=1,
-                               n_sensors=num_sensors)
+fence = generate_fence_sensors(unit_square, sensing_radius)
+mobile_sensors = generate_mobile_sensors(unit_square, num_sensors, sensing_radius, sensor_velocity)
 
-simulation = EvasionPathSimulation(sensor_network=sensor_network,
-                                   dt=timestep_size)
+sensor_network = SensorNetwork(mobile_sensors, billiard, fence, sensing_radius)
+
+simulation = EvasionPathSimulation(sensor_network, timestep_size)
 
 
 # Update takes the frame number as an argument by default, other arguments
@@ -67,7 +68,7 @@ def update(_):
 
 
 # Animation driver
-def animate():
+if __name__ == "__main__":
     # Number of time steps
     n_steps = 250
 
@@ -84,7 +85,3 @@ def animate():
         # uncomment below to show plot while computing
         plt.show()
         ani.save(filename_base+'.mp4')
-
-
-if __name__ == "__main__":
-    animate()

@@ -7,10 +7,10 @@
 # ************************************************************
 import random
 from abc import ABC, abstractmethod
+from dataclasses import dataclass
 from itertools import product
 
 import numpy as np
-from dataclasses import dataclass
 from numpy import arange, pi
 from numpy.linalg import norm
 
@@ -84,18 +84,13 @@ class RadialReflector(BoundaryReflector):
 # domain geometry. It should be unaware of sensors and
 # operate with strictly geometric objects. A user defined
 # domain should
-# - Initialize fence sensor positions
+# - provide fence sensor positions
 # - Determine if a point is in the domain
 # - generate sensor locations inside the domain
-# - provide boundary points for plotting
+# - optionally provide boundary points for plotting
 @dataclass
 class Domain(ABC):
-    spacing: float = 0
-
-    @property
-    @abstractmethod
-    def reflector(self) -> BoundaryReflector:
-        pass
+    reflector: BoundaryReflector
 
     def reflect(self, sensor):
         self.reflector.reflect_velocity(sensor)  # Order important, uses unreflected positions
@@ -116,7 +111,6 @@ class Domain(ABC):
         ...
 
 
-
 ## A rectangular domain.
 # This domain implements a physical boundary separate from the fence so that
 # sensors don't get too close and mess up the associated boundary cycle.
@@ -128,40 +122,34 @@ class RectangularDomain(Domain):
 
     ## Initialize with dimension of desired boundary.
     # Sensor positions will be reflected so that interior sensors stay in the
-    # specified domain. Default to the unit square with spacing of 0.2. Spacing
-    # should be less that 2*sensing_radius. Defaults to unit square
-    def __init__(self, spacing: float,
+    # specified domain. Defaults to unit square
+    def __init__(self,
                  x_min: float = 0, x_max: float = 1,
                  y_min: float = 0, y_max: float = 1) -> None:
         self.max = (x_max, y_max)
         self.min = (x_min, y_min)
         self.dim = 2
-        self._reflector = SquareReflector(self.dim, self.min, self.max)
-        super().__init__(spacing)
+        super().__init__(SquareReflector(self.dim, self.min, self.max))
 
     ## Check if point is in domain.
     def __contains__(self, point: tuple) -> bool:
         return all(self.min[i] <= point[i] <= self.max[i] for i in range(self.dim))
 
-    @property
-    def reflector(self):
-        return self._reflector
-
     ## Generate fence in counter-clockwise order.
-    @property
-    def fence(self) -> list:
+    # spacing should be less than 2*sensing_radius.
+    def fence(self, spacing) -> list:
         # Initialize fence position
-        dx = self.spacing * np.sin(np.pi / 6)  # virtual boundary width
+        dx = spacing * np.sin(np.pi / 6)  # virtual boundary width
         vx_min, vx_max = self.min[0] - dx, self.max[0] + dx
         vy_min, vy_max = self.min[1] - dx, self.max[1] + dx
 
         points = []
-        points.extend([(x, vy_min) for x in np.arange(vx_min, 0.999 * vx_max, self.spacing)])  # bottom
-        points.extend([(vx_max, y) for y in np.arange(vy_min, 0.999 * vx_max, self.spacing)])  # right
+        points.extend([(x, vy_min) for x in np.arange(vx_min, 0.999 * vx_max, spacing)])  # bottom
+        points.extend([(vx_max, y) for y in np.arange(vy_min, 0.999 * vx_max, spacing)])  # right
         points.extend([(self.max[0] - x, vy_max)
-                       for x in np.arange(vx_min, 0.999 * vx_max, self.spacing)])  # top
+                       for x in np.arange(vx_min, 0.999 * vx_max, spacing)])  # top
         points.extend([(vx_min, self.max[1] - y)
-                       for y in np.arange(vy_min, 0.999 * vy_max, self.spacing)])  # left
+                       for y in np.arange(vy_min, 0.999 * vy_max, spacing)])  # left
         return points
 
     ## Generate points distributed (uniformly) randomly in the interior.
@@ -178,26 +166,20 @@ class RectangularDomain(Domain):
 
 
 class CircularDomain(Domain):
-    def __init__(self, spacing, radius) -> None:
+    def __init__(self, radius) -> None:
         self.radius = radius
-        self._reflector = RadialReflector(self.radius)
-        super().__init__(spacing)
+        super().__init__(RadialReflector(radius))
 
     ## Check if point is in domain.
     def __contains__(self, point: tuple) -> bool:
         return norm(point) < self.radius
 
-    @property
-    def reflector(self):
-        return self._reflector
-
     ## Generate points in counter-clockwise order.
-    @property
-    def fence(self) -> list:
+    def fence(self, spacing) -> list:
         # Initialize fence
-        dx = self.spacing
+        dx = spacing
         v_rad = self.radius + dx
-        return [pol2cart([v_rad, t]) for t in arange(0, 2 * pi, self.spacing)]
+        return [pol2cart((v_rad, t)) for t in arange(0, 2 * pi, spacing)]
 
     ## Generate points distributed randomly (uniformly) in the interior.
     def point_generator(self, n_sensors):
@@ -218,15 +200,11 @@ class UnitCube(Domain):
         self.min = (0, 0, 0)
         self.max = (1, 1, 1)
         self.dim = 3
-        self._reflector = SquareReflector(self.dim, self.min, self.max)
+        super().__init__(SquareReflector(self.dim, self.min, self.max))
 
     ## Determine if given point it in domain or not.
     def __contains__(self, point) -> bool:
         return all(0 <= px <= 1 for px in point)
-
-    @property
-    def reflector(self):
-        return self._reflector
 
     ## Generate n_int sensors randomly inside the domain.
     def point_generator(self, n_sensors: int):
