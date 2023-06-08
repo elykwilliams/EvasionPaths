@@ -90,7 +90,7 @@ class SensorNetwork:
 
     @property
     def points(self):
-        return [s.pos for s in self]
+        return np.array([s.pos for s in self])
 
 
 def initial_vel(domain, vel_magnitude):

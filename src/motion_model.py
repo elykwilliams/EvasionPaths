@@ -229,12 +229,13 @@ class Dorsogna(ODEMotion):
         dvdt = {dim: [accelerate(sensor, dim) for sensor in range(self.n_sensors)] for dim in 'xy'}
         return np.concatenate([v['x'], v['y'], dvdt['x'], dvdt['y']])
 
+
 @dataclass
 class TimeseriesData(MotionModel):
     filename: str
     large_dt: float
     step_no: int = 1
-    df: pd.DataFrame = pd.DataFrame(())
+    df: pd.DataFrame = field(default_factory=lambda: pd.DataFrame(()))
     next_time_positions: np.array = field(default_factory=lambda: np.array([]))
 
     def __post_init__(self):
