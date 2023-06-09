@@ -13,7 +13,6 @@ from motion_model import BilliardMotion
 from plotting_tools import *
 from sensor_network import generate_mobile_sensors, generate_fence_sensors
 from time_stepping import EvasionPathSimulation
-from utilities import SimulationOver
 
 ## This is a sample script to show how to create animations using matplotlib.
 # In creating an animaiton, the timestepping must be done manually, and plotted
@@ -45,7 +44,7 @@ simulation = EvasionPathSimulation(sensor_network, timestep_size)
 def update(_):
     # Check is simulation is over
     if not simulation.cycle_label.has_intruder():
-        raise SimulationOver
+        return
 
     # Update simulation
     simulation.do_timestep()
@@ -76,12 +75,8 @@ if __name__ == "__main__":
     ms_per_frame = 5000 * timestep_size
 
     fig = plt.figure(1)
-    ani = None
-    try:
-        ani = FuncAnimation(fig, update, interval=ms_per_frame, frames=n_steps)
-    except SimulationOver:
-        print("Simulation Complete")
-    finally:
-        # uncomment below to show plot while computing
-        plt.show()
-        ani.save(filename_base+'.mp4')
+    ani = FuncAnimation(fig, update, interval=ms_per_frame, frames=n_steps)
+
+    # uncomment below to show plot while computing
+    # plt.show()
+    ani.save(filename_base+'.mp4')
