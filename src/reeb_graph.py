@@ -24,13 +24,16 @@ class ReebGraph:
     """ReebGraph class to handle operations on graph"""
 
     def __init__(self, holes: dict):
-        self.graph = nx.Graph()
-        self.stack = dict()
+        self.graph = nx.DiGraph()
+        self.stack = {}
         self.finalized = []
+
+        self.used_heights = set()
 
         # Initial update
         for hole in holes:
-            height = self._get_height(set())
+            height = self._generate_height()
+            self.used_heights.add(height)
             event_id = self._insert_new_node(0, height, "Init")
             self.stack[hole] = (event_id, height)
 
@@ -45,22 +48,35 @@ class ReebGraph:
     def update(self, time, new_holes_dict, old_holes_dict):
         added, removed = get_sym_diff(set(new_holes_dict.keys()), set(old_holes_dict.keys()))
         name = get_case(added, removed)
-        height = self._get_height(removed)
+
+        if name == "Trivial":
+            return
+
+        if removed:
+            height = min(self.stack[hole][1] for hole in removed)
+        else:
+            height = self._generate_height()  # This is just the case of a birth
+
         node_id = self._insert_new_node(time, height, name)
 
         # Connect removed boundary cycles
         for hole in removed:
             event_id, _ = self.stack[hole]
             self._insert_new_edge(event_id, node_id, old_holes_dict[hole])
+            self.used_heights.remove(self.stack[hole][1])
             del self.stack[hole]
 
         # Push new boundary cycles onto the stack
         for hole in sorted(added):
             self.stack[hole] = (node_id, height)
-            height = len(self.stack)
+            self.used_heights.add(height)
+            height = self._generate_height()
 
-    def _get_height(self, removed: set):
-        return min(self.stack[hole][1] for hole in removed) if removed else len(self.stack)
+    def _generate_height(self):
+        h = 0
+        while h in self.used_heights:
+            h += 1
+        return h
 
     def finalize(self, time, holes):
         if self.finalized:

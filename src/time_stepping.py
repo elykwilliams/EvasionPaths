@@ -6,12 +6,10 @@
 # If not, visit: https://opensource.org/licenses/BSD-3-Clause
 # ************************************************************
 import pickle
-from copy import deepcopy
-
-from termcolor import colored
 
 from alpha_complex import Simplex
 from cycle_labelling import CycleLabellingDict
+from reeb_graph import ReebGraph
 from sensor_network import SensorNetwork
 from state_change import StateChange
 from topology import generate_topology
@@ -40,7 +38,9 @@ class EvasionPathSimulation:
         self.cycle_label = CycleLabellingDict(self.topology)
 
         self.stack = []
-        self.history = [(deepcopy(self.make_hole_dict()), 'Initialization', 0)]
+        self.history = [(self.make_hole_dict(), 'Initialization', 0)]
+
+        self.reeb_graph = ReebGraph(self.history[0][0])
 
     ## Run until no more intruders.
     # exit if max time is set. Returns simulation time.
@@ -53,6 +53,7 @@ class EvasionPathSimulation:
             self.time += self.dt
             if 0 < self.Tend < self.time:
                 break
+        self.reeb_graph.finalize(self.time, self.make_hole_dict())
         return self.time
 
     ## Do single timestep.
@@ -90,9 +91,8 @@ class EvasionPathSimulation:
         self.topology = new_topology
         self.time += adaptive_dt
 
-        self.history.append((deepcopy(self.make_hole_dict()), type(label_update).__name__, self.time))
-
-
+        self.history.append((self.make_hole_dict(), type(label_update).__name__, self.time))
+        self.reeb_graph.update(self.time, self.history[-1][0], self.history[-2][0])
 
     def make_hole_dict(self):
         d = {}
