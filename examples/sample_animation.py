@@ -5,17 +5,17 @@
 # of the BSD-3 license with this file.
 # If not, visit: https://opensource.org/licenses/BSD-3-Clause
 # ************************************************************
-
+import matplotlib.pyplot as plt
 from matplotlib.animation import FuncAnimation
 
 from boundary_geometry import RectangularDomain
 from motion_model import BilliardMotion
-from plotting_tools import *
-from sensor_network import generate_mobile_sensors, generate_fence_sensors
+from plotting_tools import show_state
+from sensor_network import SensorNetwork, generate_mobile_sensors, generate_fence_sensors
 from time_stepping import EvasionPathSimulation
 
 ## This is a sample script to show how to create animations using matplotlib.
-# In creating an animaiton, the timestepping must be done manually, and plotted
+# In creating an animation, the time-stepping must be done manually, and plotted
 # after each time step. This is done in the update function. It should be noted
 # that the simulation object should be in the global namespace so that it saves
 # its state (i.e. not passed by value into the update function).
@@ -48,7 +48,6 @@ def update(_):
 
     # Update simulation
     simulation.do_timestep()
-    simulation.time += simulation.dt
 
     # Setup figure
     axis = plt.gca()
@@ -59,11 +58,7 @@ def update(_):
     axis.set_title(title_str, loc="left")
 
     # plot
-    show_state(simulation)
-
-    # log the steps that were taken
-    with open(filename_base + ".log", "a+") as file:
-        file.write("{0:5.2f} \n".format(simulation.time))
+    show_state(simulation, axis)
 
 
 # Animation driver
@@ -78,5 +73,5 @@ if __name__ == "__main__":
     ani = FuncAnimation(fig, update, interval=ms_per_frame, frames=n_steps)
 
     # uncomment below to show plot while computing
-    # plt.show()
-    ani.save(filename_base+'.mp4')
+    plt.show()
+    # ani.save(filename_base + '.mp4')
