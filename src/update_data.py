@@ -1,7 +1,6 @@
+from dataclasses import dataclass
 from itertools import chain
 from typing import Dict
-
-from dataclasses import dataclass
 
 from cycle_labelling import CycleLabelling
 from state_change import StateChange
@@ -64,8 +63,9 @@ class LabelUpdateFactory:
 
 
 class NonAtomicUpdate(LabelUpdate):
-    def is_atomic(self):
-        return False
+    # def is_atomic(self):
+    #     return False
+    pass
 
 
 @LabelUpdateFactory.register((0, 0, 0, 0, 0, 0, 0, 0))
@@ -130,22 +130,22 @@ class AddSimplexPairUpdate2D(Add1SimplexUpdate2D):
 
     # If a 1-simplex and 2-simplex are added/removed simultaniously, then the 1-simplex
     # should be an edge of the 2-simplex
-    def is_atomic(self):
-        simplex = next(iter(self.simplices[2].added()))
-        edge = next(iter(self.simplices[1].added()))
-        return simplex.is_subface(edge)
+    # def is_atomic(self):
+    #     simplex = next(iter(self.simplices[2].added()))
+    #     edge = next(iter(self.simplices[1].added()))
+    #     return simplex.is_subface(edge)
 
 
 @LabelUpdateFactory.register((0, 1, 0, 1, 1, 2))
 class RemoveSimplexPairUpdate2D(Remove1SimplexUpdate2D):
-
+    pass
     ## Same as Remove1Simplex
-    def is_atomic(self):
-        # If a 1-simplex and 2-simplex are added/removed simultaniously, then the 1-simplex
-        # should be an edge of the 2-simplex
-        simplex = next(iter(self.simplices[2].removed()))
-        edge = next(iter(self.simplices[1].removed()))
-        return simplex.is_subface(edge)
+    # def is_atomic(self):
+    #     # If a 1-simplex and 2-simplex are added/removed simultaniously, then the 1-simplex
+    #     # should be an edge of the 2-simplex
+    #     simplex = next(iter(self.simplices[2].removed()))
+    #     edge = next(iter(self.simplices[1].removed()))
+    #     return simplex.is_subface(edge)
 
 
 @LabelUpdateFactory.register((1, 1, 2, 2, 2, 2))
@@ -166,20 +166,20 @@ class DelaunyFlipUpdate2D(LabelUpdate):
 
     # The set of vertices of the 1-simplices should contain the vertices of each 2-simplex
     # that is added or removed.
-    def is_atomic(self):
-        old_edge = next(iter(self.simplices[1].removed()))
-        new_edge = next(iter(self.simplices[1].added()))
-
-        if not all([simplex.is_subface(old_edge) for simplex in self.simplices[2].removed()]):
-            return False
-        elif not all([simplex.is_subface(new_edge) for simplex in self.simplices[2].added()]):
-            return False
-
-        old_nodes = chain(*[simplex.nodes for simplex in self.simplices[2].removed()])
-        new_nodes = chain(*[simplex.nodes for simplex in self.simplices[2].added()])
-        if set(old_nodes) != set(new_nodes):
-            return False
-        return True
+    # def is_atomic(self):
+    #     old_edge = next(iter(self.simplices[1].removed()))
+    #     new_edge = next(iter(self.simplices[1].added()))
+    #
+    #     if not all([simplex.is_subface(old_edge) for simplex in self.simplices[2].removed()]):
+    #         return False
+    #     elif not all([simplex.is_subface(new_edge) for simplex in self.simplices[2].added()]):
+    #         return False
+    #
+    #     old_nodes = chain(*[simplex.nodes for simplex in self.simplices[2].removed()])
+    #     new_nodes = chain(*[simplex.nodes for simplex in self.simplices[2].added()])
+    #     if set(old_nodes) != set(new_nodes):
+    #         return False
+    #     return True
 
 
 @LabelUpdateFactory.register((0, 0, 0, 1, 0, 0, 1, 1))

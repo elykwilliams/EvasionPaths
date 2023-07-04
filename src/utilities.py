@@ -7,9 +7,8 @@
 # ************************************************************
 
 from abc import ABC
-from dataclasses import dataclass
+from itertools import chain
 from math import atan2
-from typing import Iterable, Set
 
 import numpy
 from numpy import cos, sin
@@ -24,28 +23,6 @@ def cart2pol(p: numpy.array) -> list:
 ## Convert Polar coordinates to cartesian.
 def pol2cart(p: tuple) -> tuple:
     return p[0] * cos(p[1]), p[0] * sin(p[1])
-
-
-## Compute the set theoretic difference between two lists.
-def set_difference(list1: list, list2: list) -> list:
-    return [x for x in list1 if x not in list2]
-
-
-## Determine if list is subset list.
-def is_subset(list1: list, list2: list) -> bool:
-    return set(list1).issubset(set(list2))
-
-
-@dataclass
-class SetDifference:
-    new_list: Iterable
-    old_list: Iterable
-
-    def added(self) -> Set:
-        return {item for item in self.new_list if item not in self.old_list}
-
-    def removed(self) -> Set:
-        return {item for item in self.old_list if item not in self.new_list}
 
 
 ## Base Exception Class.
@@ -65,13 +42,20 @@ class MaxRecursionDepthError(EvasionPathError):
         self.state_change = state_change
 
     def __str__(self):
+        old_nodes = list(chain(*[simplex.nodes for simplex in self.state_change.simplices[2].removed()]))
+        new_nodes = list(chain(*[simplex.nodes for simplex in self.state_change.simplices[2].added()]))
         return (
             f'{self.message}Max Recursion depth exceeded!'
-            f'This exception was raised because the adaptive timestep was unable to resolve' 
-            f'a small enough time step so that the topological change is atomic. This may be ' 
-            f'because your timestep was too large. It can also often be likely in manufactured ' 
-            f'simulations. It could also indicate that a sensor has left the domain and is ' 
-            f'interacting with the fence sensors.'
+            f'This exception was raised because the adaptive timestep was unable to resolve\n' 
+            f'a small enough time step so that the topological change is atomic. This may be \n' 
+            f'because your timestep was too large. It can also often be likely in manufactured \n' 
+            f'simulations. It could also indicate that a sensor has left the domain and is \n' 
+            f'interacting with the fence sensors.\n'
+            f'Alpha complex change: {self.state_change.alpha_complex_change()}\n'
+            f'Boundary cycle change: {self.state_change.boundary_cycle_change()}\n'
+            f'Old nodes: {old_nodes}\n'
+            f'New nodes: {new_nodes}'
+
         )
 
 

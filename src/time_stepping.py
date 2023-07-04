@@ -7,7 +7,6 @@
 # ************************************************************
 import pickle
 
-from alpha_complex import Simplex
 from cycle_labelling import CycleLabellingDict
 from reeb_graph import ReebGraph
 from sensor_network import SensorNetwork
@@ -76,9 +75,10 @@ class EvasionPathSimulation:
                 return
 
             new_topology = self.stack.pop()
+            state_change = StateChange(new_topology, self.topology)
             label_update = LabelUpdateFactory().get_update(new_topology, self.topology, self.cycle_label)
 
-            if label_update.is_atomic():
+            if state_change.is_atomic_change():
                 self.update(label_update, new_topology, adaptive_dt)
             else:
                 self.stack.append(new_topology)
@@ -96,13 +96,9 @@ class EvasionPathSimulation:
 
     def make_hole_dict(self):
         d = {}
-        for cycle, val in self.cycle_label.dict.items():
-            if cycle == self.topology.alpha_cycle:
-                continue
-            elif len(cycle) > 4:
-                d[cycle] = val
-            elif Simplex(cycle.nodes) not in self.topology.simplices(self.topology.dim):
-                d[cycle] = val
+        for cycle in self.topology.homology_generators:
+            if cycle != self.topology.alpha_cycle:
+                d[cycle] = self.cycle_label.dict[cycle]
         return d
 
 ## Takes output from save_state() to initialize a simulation.

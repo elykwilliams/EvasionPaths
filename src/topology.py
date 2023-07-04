@@ -1,6 +1,6 @@
 from dataclasses import dataclass
 
-from alpha_complex import AlphaComplex
+from alpha_complex import AlphaComplex, Simplex
 from combinatorial_map import BoundaryCycle, RotationInfo2D, CombinatorialMap2D, CombinatorialMap, CombinatorialMap3D, \
     OrientedSimplex, RotationInfo3D
 
@@ -18,6 +18,10 @@ class Topology:
         return self.cmap.boundary_cycles
 
     @property
+    def homology_generators(self):
+        return {cycle for cycle in self.boundary_cycles if not self.is_boundary(cycle)}
+
+    @property
     def alpha_cycle(self) -> BoundaryCycle:
         if self.dim <= 3:
             face = OrientedSimplex(tuple(range(self.dim)))
@@ -29,6 +33,10 @@ class Topology:
     @property
     def dim(self) -> int:
         return self.alpha_complex.dim
+
+    def is_boundary(self, cycle):
+        # Return True if the cycle is the boundary of a dim-simplex
+        return Simplex(cycle.nodes) in self.simplices(self.dim)
 
 
 def generate_topology(points, radius):
