@@ -1,23 +1,9 @@
 import networkx as nx
 
-case_name = {
-    (0, 0): "Trivial",
-    (1, 0): "Birth",
-    (0, 1): "Death",
-    (1, 1): "No Change",
-    (2, 1): "Split",
-    (1, 2): "Merge"
-}
-
 
 def get_sym_diff(set1: set, set2: set):
     """Returns symmetric difference between two sets"""
     return set1.difference(set2), set2.difference(set1)
-
-
-def get_case(added: set, removed: set) -> str:
-    """Returns the case name based on the size of the added and removed sets"""
-    return case_name[(len(added), len(removed))]
 
 
 class ReebGraph:
@@ -34,12 +20,12 @@ class ReebGraph:
         for hole in holes:
             height = self._generate_height()
             self.used_heights.add(height)
-            event_id = self._insert_new_node(0, height, "Init")
+            event_id = self._insert_new_node(0, height)
             self.stack[hole] = (event_id, height)
 
-    def _insert_new_node(self, time: float, height: float, name: str):
+    def _insert_new_node(self, time: float, height: float):
         event_id = len(self.graph)
-        self.graph.add_node(event_id, name=name, pos=(time, height))
+        self.graph.add_node(event_id, pos=(time, height))
         return event_id
 
     def _insert_new_edge(self, oldId: int, newId: int, val: bool) -> None:
@@ -47,9 +33,8 @@ class ReebGraph:
 
     def update(self, time, new_holes_dict, old_holes_dict):
         added, removed = get_sym_diff(set(new_holes_dict.keys()), set(old_holes_dict.keys()))
-        name = get_case(added, removed)
 
-        if name == "Trivial":
+        if not added and not removed:
             return
 
         if removed:
@@ -57,7 +42,7 @@ class ReebGraph:
         else:
             height = self._generate_height()  # This is just the case of a birth
 
-        node_id = self._insert_new_node(time, height, name)
+        node_id = self._insert_new_node(time, height)
 
         # Connect removed boundary cycles
         for hole in removed:
@@ -84,7 +69,7 @@ class ReebGraph:
 
         for hole in holes:
             old_id, height = self.stack[hole]
-            new_id = self._insert_new_node(time, height, "final")
+            new_id = self._insert_new_node(time, height)
             self._insert_new_edge(old_id, new_id, holes[hole])
             self.finalized.append(new_id)
 

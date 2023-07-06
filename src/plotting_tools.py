@@ -75,23 +75,18 @@ def show_possible_intruder(sim: EvasionPathSimulation, ax=None) -> None:
     cmap = sim.topology.cmap
 
     # get boundary cycles with nodes in correct order
-    for cycle in cmap.boundary_cycles:
-        cycle_nodes = cmap.get_cycle_nodes(list(cycle).pop())
+    for cycle in sim.cycle_label.label:
+        cycle_nodes = cmap.get_cycle_nodes(next(iter(cycle)))
         xpts, ypts = zip(*[sim.sensor_network.points[n] for n in cycle_nodes])
 
         # Exclude alpha-cycle
         if cycle == sim.topology.alpha_cycle:
             continue
 
-        # powered off cycles are not in labelling
-        if cycle not in sim.cycle_label:
-            continue
-
         # fill contaminated cycles transparent black
-        if sim.cycle_label[cycle]:
+        if sim.cycle_label.label[cycle]:
             ax.fill(xpts, ypts, color='k', alpha=0.5)
-        else:
-            pass
+
     show_sensor_points(sim.sensor_network, ax)
 
 
@@ -103,8 +98,8 @@ def show_alpha_complex(sim: EvasionPathSimulation, ax=None) -> None:
     points = sim.sensor_network.points
     for simplex in sim.topology.simplices(2):
         xpts, ypts = zip(*[points[node] for node in simplex.nodes])
-        if simplex.to_cycle(sim.topology.boundary_cycles) in sim.cycle_label:
-            ax.fill(xpts, ypts, color='r', alpha=0.5)
+        # if simplex.to_cycle(sim.topology.boundary_cycles) in sim.cycle_label:
+        ax.fill(xpts, ypts, color='r', alpha=0.5)
 
     for edge in sim.topology.simplices(1):
         xpts, ypts = zip(*[points[node] for node in edge.nodes])
