@@ -6,6 +6,9 @@
 # ******************************************************************************
 
 from dataclasses import dataclass
+from itertools import combinations
+
+import networkx as nx
 
 from alpha_complex import AlphaComplex, Simplex
 from combinatorial_map import BoundaryCycle, RotationInfo2D, CombinatorialMap2D, CombinatorialMap, CombinatorialMap3D, \
@@ -44,6 +47,17 @@ class Topology:
     def is_boundary(self, cycle):
         # Return True if the cycle is the boundary of a dim-simplex
         return Simplex(cycle.nodes) in self.simplices(self.dim)
+
+    @property
+    def face_connectivity_graph(self):
+        graph = nx.Graph()
+        graph.add_nodes_from(self.simplices(self.dim - 1))
+        for face_list in self.cmap.rotation_info.incident_simplices.values():  # Maybe move graph to cmap?
+            graph.add_edges_from(combinations(face_list, 2))
+        return graph
+
+    def is_connected_cycle(self, cycle):
+        return nx.has_path(self.face_connectivity_graph, next(iter(cycle)), tuple(range(self.dim)))
 
 
 def generate_topology(points, radius):
