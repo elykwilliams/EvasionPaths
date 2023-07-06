@@ -1,9 +1,10 @@
 from typing import Hashable
 from unittest import mock
 
+from update_data import LabelUpdateFactory, RemoveSimplexPairUpdate2D
+
 from state_change import StateChange
 from topology import Topology, generate_topology
-from update_data import LabelUpdateFactory, RemoveSimplexPairUpdate2D
 
 # import pytest
 
@@ -130,4 +131,4 @@ def test_generate_topology():
     radius = 0.5
 
     topology = generate_topology(points, radius)
-    assert topology.simplices(2) == {Simplex(frozenset({1, 5, 0}))}
+    assert topology.simplices_difference(2) == {Simplex(frozenset({1, 5, 0}))}

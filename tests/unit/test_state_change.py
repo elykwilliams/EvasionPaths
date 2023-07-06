@@ -161,7 +161,7 @@ class TestStateChange:
     @patch("state_change.SetDifference")
     def test_boundary_cycels(self, mock_set_diff, topology1, topology2):
         sc = StateChange(topology2, topology1)
-        _ = sc.boundary_cycles
+        _ = sc.boundary_cycles_difference
         mock_set_diff.assert_called_once_with(["B", "C", "D"], ["B", "C"])
 
     def test_is_valid(self, topology1, topology2):
@@ -191,7 +191,7 @@ class TestStateChange:
         topology2.dim = 2
         topology1.dim = 2
         sc = StateChange(topology2, topology1)
-        assert len(sc.simplices[2].added()) == 1 and len(sc.simplices[2].removed()) == 0
+        assert len(sc.simplices_difference[2].added()) == 1 and len(sc.simplices_difference[2].removed()) == 0
 
     def test_case(self, topology1, topology2):
         simplexB = Simplex("B")

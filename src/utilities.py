@@ -42,8 +42,8 @@ class MaxRecursionDepthError(EvasionPathError):
         self.state_change = state_change
 
     def __str__(self):
-        old_nodes = list(chain(*[simplex.nodes for simplex in self.state_change.simplices[2].removed()]))
-        new_nodes = list(chain(*[simplex.nodes for simplex in self.state_change.simplices[2].added()]))
+        old_nodes = list(chain(*[simplex.nodes for simplex in self.state_change.simplices_difference[2].removed()]))
+        new_nodes = list(chain(*[simplex.nodes for simplex in self.state_change.simplices_difference[2].added()]))
         return (
             f'{self.message}Max Recursion depth exceeded!'
             f'This exception was raised because the adaptive timestep was unable to resolve\n' 

@@ -1,9 +1,9 @@
 from unittest import mock
 
 import pytest
+from update_data import LabelUpdateFactory, Add2SimplicesUpdate2D, RemoveSimplexPairUpdate2D
 
 from state_change import StateChange
-from update_data import LabelUpdateFactory, Add2SimplicesUpdate2D, RemoveSimplexPairUpdate2D
 
 
 @pytest.mark.fixture
@@ -34,11 +34,11 @@ class TestAdd2Simplex:
 
     def test_new_simplices(self, connected_labelling):
         state_change = StateChange(self.new_topology, self.old_topology)
-        assert state_change.simplices[2].new_list == [self.simplexB, self.simplexC, self.simplexD]
+        assert state_change.simplices_difference[2].new_list == [self.simplexB, self.simplexC, self.simplexD]
 
     def test_added_simplices(self, connected_labelling):
         state_change = StateChange(self.new_topology, self.old_topology)
-        assert state_change.simplices[2].added() == {self.simplexD}
+        assert state_change.simplices_difference[2].added() == {self.simplexD}
 
     def test_case(self, connected_labelling):
         state_change = StateChange(self.new_topology, self.old_topology)

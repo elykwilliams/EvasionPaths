@@ -9,18 +9,13 @@
 
 - Add examples of custom_sensor_network (two different motion models)
 - Add optional setting to enforce connected graph vs power-off
-
 - integrate support for dynamical systems packages (pydstool, pydy, DynamicalBilliards.jl)
 - Add sensor_tools (e.g. mixing, kinetic energy, etc)
 - support time-series data (pandas) [In Progress]
 - Implement 3D [In Progress]
 - Allow user to specify boundary shape/reflector. eg. allow for semi-circle
-
 - Maybe refactor sensor network into separate package
 - Refactor AlphaComplex decomposition and reeb graph generation
-- Generate ReebGraph
-- identify cases via (e+, f+, v+), (e-, f-, v-), (h+, h-) h is holes
-- auto detect is_atomic via cofaces
 
 # Documentation:
 

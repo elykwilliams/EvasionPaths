@@ -11,10 +11,10 @@ class SetDifference:
     old_list: Iterable
 
     def added(self) -> Set:
-        return {item for item in self.new_list if item not in self.old_list}
+        return set(self.new_list).difference(self.old_list)
 
     def removed(self) -> Set:
-        return {item for item in self.old_list if item not in self.new_list}
+        return set(self.old_list).difference(self.new_list)
 
 
 trivial = [(0, 0, 0, 0), (0, 0, 0, 0, 0, 0)]
@@ -47,73 +47,50 @@ class StateChange:
     new_topology: Topology
     old_topology: Topology
 
-
-    ## Identify Atomic States
-    #
-    # (#1-simplices added, #1-simpleices removed, #2-simplices added, #2-simplices removed, #boundary cycles added,
-    # #boundary cycles removed)
-    @property
-    def case(self):
-        case = ()
-        for dim in range(1, self.new_topology.dim + 1):
-            case += (len(self.simplices[dim].added()), len(self.simplices[dim].removed()))
-        return case + (len(self.boundary_cycles.added()), len(self.boundary_cycles.removed()))
-
     def __repr__(self) -> str:
-        result = f"State Change: {self.case}\n"
+        result = f"State Change:\n"
         for dim in range(1, self.new_topology.dim + 1):
-            result += f"{dim}-Simplices Added: {self.simplices[dim].added()}\n" \
-                      f"{dim}-Simplices Removed: {self.simplices[dim].removed()}\n"
-        result += f"Boundary Cycles Added: {self.boundary_cycles.added()}\n" \
-                  f"Boundary Cycles Removed: {self.boundary_cycles.removed()}\n"
+            result += f"{dim}-Simplices Added: {self.simplices_difference[dim].added()}\n" \
+                      f"{dim}-Simplices Removed: {self.simplices_difference[dim].removed()}\n"
+        result += f"Boundary Cycles Added: {self.boundary_cycles_difference.added()}\n" \
+                  f"Boundary Cycles Removed: {self.boundary_cycles_difference.removed()}\n"
         return result
-
-    def is_valid(self):
-        new_simplex_cycles = [simplex.to_cycle(self.boundary_cycles.new_list)
-                              for simplex in self.simplices[self.new_topology.dim].added()]
-        old_simplex_cycles = [simplex.to_cycle(self.boundary_cycles.old_list)
-                              for simplex in self.simplices[self.old_topology.dim].removed()]
-        check1 = all(cycle in self.boundary_cycles.old_list for cycle in old_simplex_cycles)
-        check2 = all(cycle in self.boundary_cycles.new_list for cycle in new_simplex_cycles)
-        return check1 and check2
 
     def alpha_complex_change(self):
         case = ()
         for dim in range(1, self.new_topology.dim + 1):
-            case += (len(self.simplices[dim].added()), len(self.simplices[dim].removed()))
+            case += (len(self.simplices_difference[dim].added()), len(self.simplices_difference[dim].removed()))
         return case
 
     def boundary_cycle_change(self):
-        new_holes = self.new_topology.homology_generators
-        old_holes = self.old_topology.homology_generators
-        return len(new_holes.difference(old_holes)), len(old_holes.difference(new_holes))
+        return len(self.boundary_cycles_difference.added()), len(self.boundary_cycles_difference.removed())
 
     @property
-    def boundary_cycles(self) -> SetDifference:
-        return SetDifference(self.new_topology.boundary_cycles, self.old_topology.boundary_cycles)
+    def boundary_cycles_difference(self) -> SetDifference:
+        return SetDifference(self.new_topology.homology_generators, self.old_topology.homology_generators)
 
     @property
-    def simplices(self) -> Dict[int, SetDifference]:
+    def simplices_difference(self) -> Dict[int, SetDifference]:
         dim = self.new_topology.dim
         return {i: SetDifference(self.new_topology.simplices(i), self.old_topology.simplices(i))
                 for i in range(1, dim + 1)}
 
     def is_local_change_added(self):
-        dim = len(self.simplices)
+        dim = len(self.simplices_difference)
         for i in range(1, dim):
             for j in range(i, dim+1):
-                for edge in self.simplices[i].added():
-                    for face in self.simplices[j].added():
+                for edge in self.simplices_difference[i].added():
+                    for face in self.simplices_difference[j].added():
                         if not face.is_subface(edge):
                             return False
         return True
 
     def is_local_change_removed(self):
-        dim = len(self.simplices)
+        dim = len(self.simplices_difference)
         for i in range(1, dim):
             for j in range(i, dim+1):
-                for edge in self.simplices[i].removed():
-                    for face in self.simplices[j].removed():
+                for edge in self.simplices_difference[i].removed():
+                    for face in self.simplices_difference[j].removed():
                         if not face.is_subface(edge):
                             return False
         return True
@@ -125,16 +102,15 @@ class StateChange:
         if case not in atomic_change_list:
             return False
 
-        elif not self.is_local_change_added():
-            return False
+        elif case in simplex_added:
+            return self.is_local_change_added()
 
-        elif not self.is_local_change_removed():
-            return False
+        elif case in simplex_removed:
+            return self.is_local_change_removed()
 
-        if case in delaunay_change:
-            old_nodes = chain(*[simplex.nodes for simplex in self.simplices[dim].removed()])
-            new_nodes = chain(*[simplex.nodes for simplex in self.simplices[dim].added()])
-            if set(old_nodes) != set(new_nodes):
-                return False
+        elif case in delaunay_change:
+            old_nodes = chain(*[simplex.nodes for simplex in self.simplices_difference[dim].removed()])
+            new_nodes = chain(*[simplex.nodes for simplex in self.simplices_difference[dim].added()])
+            return set(old_nodes) == set(new_nodes)
 
         return True

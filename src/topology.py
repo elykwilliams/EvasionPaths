@@ -19,7 +19,7 @@ class Topology:
 
     @property
     def homology_generators(self):
-        return {cycle for cycle in self.boundary_cycles if not self.is_boundary(cycle)}
+        return {cycle for cycle in self.cmap.boundary_cycles if not self.is_boundary(cycle)}
 
     @property
     def alpha_cycle(self) -> BoundaryCycle:

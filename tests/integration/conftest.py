@@ -14,6 +14,6 @@ def connected_topology():
 
 @pytest.fixture
 def connected_labelling(connected_topology):
-    result = {cycle: True for cycle in connected_topology.boundary_cycles()}
-    result.update({cycle: False for cycle in connected_topology.simplices(2)})
+    result = {cycle: True for cycle in connected_topology.boundary_cycles_difference()}
+    result.update({cycle: False for cycle in connected_topology.simplices_difference(2)})
     return result

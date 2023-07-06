@@ -44,7 +44,7 @@ def show_labelled_graph(sim: EvasionPathSimulation, ax=None):
         ax = plt.gca()
     graph = nx.Graph()
     graph.add_nodes_from(sim.topology.alpha_complex.nodes)
-    graph.add_edges_from(simplex.nodes for simplex in sim.topology.simplices(1))
+    graph.add_edges_from(simplex.nodes for simplex in sim.topology.simplices_difference(1))
     nx.draw(graph, sim.sensor_network.points, ax=ax)
     nx.draw_networkx_labels(graph, dict(enumerate(sim.sensor_network.points)), ax=ax)
 
@@ -125,7 +125,7 @@ def show_combinatorial_map(sim: EvasionPathSimulation, ax=None) -> None:
         ax = plt.gca()
     graph = nx.Graph()
     graph.add_nodes_from(sim.topology.alpha_complex.nodes)
-    graph.add_edges_from(simplex.nodes for simplex in sim.topology.simplices(1))
+    graph.add_edges_from(simplex.nodes for simplex in sim.topology.simplices_difference(1))
 
     temp_dict = {edge: OrientedSimplex(edge) for edge in graph.edges}
     temp_dict.update({reversed(edge): sim.topology.cmap.alpha(OrientedSimplex(edge)) for edge in graph.edges})
@@ -145,7 +145,7 @@ if __name__ == '__main__':
     sensing_radius = 0.2
     timestep_size = 0.1
 
-    unit_square = RectangularDomain(spacing=sensing_radius)
+    unit_square = RectangularDomain()
     brownian_motion = BilliardMotion(domain=unit_square)
     sensor_network = SensorNetwork(brownian_motion, unit_square, sensing_radius, num_sensors, 0.1)
     simulation = EvasionPathSimulation(sensor_network=sensor_network, dt=timestep_size)
