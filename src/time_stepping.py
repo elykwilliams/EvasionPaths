@@ -42,7 +42,7 @@ class EvasionPathSimulation:
                 self.do_timestep()
             except MaxRecursionDepthError:
                 raise  # do self_dump
-            self.time += self.dt
+            # self.time += self.dt
             if 0 < self.Tend < self.time:
                 break
         self.cycle_label.finalize(self.time)
@@ -57,29 +57,35 @@ class EvasionPathSimulation:
             s = StateChange(self.topology_stack[-1], self.topology)
             raise MaxRecursionDepthError(s)
 
-        adaptive_dt = self.dt * 2 ** (-level)
+        adaptive_dt = self.dt / (2 ** level)
 
+        # First half
         self.sensor_network.move(adaptive_dt)
-        topology = generate_topology(self.sensor_network.points, self.sensor_network.sensing_radius)
-        self.topology_stack.append(topology)
+        new_topology = generate_topology(self.sensor_network.points, self.sensor_network.sensing_radius)
+        state_change = StateChange(new_topology, self.topology)
 
-        for _ in range(2):
-            if not self.topology_stack:
-                return
+        if not state_change.is_atomic_change():
+            self.topology_stack.append(new_topology)
+            self.do_timestep(level + 1)
+        else:
+            self.update(state_change, adaptive_dt)
 
-            new_topology = self.topology_stack.pop()
-            state_change = StateChange(new_topology, self.topology)
+        if level == 0:
+            return
 
-            if state_change.is_atomic_change():
-                self.update(state_change, adaptive_dt)
-            else:
-                self.topology_stack.append(new_topology)
-                self.do_timestep(level + 1)
+        # Second half
+        self.sensor_network.move(adaptive_dt)
+        new_topology = self.topology_stack.pop()
+        state_change = StateChange(new_topology, self.topology)
+
+        if not state_change.is_atomic_change():
+            self.topology_stack.append(new_topology)
+            self.do_timestep(level + 1)
+        else:
+            self.update(state_change, adaptive_dt)
 
     def update(self, state_change, adaptive_dt: float):
         self.time += adaptive_dt
         self.cycle_label.update(state_change, self.time)
         self.topology = state_change.new_topology
-
-        self.sensor_network.move(adaptive_dt)
         self.sensor_network.update()
