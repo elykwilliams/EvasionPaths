@@ -53,8 +53,12 @@ class MaxRecursionDepthError(EvasionPathError):
             f'interacting with the fence sensors.\n'
             f'Alpha complex change: {self.state_change.alpha_complex_change()}\n'
             f'Boundary cycle change: {self.state_change.boundary_cycle_change()}\n'
-            f'Old nodes: {old_nodes}\n'
-            f'New nodes: {new_nodes}'
+            f'Old nodes: {set(old_nodes)}\n'
+            f'New nodes: {set(new_nodes)}\n'
+            f'new faces: {self.state_change.simplices_difference[2].added()}\n'
+            f'Old faces: {self.state_change.simplices_difference[2].removed()}\n'
+            f'new edges: {self.state_change.simplices_difference[1].added()}\n'
+            f'Old edges: {self.state_change.simplices_difference[1].removed()}\n'
 
         )
 
