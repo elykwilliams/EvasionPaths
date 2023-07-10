@@ -36,14 +36,13 @@ class SquareReflector(BoundaryReflector):
 
     def reflect_point(self, sensor):
         for i in range(self.dim):
-            if sensor.pos[i] <= self.min[i]:
-                sensor.pos[i] = (self.min[i] - sensor.pos[i]) + self.min[i]
-            elif sensor.pos[i] >= self.max[i]:
-                sensor.pos[i] = 2 * self.max[i] - sensor.pos[i] + self.min[i]
+            if not (self.min[i] <= sensor.pos[i] <= self.max[i]):
+                wall = self.min[i] if sensor.pos[i] < self.min[i] else self.max[i]
+                sensor.pos[i] = 2*wall - sensor.pos[i]
 
     def reflect_velocity(self, sensor):
         for i in range(self.dim):
-            if sensor.pos[i] <= self.min[i] or sensor.pos[i] >= self.max[i]:
+            if not (self.min[i] <= sensor.pos[i] <= self.max[i]):
                 sensor.vel[i] = -sensor.vel[i]
 
 
