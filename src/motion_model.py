@@ -53,7 +53,7 @@ class MotionModel(ABC):
 # Velocity is constant
 class BilliardMotion(MotionModel):
     def update_position(self, sensor, dt):
-        sensor.pos = sensor.old_pos + dt * sensor.vel
+        sensor.pos = sensor.old_pos + dt * sensor.old_vel
 
 
 ## Provide random motion.
