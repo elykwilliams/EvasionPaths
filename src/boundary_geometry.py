@@ -134,6 +134,11 @@ class RectangularDomain(Domain):
     def __contains__(self, point: tuple) -> bool:
         return all(self.min[i] <= point[i] <= self.max[i] for i in range(self.dim))
 
+    @staticmethod
+    def eps():
+        epsilon = pow(10, -4)
+        return random.uniform(-epsilon, epsilon)
+
     ## Generate fence in counter-clockwise order.
     # spacing should be less than 2*sensing_radius.
     def fence(self, spacing) -> list:
@@ -143,11 +148,11 @@ class RectangularDomain(Domain):
         vy_min, vy_max = self.min[1] - dx, self.max[1] + dx
 
         points = []
-        points.extend([(x, vy_min) for x in np.arange(vx_min, 0.999 * vx_max, spacing)])  # bottom
-        points.extend([(vx_max, y) for y in np.arange(vy_min, 0.999 * vx_max, spacing)])  # right
-        points.extend([(self.max[0] - x, vy_max)
+        points.extend([(x+self.eps(), vy_min+self.eps()) for x in np.arange(vx_min, 0.999 * vx_max, spacing)])  # bottom
+        points.extend([(vx_max+self.eps(), y+self.eps()) for y in np.arange(vy_min, 0.999 * vx_max, spacing)])  # right
+        points.extend([(self.max[0] - x+self.eps(), vy_max+self.eps())
                        for x in np.arange(vx_min, 0.999 * vx_max, spacing)])  # top
-        points.extend([(vx_min, self.max[1] - y)
+        points.extend([(vx_min+self.eps(), self.max[1] - y+self.eps())
                        for y in np.arange(vy_min, 0.999 * vy_max, spacing)])  # left
         return points
 
