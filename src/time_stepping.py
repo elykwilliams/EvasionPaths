@@ -32,8 +32,6 @@ class EvasionPathSimulation:
         self.topology = generate_topology(sensor_network.points, sensor_network.sensing_radius)
         self.cycle_label = CycleLabelling(self.topology)
 
-        self.topology_stack = []
-
     ## Run until no more intruders.
     # exit if max time is set. Returns simulation time.
     def run(self) -> float:
@@ -42,10 +40,9 @@ class EvasionPathSimulation:
                 self.do_timestep()
             except MaxRecursionDepthError:
                 raise  # do self_dump
-            # self.time += self.dt
             if 0 < self.Tend < self.time:
                 break
-        self.cycle_label.finalize(self.time)
+        # self.cycle_label.finalize(self.time)
         return self.time
 
     ## Do single timestep.
@@ -59,30 +56,19 @@ class EvasionPathSimulation:
 
         adaptive_dt = self.dt / (2 ** level)
 
-        # First half
-        self.sensor_network.move(adaptive_dt)
-        new_topology = generate_topology(self.sensor_network.points, self.sensor_network.sensing_radius)
-        state_change = StateChange(new_topology, self.topology)
+        # Split interval in two
+        for _ in range(2):
+            self.sensor_network.move(adaptive_dt)
+            new_topology = generate_topology(self.sensor_network.points, self.sensor_network.sensing_radius)
+            state_change = StateChange(new_topology, self.topology)
 
-        if not state_change.is_atomic_change():
-            self.topology_stack.append(new_topology)
-            self.do_timestep(level + 1)
-        else:
-            self.update(state_change, adaptive_dt)
+            if not state_change.is_atomic_change():
+                self.do_timestep(level + 1)
+            else:
+                self.update(state_change, adaptive_dt)
 
-        if level == 0:
-            return
-
-        # Second half
-        self.sensor_network.move(adaptive_dt)
-        new_topology = self.topology_stack.pop()
-        state_change = StateChange(new_topology, self.topology)
-
-        if not state_change.is_atomic_change():
-            self.topology_stack.append(new_topology)
-            self.do_timestep(level + 1)
-        else:
-            self.update(state_change, adaptive_dt)
+            if level == 0:
+                break
 
     def update(self, state_change, adaptive_dt: float):
         self.time += adaptive_dt
