@@ -81,7 +81,7 @@ class StateChange:
             for j in range(i, dim+1):
                 for edge in self.simplices_difference[i].added():
                     for face in self.simplices_difference[j].added():
-                        if not face.is_subface(edge):
+                        if not face.is_subsimplex(edge):
                             return False
         return True
 
@@ -91,7 +91,7 @@ class StateChange:
             for j in range(i, dim+1):
                 for edge in self.simplices_difference[i].removed():
                     for face in self.simplices_difference[j].removed():
-                        if not face.is_subface(edge):
+                        if not face.is_subsimplex(edge):
                             return False
         return True
 
@@ -109,8 +109,8 @@ class StateChange:
             return self.is_local_change_removed()
 
         elif case in delaunay_change:
-            old_nodes = chain(*[simplex.nodes for simplex in self.simplices_difference[dim].removed()])
-            new_nodes = chain(*[simplex.nodes for simplex in self.simplices_difference[dim].added()])
+            old_nodes = chain.from_iterable(self.simplices_difference[dim].removed())
+            new_nodes = chain.from_iterable(self.simplices_difference[dim].added())
             return set(old_nodes) == set(new_nodes)
 
         return True

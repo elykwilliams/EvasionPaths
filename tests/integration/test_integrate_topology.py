@@ -47,7 +47,7 @@ def test_create_alpha_complex():
     simplexC = Simplex("C", edges=("CB", "CD", "CE"))
     edges = ("AD", "AB", "AE", "BD", "BE", "BC", "CE", "CD")
     alpha_complex = AlphaComplex((simplexC,), edges)
-    assert alpha_complex.simplices(2)[0].is_subface("BC")
+    assert alpha_complex.simplices(2)[0].is_subsimplex("BC")
 
 
 class TestIntegrateTopology:
@@ -131,4 +131,4 @@ def test_generate_topology():
     radius = 0.5
 
     topology = generate_topology(points, radius)
-    assert topology.simplices_difference(2) == {Simplex(frozenset({1, 5, 0}))}
+    assert topology.simplices_difference(2) == {Simplex({1, 5, 0})}

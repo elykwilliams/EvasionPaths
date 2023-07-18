@@ -13,7 +13,7 @@ def mock_alphacomplex(edges, faces, tets):
     simplices_dict = {1: edges, 2: faces, 3: tets}
     ac = mock.Mock()
     ac.simplices.side_effect = \
-        lambda dim: [Simplex(frozenset(item)) for item in simplices_dict[dim]]
+        lambda dim: [Simplex(item) for item in simplices_dict[dim]]
     ac.nodes = {0, 1, 2, 3, 4, 5}
     ac.dim = 3
     return ac
@@ -87,7 +87,7 @@ def test_simplex_find_boundary_cycles():
     cmap = CombinatorialMap3D(rotinfo)
     topology = Topology(ac, cmap)
 
-    my_tetrahedron = Simplex(frozenset({0, 1, 2, 4}))
+    my_tetrahedron = Simplex({0, 1, 2, 4})
 
     assert my_tetrahedron.to_cycle(topology.boundary_cycles) is not None
 
@@ -103,7 +103,7 @@ def test_simplex_find_boundary_cycles_2():
     cmap = CombinatorialMap3D(rotinfo)
     topology = Topology(ac, cmap)
 
-    my_tetrahedron = Simplex(frozenset({0, 1, 2, 4}))
+    my_tetrahedron = Simplex({0, 1, 2, 4})
     boundary_cycles = my_tetrahedron.to_cycle(topology.boundary_cycles)
 
     triangle_nodes = {(0, 1, 4), (0, 2, 1), (2, 4, 1), (0, 4, 2)}

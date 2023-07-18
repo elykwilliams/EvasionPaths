@@ -56,7 +56,7 @@ class OrientedSimplex:
 def get_oriented(simplices):
     oriented_simplices = set()
     for simplex in simplices:
-        nodes = tuple(simplex.nodes)
+        nodes = tuple(simplex)
         os = OrientedSimplex(nodes)
         os_alpha = OrientedSimplex(nodes[::-1])
         oriented_simplices.update({os, os_alpha})
@@ -111,7 +111,7 @@ class RotationInfo2D(RotationInfo):
     def build_rotinfo(self):
         graph = nx.Graph()
         graph.add_nodes_from(self.alpha_complex.nodes)
-        graph.add_edges_from([edge.nodes for edge in self.alpha_complex.simplices(1)])
+        graph.add_edges_from(self.alpha_complex.simplices(1))
 
         for node in graph.nodes():
             neighbors = list(graph.neighbors(node))

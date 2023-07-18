@@ -71,7 +71,7 @@ def show_possible_intruder(sim: EvasionPathSimulation, ax=None) -> None:
         ax = plt.gca()
     graph = nx.Graph()
     graph.add_nodes_from(sim.topology.alpha_complex.nodes)
-    graph.add_edges_from(simplex.nodes for simplex in sim.topology.simplices(1))
+    graph.add_edges_from(simplex for simplex in sim.topology.simplices(1))
     cmap = sim.topology.cmap
 
     # get boundary cycles with nodes in correct order
@@ -97,12 +97,12 @@ def show_alpha_complex(sim: EvasionPathSimulation, ax=None) -> None:
         ax = plt.gca()
     points = sim.sensor_network.points
     for simplex in sim.topology.simplices(2):
-        xpts, ypts = zip(*[points[node] for node in simplex.nodes])
+        xpts, ypts = zip(*[points[node] for node in simplex])
         # if simplex.to_cycle(sim.topology.boundary_cycles) in sim.cycle_label:
         ax.fill(xpts, ypts, color='r', alpha=0.5)
 
     for edge in sim.topology.simplices(1):
-        xpts, ypts = zip(*[points[node] for node in edge.nodes])
+        xpts, ypts = zip(*[points[node] for node in edge])
         ax.plot(xpts, ypts, color='r', alpha=1)
 
     show_sensor_points(sim.sensor_network, ax)
