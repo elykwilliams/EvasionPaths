@@ -12,20 +12,16 @@ def mock_BoundaryCycle(nodes):
 
 
 class TestSimplex:
-    def test_init(self):
-        nodes = frozenset({1, 2, 3, 4})
-        s = Simplex(nodes)
-        assert s.nodes == {1, 2, 3, 4}
 
     def test_is_subface(self):
-        simplex = Simplex(frozenset({1, 2, 3}))
-        edge = Simplex(frozenset({1, 2}))
-        assert simplex.is_subface(edge)
+        simplex = Simplex({1, 2, 3})
+        edge = Simplex({1, 2})
+        assert simplex.is_subsimplex(edge)
 
     def test_is_not_subface(self):
-        simplex = Simplex(frozenset({1, 2, 3}))
-        edge = Simplex(frozenset({1, 4}))
-        assert not simplex.is_subface(edge)
+        simplex = Simplex({1, 2, 3})
+        edge = Simplex({1, 4})
+        assert not simplex.is_subsimplex(edge)
 
     def test_to_cycle(self):
         bc1 = mock_BoundaryCycle({1, 2, 3})
@@ -33,7 +29,7 @@ class TestSimplex:
         bc3 = mock_BoundaryCycle({3, 4, 1})
         boundary_cycles = [bc1, bc2, bc3]
 
-        simplex = Simplex(frozenset({1, 2, 3}))
+        simplex = Simplex({1, 2, 3})
         assert simplex.to_cycle(boundary_cycles) is bc1
 
     def test_to_cycle_nonunique(self):
@@ -42,7 +38,7 @@ class TestSimplex:
         bc3 = mock_BoundaryCycle({1, 2, 3})
         boundary_cycles = [bc1, bc2, bc3]
 
-        simplex = Simplex(frozenset({1, 2, 3}))
+        simplex = Simplex({1, 2, 3})
         pytest.raises(ValueError, simplex.to_cycle, boundary_cycles)
 
     def test_to_cycle_notfound(self):
@@ -50,21 +46,21 @@ class TestSimplex:
         bc3 = mock_BoundaryCycle({4, 2, 3})
         boundary_cycles = [bc2, bc3]
 
-        simplex = Simplex(frozenset({1, 2, 3}))
+        simplex = Simplex({1, 2, 3})
         pytest.raises(ValueError, simplex.to_cycle, boundary_cycles)
 
     def test_dim(self):
-        s = Simplex(frozenset({1, 2, 3}))
+        s = Simplex({1, 2, 3})
         assert s.dim == 2
 
     def test_eq(self):
-        s1 = Simplex(frozenset({1, 2, 3}))
-        s2 = Simplex(frozenset({1, 2, 3}))
+        s1 = Simplex({1, 2, 3})
+        s2 = Simplex({1, 2, 3})
         assert s1 == s2
 
     def test_hash(self):
-        s1 = Simplex(frozenset({1, 2, 3}))
-        s2 = Simplex(frozenset({1, 3, 2}))
+        s1 = Simplex({1, 2, 3})
+        s2 = Simplex({1, 3, 2})
         assert hash(s1) == hash(s2)
 
 

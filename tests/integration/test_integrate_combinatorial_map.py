@@ -2,13 +2,13 @@ from itertools import chain
 from unittest import mock
 
 import pytest
+from update_data import LabelUpdateFactory, Remove1SimplexUpdate2D
 
 from alpha_complex import Simplex
 from combinatorial_map import CombinatorialMap2D, RotationInfo2D, OrientedSimplex, BoundaryCycle
 from cycle_labelling import CycleLabellingDict
 from state_change import StateChange
 from topology import Topology
-from update_data import LabelUpdateFactory, Remove1SimplexUpdate2D
 
 
 @pytest.fixture
@@ -32,8 +32,8 @@ def mock_rotinfo():
 def mock_alphacomplex(simplices, edges):
     ac = mock.Mock()
     ac.simplices.side_effect = \
-        lambda dim: [Simplex(frozenset(edge)) for edge in edges] if dim == 1 \
-            else [Simplex(frozenset(simplex)) for simplex in simplices]
+        lambda dim: [Simplex(edge) for edge in edges] if dim == 1 \
+            else [Simplex(simplex) for simplex in simplices]
     ac.nodes = {0, 1, 2, 3, 4, 5}
     ac.dim = 2
     return ac
