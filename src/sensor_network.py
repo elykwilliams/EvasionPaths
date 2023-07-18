@@ -8,42 +8,47 @@
 
 import numpy as np
 import pandas as pd
-from numpy import array
-
-from utilities import *
 
 
-## This class contains all information local to a sensor.
-# The sensor is able to compute its movement given a model
-# of motion. Positions/velocities are not updated unless
-# update is called, in case the timestep is subdivided and
-# positions need to be recomputed. Update should be called
-# when moving to the next timestep.
-# Note that velocity is stored in polar form (rho, theta).
 class Sensor:
-    ## Initialize Sensor.
-    # Position as (x, y), velocity as (vx, vy)
-    # boundary_sensor indicates that it is part of the fence.
-    def __init__(self, position, vel, sensing_radius, boundary_sensor=False):
-        self.pos = np.array(position)
-        self.old_pos = self.pos
-        self.vel = np.array(vel)
-        self.old_vel = self.vel
+    """
+    This class contains all information local to a sensor. The sensor is able to compute its movement given a model
+    of motion. old_pos and new_pos should not updated unless update is called, in case the timestep is subdivided and
+    positions need to be interpolated.
+    """
+
+    def __init__(self, position: np.array, velocity: np.array, sensing_radius: float, boundary_sensor: bool = False):
+        """
+        Initialize Sensor.
+
+        :param position: Initial position as an np.array [x, y].
+        :param velocity: Initial velocity as an np.array [vx, vy].
+        :param sensing_radius: Sensing radius of the sensor.
+        :param boundary_sensor: Indicator if the sensor is part of the boundary/fence.
+        """
+        self.pos = self.old_pos = position
+        self.vel = self.old_vel = velocity
         self.radius = sensing_radius
         self.boundary_flag = boundary_sensor
 
-    ## Update sensor current state.
-    # This function updates the values on which the new position are computed,
-    # It should not be called until ready to move to next timestep.
     def update(self):
+        """
+        Update sensor current state. This function updates the values on which the new position are computed.
+        It should not be called until ready to move to next timestep.
+        """
         if self.boundary_flag:
             return
         self.old_pos = self.pos
         self.old_vel = self.vel
 
-    ## Compute distance between two sensors.
-    def dist(self, s2):
-        return norm(array(self.old_pos) - array(s2.old_pos))
+    def dist(self, other: 'Sensor') -> float:
+        """
+        Compute distance between this sensor and another sensor.
+
+        :param other: The other sensor.
+        :return: The Euclidean distance between the two sensors.
+        """
+        return np.linalg.norm(self.old_pos - other.old_pos)
 
 
 ## This class represents a collection of sensors.
