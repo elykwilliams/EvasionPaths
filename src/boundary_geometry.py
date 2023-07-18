@@ -137,13 +137,13 @@ class RectangularDomain(Domain):
     @staticmethod
     def eps():
         epsilon = pow(10, -4)
-        return random.uniform(-epsilon, epsilon)
+        return random.uniform(-epsilon, epsilon)*0
 
     ## Generate fence in counter-clockwise order.
     # spacing should be less than 2*sensing_radius.
     def fence(self, spacing) -> list:
         # Initialize fence position
-        dx = spacing * np.sin(np.pi / 6)  # virtual boundary width
+        dx = spacing * np.sin(np.pi / 3)  # virtual boundary width
         vx_min, vx_max = self.min[0] - dx, self.max[0] + dx
         vy_min, vy_max = self.min[1] - dx, self.max[1] + dx
 
