@@ -1,7 +1,7 @@
 SHELL := /bin/bash
 .ONESHELL:
 
-VENV := env
+VENV := venv
 PYTHON := ${VENV}/bin/python3
 PIP := ${VENV}/bin/pip3
 
@@ -11,12 +11,11 @@ pre-req:        ## Install/update python, pip, and virtualenv
 	sudo apt install python3 python3-pip python3-venv
 
 
-env:    pre-req ## Create virtual environment
+venv:    pre-req ## Create virtual environment
 	python3 -m venv ${VENV}
 
 
 install: env    ## Install dependencies and package
-	${PIP} install -r requirements.txt
 	${PIP} install -e .
 
 
@@ -26,24 +25,6 @@ update:         ## Get recent updates and reinstall
 	git pull --rebase
 	git stash pop
 	make install
-
-
-conda-env:	environment.yml      ## Create conda environment with dependencies
-	conda env create --file environment.yml --force
-
-
-conda-install:  conda-env       ## Install package
-	conda activate EvasionPaths-env
-	pip install -e .
-
-
-.PHONY: conda-update
-conda-update:   ## Get recent updates and reinstall
-	git stash
-	git pull --rebase
-	git stash pop
-	conda activate EvasionPaths-env
-	make conda-install
 
 .PHONY: help
 help: ## Show this help

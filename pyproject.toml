@@ -1,0 +1,45 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "EvasionPaths"
+version = "1.2.0"
+description = "Track evasion paths in mobile sensor networks"
+readme = "README.md"
+requires-python = ">=3.10"
+license = {file = "LICENSE.txt"}
+keywords = [
+    "Computational Topology", "Evasion Paths", "Sensor Netoworks", "Topological Data Analysis"
+]
+authors = [
+    { name="Kyle Williams", email="williams.kyle@gmx.com" },
+    { name = "Deepjoyti Gosh"},
+    { name = "Clark Mask"},
+    { name = "Marco Campos"}
+]
+maintainers = [
+    { name="Kyle Williams", email="williams.kyle@gmx.com" }
+]
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "Operating System :: OS Independent",
+]
+
+dependencies = [
+    "numpy",
+    "scipy",
+    "matplotlib",
+    "networkx",
+    "gudhi>=3.6.0",
+    "pandas"
+]
+
+[project.optional-dependencies]
+test = ["pytest"]
+examples = ["joblib"]
+
+
+[project.urls]
+"Homepage" = "https://github.com/elykwilliams/EvasionPaths"
+"Bug Tracker" = "https://github.com/elykwilliams/EvasionPaths/issues"
