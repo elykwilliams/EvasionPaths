@@ -1,5 +1,6 @@
 # Bugs
 
+- Bug in time-stepping when attempting to use topology_stack
 
 # Style
 
@@ -8,23 +9,25 @@
 # Features:
 
 - Add examples of custom_sensor_network (two different motion models)
-- Add example of custom_domain
+- Add example of custom_domain [In Progress]
 - Add optional setting to enforce connected graph vs power-off
 - integrate support for dynamical systems packages (pydstool, pydy, DynamicalBilliards.jl)
-- Add sensor_tools (e.g. mixing, kinetic energy, etc)
+- Add sensor_network_tools (e.g. mixing, kinetic energy, etc)
 - support time-series data (pandas) [In Progress]
 - Implement 3D [In Progress]
 - Maybe refactor sensor network into separate package
+- Refactor Sensor Network from time-stepping into data stream.
 - Refactor AlphaComplex decomposition and reeb graph generation
 
 # Documentation:
 
-- Migrate to pdoc for documentation
+- Migrate to more pythong based documentation
 - Setup documentation git action
 - Document Examples and tutorials
-- src documentation move to google format
+- Add github wiki
+- use google format for src documentation
 - Document refactored code
-- Add type hints to all functions
+- Use type hints in all functions
 
 # Testing
 
@@ -46,4 +49,6 @@
 - Work towards fully distributed algorithm
 - Allow for fully disconnected graph ("power on")
 - AlphaComplex with variable radii
+- More applications
+- IRL Sensor Network
 
