@@ -33,12 +33,12 @@ class Topology:
 
     @property
     def alpha_cycle(self) -> BoundaryCycle:
-        if self.dim <= 3:
-            face = OrientedSimplex(tuple(range(self.dim)))
-        else:
-            raise NotImplementedError(f"No Implementation for CombinatorialMap for dimension {self.dim}")
-
-        return self.cmap.get_cycle(face)
+        face = OrientedSimplex(tuple(range(self.dim)))
+        try:
+            cycle = self.cmap.get_cycle(face)
+        except KeyError:
+            raise KeyError("The simplex (0, 1, ... dim-1), is not a face of the external boundary.")
+        return cycle
 
     @property
     def dim(self) -> int:
