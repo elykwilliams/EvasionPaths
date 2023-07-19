@@ -19,16 +19,33 @@ class CycleLabelling:
         self.reeb_graph = ReebGraph(self.label)
 
     def update(self, state_change: StateChange, time):
+        def was_disconnected(cycle):
+            return state_change.old_topology.is_connected_cycle(cycle) and not state_change.new_topology.is_connected_cycle(cycle)
 
-        added_cycles = state_change.new_topology.homology_generators.difference(
+        def was_reconnected(cycle):
+            return state_change.new_topology.is_connected_cycle(cycle) and not state_change.old_topology.is_connected_cycle(cycle)
+
+        added_cycles = set(filter(state_change.new_topology.is_connected_cycle,
+                                  state_change.new_topology.homology_generators.difference(
+                                      state_change.old_topology.homology_generators)))
+
+        removed_cycles = set(filter(state_change.old_topology.is_connected_cycle,
+                                    state_change.old_topology.homology_generators.difference(
+                                        state_change.new_topology.homology_generators)))
+
+        persistent_cycles = state_change.new_topology.homology_generators.intersection(
             state_change.old_topology.homology_generators)
-        removed_cycles = state_change.old_topology.homology_generators.difference(
-            state_change.new_topology.homology_generators)
 
-        for cycle in added_cycles:
-            self.label[cycle] = any(self.label[cycle] for cycle in removed_cycles)
+        # Find cycles that were reconnected or disconnected during the transition
+        reconnected_cycle = set(filter(was_reconnected, persistent_cycles))
 
-        for cycle in removed_cycles:
+        disconnected_cycles = set(filter(was_disconnected, persistent_cycles))
+
+        # Update labels based on cycle transitions
+        for cycle in added_cycles.union(reconnected_cycle):
+            self.label[cycle] = any(self.label[cycle] for cycle in removed_cycles.union(disconnected_cycles))
+
+        for cycle in removed_cycles.difference(removed_cycles.intersection(disconnected_cycles)):
             del self.label[cycle]
 
         self.reeb_graph.update(time, self.label, self.history[-1][0])

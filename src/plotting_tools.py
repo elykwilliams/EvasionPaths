@@ -4,10 +4,12 @@
 #  license. You should have received a copy of the BSD-3 license with this file.
 #  If not, visit: https://opensource.org/licenses/BSD-3-Clause
 # ******************************************************************************
+import random
 
 import matplotlib.pyplot as plt
 import networkx as nx
 
+from alpha_complex import Simplex
 from boundary_geometry import Domain
 from combinatorial_map import OrientedSimplex
 from sensor_network import SensorNetwork
@@ -95,11 +97,14 @@ def show_alpha_complex(sim: EvasionPathSimulation, ax=None) -> None:
     if not ax:
         ax = plt.gca()
     points = sim.sensor_network.points
+
     for simplex in sim.topology.simplices(2):
         xpts, ypts = zip(*[points[node] for node in simplex])
         # if simplex.to_cycle(sim.topology.boundary_cycles) in sim.cycle_label:
+        edge = random_elements = random.sample(simplex, 2)
+        if not nx.has_path(sim.topology.face_connectivity_graph, Simplex(edge), Simplex({0, 1})):
+            continue
         ax.fill(xpts, ypts, color='r', alpha=0.5)
-
     for edge in sim.topology.simplices(1):
         xpts, ypts = zip(*[points[node] for node in edge])
         ax.plot(xpts, ypts, color='r', alpha=1)
