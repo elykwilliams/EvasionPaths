@@ -7,13 +7,19 @@ See our results _[Efficient Evader Detection in Mobile Sensor Networks](https://
 # Installation
 1. Clone this repository. 
 From the command line, use the following
+
 ```git clone https://www.github.com/elykwilliams/evasion-paths.git```
 
 2. Activate appropriate virtual environment (venv/conda). 
 A new environment can be created using
+
 ```python3 -m venv venv```
+
 3. Navigate to the source root directory
-4. Install using pip ```python3 -m pip install -e .```
+4. Install using from the command line via pip 
+
+```python3 -m pip install -e .```
+
 
 * If you are using PyCharm, be sure to set the `src` folder as a Source folder in your IDE 
 (otherwise it may complain about modules not being found)
