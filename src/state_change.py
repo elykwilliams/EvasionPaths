@@ -56,7 +56,7 @@ class StateChange:
 
     def __repr__(self) -> str:
         result = f"State Change:\n"
-        for dim in range(1, self.new_topology.dim + 1):
+        for dim in range(1, self.dim + 1):
             result += f"{dim}-Simplices Added: {self.simplices_difference[dim].added()}\n" \
                       f"{dim}-Simplices Removed: {self.simplices_difference[dim].removed()}\n"
         result += f"Boundary Cycles Added: {self.boundary_cycles_difference.added()}\n" \
@@ -65,7 +65,7 @@ class StateChange:
 
     def alpha_complex_change(self):
         case = ()
-        for dim in range(1, self.new_topology.dim + 1):
+        for dim in range(1, self.dim + 1):
             case += (len(self.simplices_difference[dim].added()), len(self.simplices_difference[dim].removed()))
         return case
 
@@ -78,14 +78,12 @@ class StateChange:
 
     @property
     def simplices_difference(self) -> Dict[int, SetDifference]:
-        dim = self.new_topology.dim
         return {i: SetDifference(self.new_topology.simplices(i), self.old_topology.simplices(i))
-                for i in range(1, dim + 1)}
+                for i in range(1, self.dim + 1)}
 
     def is_local_change_added(self):
-        dim = len(self.simplices_difference)
-        for i in range(1, dim):
-            for j in range(i, dim+1):
+        for i in range(1, self.dim):
+            for j in range(i, self.dim+1):
                 for edge in self.simplices_difference[i].added():
                     for face in self.simplices_difference[j].added():
                         if not face.is_subsimplex(edge):
@@ -93,9 +91,8 @@ class StateChange:
         return True
 
     def is_local_change_removed(self):
-        dim = len(self.simplices_difference)
-        for i in range(1, dim):
-            for j in range(i, dim+1):
+        for i in range(1, self.dim):
+            for j in range(i, self.dim+1):
                 for edge in self.simplices_difference[i].removed():
                     for face in self.simplices_difference[j].removed():
                         if not face.is_subsimplex(edge):
@@ -104,7 +101,6 @@ class StateChange:
 
     def is_atomic_change(self):
         case = self.alpha_complex_change()
-        dim = self.new_topology.dim
 
         if case not in atomic_change_list:
             return False
@@ -116,8 +112,18 @@ class StateChange:
             return self.is_local_change_removed()
 
         elif case in delaunay_change:
-            old_nodes = chain.from_iterable(self.simplices_difference[dim].removed())
-            new_nodes = chain.from_iterable(self.simplices_difference[dim].added())
+            old_nodes = chain.from_iterable(self.simplices_difference[self.dim].removed())
+            new_nodes = chain.from_iterable(self.simplices_difference[self.dim].added())
             return set(old_nodes) == set(new_nodes)
 
         return True
+
+    def is_disconnect(self):
+        return self.alpha_complex_change()[2*(self.dim-2)+1] and self.boundary_cycle_change() == (1, 2)
+
+    def is_reconnect(self):
+        return self.alpha_complex_change()[2*(self.dim-2)] and self.boundary_cycle_change() == (2, 1)
+
+    @property
+    def dim(self):
+        return self.new_topology.dim

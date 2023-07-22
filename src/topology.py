@@ -19,6 +19,7 @@ from combinatorial_map import BoundaryCycle, RotationInfo2D, CombinatorialMap2D,
 class Topology:
     alpha_complex: AlphaComplex
     cmap: CombinatorialMap
+    _graph: nx.Graph = None
 
     def simplices(self, dim):
         return self.alpha_complex.simplices(dim)
@@ -50,14 +51,19 @@ class Topology:
 
     @property
     def face_connectivity_graph(self):
-        graph = nx.Graph()
-        graph.add_nodes_from(self.simplices(self.dim - 1))
+        if self._graph:
+            return self._graph
+        self._graph = nx.Graph()
+        self._graph.add_nodes_from(self.simplices(self.dim - 1))
         for face_list in self.cmap.rotation_info.incident_simplices.values():  # Maybe move graph to cmap?
-            graph.add_edges_from(combinations(face_list, 2))
-        return graph
+            self._graph.add_edges_from(map(lambda e: (Simplex(e[0]), Simplex(e[1])), combinations(face_list, 2)))
+        return self._graph
 
     def is_connected_cycle(self, cycle):
-        return nx.has_path(self.face_connectivity_graph, next(iter(cycle)), tuple(range(self.dim)))
+        return nx.has_path(self.face_connectivity_graph, Simplex(next(iter(cycle)).nodes), Simplex(range(self.dim)))
+
+    def is_face_connected(self):
+        return nx.is_connected(self.face_connectivity_graph)
 
 
 def generate_topology(points, radius):

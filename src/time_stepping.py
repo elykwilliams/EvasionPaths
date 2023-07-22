@@ -37,6 +37,9 @@ class EvasionPathSimulation:
 
         self.sensor_network = sensor_network
         self.topology = generate_topology(sensor_network.points, sensor_network.sensing_radius)
+        if not self.topology.is_face_connected():
+            raise ValueError("The provided sensor network is not face connected")
+
         self.cycle_label = CycleLabelling(self.topology)
 
         self.topology_stack = []
