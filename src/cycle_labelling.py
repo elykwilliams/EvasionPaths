@@ -45,7 +45,7 @@ class CycleLabelling:
         for cycle in added_cycles.union(reconnected_cycle):
             self.label[cycle] = any(self.label[cycle] for cycle in removed_cycles.union(disconnected_cycles))
 
-        for cycle in removed_cycles.difference(removed_cycles.intersection(disconnected_cycles)):
+        for cycle in removed_cycles.union(disconnected_cycles):
             del self.label[cycle]
 
         self.reeb_graph.update(time, self.label, self.history[-1][0])

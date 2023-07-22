@@ -62,6 +62,9 @@ class Topology:
     def is_connected_cycle(self, cycle):
         return nx.has_path(self.face_connectivity_graph, Simplex(next(iter(cycle)).nodes), Simplex(range(self.dim)))
 
+    def is_face_connected(self):
+        return nx.is_connected(self.face_connectivity_graph)
+
 
 def generate_topology(points, radius):
     ac = AlphaComplex(points, radius)
