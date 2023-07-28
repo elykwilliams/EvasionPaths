@@ -31,7 +31,7 @@ class MotionModel(ABC):
         self.update_velocity(sensor, dt)
         self.update_position(sensor, dt)
         if sensor.pos not in self.domain:
-            self.domain.reflect(sensor)
+            self.reflect(sensor)
 
     @abstractmethod
     def update_position(self, sensor, dt):
@@ -48,6 +48,20 @@ class MotionModel(ABC):
     # then update the sensors when update_position is called.
     def nonlocal_update(self, all_sensors, dt):
         pass
+
+    def reflect(self, sensor):
+        old = sensor.old_pos
+        while sensor.pos not in self.domain:
+            intersect = self.domain.get_intersection_point(old, sensor.pos)
+            unit_normal = self.domain.normal(intersect)
+            disp = sensor.pos - intersect
+            sensor.pos -= 2 * np.dot(disp, unit_normal) * unit_normal
+
+            V = sensor.pos - intersect
+            unit_v = V / np.linalg.norm(V)
+            sensor.vel = unit_v * np.linalg.norm(sensor.vel)
+
+            old = intersect + 0.00001 * V
 
 
 # Velocity is constant

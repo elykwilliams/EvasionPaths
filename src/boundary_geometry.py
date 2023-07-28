@@ -17,83 +17,20 @@ from numpy.linalg import norm
 from utilities import pol2cart
 
 
-class BoundaryReflector(ABC):
-
-    @abstractmethod
-    def reflect_point(self, sensor):
-        ...
-
-    @abstractmethod
-    def reflect_velocity(self, sensor):
-        ...
-
-
-@dataclass
-class SquareReflector(BoundaryReflector):
-    dim: int
-    min: tuple
-    max: tuple
-
-    def reflect_point(self, sensor):
-        for i in range(self.dim):
-            if not (self.min[i] <= sensor.pos[i] <= self.max[i]):
-                wall = self.min[i] if sensor.pos[i] < self.min[i] else self.max[i]
-                sensor.pos[i] = 2*wall - sensor.pos[i]
-
-    def reflect_velocity(self, sensor):
-        for i in range(self.dim):
-            if not (self.min[i] <= sensor.pos[i] <= self.max[i]):
-                sensor.vel[i] = -sensor.vel[i]
-
-
-@dataclass
-class RadialReflector(BoundaryReflector):
-    radius: float
-
-    ## Compute trajectory intersection with boundary.
-    # For internal use.
-    def _get_intersection(self, old_pt, new_pt):
-        d = new_pt - old_pt
-        x0 = old_pt
-        t_vals = np.roots([norm(d) ** 2, 2 * np.dot(d, x0), norm(x0) ** 2 - self.radius ** 2])
-        t = t_vals[0] if 0 <= t_vals[0] <= 1 else t_vals[1]
-        return (1 - t) * old_pt + t * new_pt
-
-    ## reflect position if outside of domain.
-    def reflect_point(self, sensor):
-        boundary_pt = self._get_intersection(sensor.old_pos, sensor.pos)
-        disp = sensor.pos - boundary_pt
-        normal = boundary_pt / norm(boundary_pt)
-        reflected_disp = disp - 2 * np.dot(disp, normal) * normal
-        sensor.pos = boundary_pt + reflected_disp
-
-    ## Reflect velocity angle to keep velocity consistent.
-    def reflect_velocity(self, sensor):
-        boundary_pt = self._get_intersection(sensor.old_pos, sensor.pos)
-        disp = sensor.pos - boundary_pt
-        normal = boundary_pt / norm(boundary_pt)
-        reflected_disp = disp - 2 * np.dot(disp, normal) * normal
-        unit_vec = reflected_disp / norm(reflected_disp)
-
-        sensor.vel = norm(sensor.vel) * unit_vec
-
-
 ## Specify domain geometry.
 # The domain class handles all issues relating to the
 # domain geometry. It should be unaware of sensors and
 # operate with strictly geometric objects. A user defined
 # domain should
-# - provide fence sensor positions
 # - Determine if a point is in the domain
-# - generate sensor locations inside the domain
+# - provide the outward UNIT normal for any point on the boundary
+# - given a point inside and a point outside, determine the intersection
+#   point of the segment connecting these two points with the domain.
+# - generate random points inside the domain
+# - optionally provide fence sensor positions
 # - optionally provide boundary points for plotting
 @dataclass
 class Domain(ABC):
-    reflector: BoundaryReflector
-
-    def reflect(self, sensor):
-        self.reflector.reflect_velocity(sensor)  # Order important, uses unreflected positions
-        self.reflector.reflect_point(sensor)
 
     @abstractmethod
     def __contains__(self, point: tuple) -> bool:
@@ -108,6 +45,14 @@ class Domain(ABC):
     @abstractmethod
     def domain_boundary_points(self):
         ...
+
+    @abstractmethod
+    def normal(self, boundary_point):
+        pass
+
+    @abstractmethod
+    def get_intersection_point(self, old, new):
+        pass
 
 
 ## A rectangular domain.
@@ -128,7 +73,6 @@ class RectangularDomain(Domain):
         self.max = (x_max, y_max)
         self.min = (x_min, y_min)
         self.dim = 2
-        super().__init__(SquareReflector(self.dim, self.min, self.max))
 
     ## Check if point is in domain.
     def __contains__(self, point: tuple) -> bool:
@@ -168,11 +112,29 @@ class RectangularDomain(Domain):
         y_pts = [self.min[1], self.max[1], self.max[1], self.min[1], self.min[1]]
         return x_pts, y_pts
 
+    def normal(self, boundary_point):
+        center = 0.5*np.array([self.max[0] + self.min[0], self.max[1] + self.min[1]])
+        offset_point = boundary_point - center      # center domain at (0, 0)
+        if self.min[0] < boundary_point[0] < self.max[0]:
+            normal = np.array([0, offset_point[1]])
+        else:
+            normal = np.array([offset_point[0], 0])
+        return normal / np.linalg.norm(normal)
+
+    def get_intersection_point(self, old, new):
+        assert (old in self and new not in self)
+        tvals = []
+        for dim in range(self.dim):
+            tvals.append((self.max[dim] - old[dim]) / (new[dim] - old[dim]))
+            tvals.append((self.min[dim] - old[dim]) / (new[dim] - old[dim]))
+        t = min(filter(lambda x: 0 < x < 1, tvals))
+        return old + t*(new - old)
+
 
 class CircularDomain(Domain):
     def __init__(self, radius) -> None:
         self.radius = radius
-        super().__init__(RadialReflector(radius))
+        self.dim = 2
 
     ## Check if point is in domain.
     def __contains__(self, point: tuple) -> bool:
@@ -197,6 +159,15 @@ class CircularDomain(Domain):
         y_pts = [self.radius * np.sin(t) for t in arange(0, 2 * pi, 0.01)]
         return x_pts, y_pts
 
+    def normal(self, boundary_point):
+        return boundary_point / np.linalg.norm(boundary_point)
+
+    def get_intersection_point(self, old, new):
+        disp = new - old
+        tvals = np.roots([norm(disp) ** 2, 2 * np.dot(disp, old), norm(old) ** 2 - self.radius ** 2])
+        t = min(filter(lambda x: 0 < x < 1, tvals))
+        return old + t * disp
+
 
 class UnitCube(Domain):
 
@@ -204,7 +175,6 @@ class UnitCube(Domain):
         self.min = (0, 0, 0)
         self.max = (1, 1, 1)
         self.dim = 3
-        super().__init__(SquareReflector(self.dim, self.min, self.max))
 
     ## Determine if given point it in domain or not.
     def __contains__(self, point) -> bool:
@@ -216,6 +186,24 @@ class UnitCube(Domain):
 
     def domain_boundary_points(self):
         return []
+
+    def normal(self, boundary_point):
+        center = 0.5*np.array([self.max[d] + self.min[d] for d in range(self.dim)])
+        offset_point = boundary_point - center      # center domain at (0, 0)
+        if self.min[0] < boundary_point[0] < self.max[0]:
+            normal = np.array([0, offset_point[1]])
+        else:
+            normal = np.array([offset_point[0], 0])
+        return normal / np.linalg.norm(normal)
+
+    def get_intersection_point(self, old, new):
+        assert (old in self and new not in self)
+        tvals = []
+        for dim in range(len(old)):
+            tvals.append((self.max[dim] - old[dim]) / (new[dim] - old[dim]))
+            tvals.append((self.min[dim] - old[dim]) / (new[dim] - old[dim]))
+        t = min(filter(lambda x: 0 < x < 1, tvals))
+        return old + t*(new - old)
 
 
 ## Generate boundary points in counterclockwise order.
