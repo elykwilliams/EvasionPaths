@@ -8,7 +8,6 @@
 import numpy as np
 from matplotlib.animation import FuncAnimation
 
-from boundary_geometry import RectangularDomain
 from motion_model import ODEMotion
 from plotting_tools import *
 from sensor_network import generate_fence_sensors, generate_mobile_sensors
@@ -75,8 +74,8 @@ def update(_):
     axis.set_title(title_str, loc="left")
 
     # plot
-    show_sensor_radius(sim.sensor_network)
-    show_sensor_points(sim.sensor_network)
+    show_sensor_radius(sim.sensor_network, ax=axis)
+    show_all_sensors(sim.sensor_network, ax=axis)
 
     sim.sensor_network.update()
 

@@ -57,7 +57,7 @@ def update(_):
     axis.set_title(title_str, loc="left")
 
     # plot
-    show_state(simulation, axis)
+    show_state(simulation, ax=axis)
 
 
 # Animation driver
