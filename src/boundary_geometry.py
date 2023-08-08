@@ -115,7 +115,7 @@ class RectangularDomain(Domain):
     def normal(self, boundary_point):
         center = 0.5*np.array([self.max[0] + self.min[0], self.max[1] + self.min[1]])
         offset_point = boundary_point - center      # center domain at (0, 0)
-        if self.min[0] < boundary_point[0] < self.max[0]:
+        if self.min[0] - center[0] < offset_point[0] < self.max[0] - center[0]:
             normal = np.array([0, offset_point[1]])
         else:
             normal = np.array([offset_point[0], 0])
