@@ -26,14 +26,14 @@ sensor_velocity = 1
 
 filename_base = "SampleAnimation"
 
-unit_square = RectangularDomain()
+domain = RectangularDomain()
 
-billiard = BilliardMotion(unit_square)
+motion_model = BilliardMotion()
 
-fence = generate_fence_sensors(unit_square, sensing_radius)
-mobile_sensors = generate_mobile_sensors(unit_square, num_sensors, sensing_radius, sensor_velocity)
+fence = generate_fence_sensors(domain, sensing_radius)
+mobile_sensors = generate_mobile_sensors(domain, num_sensors, sensing_radius, sensor_velocity)
 
-sensor_network = SensorNetwork(mobile_sensors, billiard, fence, sensing_radius)
+sensor_network = SensorNetwork(mobile_sensors, motion_model, fence, sensing_radius, domain)
 
 simulation = EvasionPathSimulation(sensor_network, timestep_size)
 

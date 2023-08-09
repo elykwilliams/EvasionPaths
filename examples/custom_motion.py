@@ -8,11 +8,9 @@
 import numpy as np
 from matplotlib.animation import FuncAnimation
 
-from boundary_geometry import RectangularDomain
 from motion_model import ODEMotion
 from plotting_tools import *
-from sensor_network import generate_fence_sensors, generate_mobile_sensors
-from time_stepping import EvasionPathSimulation
+from sensor_network import generate_mobile_sensors
 
 
 ## This is a sample script to show how to create animations using matplotlib.
@@ -21,23 +19,22 @@ from time_stepping import EvasionPathSimulation
 # that the simulation object should be in the global namespace so that it saves
 # its state (i.e. not passed by value into the update function).
 class GravityMotion(ODEMotion):
-    def __init__(self, domain, gravity):
-        super().__init__(domain)
+    def __init__(self, gravity):
+        super().__init__()
         self.G = gravity
 
     def gradient(self, *_):
-        return np.zeros(self.n_sensors), self.G*np.ones(self.n_sensors)
+        return np.zeros(self.n_sensors), -self.G*np.ones(self.n_sensors)
 
     def time_derivative(self, _, state):
         # ode solver gives us np array in the form [xvals | yvals | vxvals | vyvals]
-        # split into individual np array
-        split_state = [state[i:i + self.n_sensors] for i in range(0, len(state), self.n_sensors)]
+        xs, ys, vxs, vys = np.array_split(state, 4)
 
         # Need to compute time derivative of each,
-        # I just have d(x, y)/dt = (vx, vy), d(vx, vy)/dt = (0, G)
-        dxdt, dydt = split_state[2], split_state[3]
-        dvxdt, dvydt = self.gradient(split_state[0], split_state[1])
-        return np.concatenate([dxdt, dydt, -dvxdt, -dvydt])
+        # I just have d(x, y)/dt = (vx, vy), d(vx, vy)/dt = (0, -G)
+        dxdt, dydt = vxs, vys
+        dvxdt, dvydt = self.gradient([xs, ys])
+        return np.concatenate([dxdt, dydt, dvxdt, dvydt])
 
 
 num_sensors = 20
@@ -47,38 +44,35 @@ sensor_velocity = 1
 
 filename_base = "SampleAnimation"
 
-unit_square = RectangularDomain()
+domain = RectangularDomain()
 
-billiard = GravityMotion(unit_square, 10)
+motion_model = GravityMotion(9.81)
 
-fence = generate_fence_sensors(unit_square, sensing_radius)
-mobile_sensors = generate_mobile_sensors(unit_square, num_sensors, sensing_radius, sensor_velocity)
+mobile_sensors = generate_mobile_sensors(domain, num_sensors, sensing_radius, sensor_velocity)
 
-sensor_network = SensorNetwork(mobile_sensors, billiard, fence, sensing_radius)
-
-sim = EvasionPathSimulation(sensor_network, timestep_size)
+sensor_network = SensorNetwork(mobile_sensors, motion_model, [], sensing_radius, domain)
 
 
 # Update takes the frame number as an argument by default, other arguments
 # can be added by specifying fargs= ... in the FuncAnimation parameters
-def update(_):
+def update(frame):
     # Update simulation
-    sim.sensor_network.move(sim.dt)
-    sim.time += sim.dt
+    sensor_network.move(timestep_size)
+    time = frame*timestep_size
 
     # Setup figure
     axis = plt.gca()
     axis.cla()
     axis.axis("off")
     axis.axis("equal")
-    title_str = "T = " + "{:5.2f}:\n".format(sim.time)
+    title_str = "T = " + "{:5.2f}:\n".format(time)
     axis.set_title(title_str, loc="left")
 
     # plot
-    show_sensor_radius(sim.sensor_network)
-    show_sensor_points(sim.sensor_network)
+    show_sensor_points(sensor_network, axis)
+    show_domain_boundary(domain, axis)
 
-    sim.sensor_network.update()
+    sensor_network.update()
 
 
 # Animation driver
