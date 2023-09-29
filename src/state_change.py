@@ -64,12 +64,14 @@ class StateChange:
         return result
 
     def alpha_complex_change(self):
+        """(+E, -E, +T, -T, +V, -V)"""
         case = ()
         for dim in range(1, self.dim + 1):
             case += (len(self.simplices_difference[dim].added()), len(self.simplices_difference[dim].removed()))
         return case
 
     def boundary_cycle_change(self):
+        """(+B, -B)"""
         return len(self.boundary_cycles_difference.added()), len(self.boundary_cycles_difference.removed())
 
     @property

@@ -26,10 +26,12 @@ class Topology:
 
     @property
     def boundary_cycles(self):
+        """All cycles in teh partition, even corresponding to simplices"""
         return self.cmap.boundary_cycles
 
     @property
     def homology_generators(self):
+        """Cycles that are not the boundary of a simplex"""
         return {cycle for cycle in self.cmap.boundary_cycles if not self.is_boundary(cycle)}
 
     @property

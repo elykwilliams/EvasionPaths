@@ -13,7 +13,8 @@ from topology import Topology
 class CycleLabelling:
 
     def __init__(self, topology: Topology):
-        self.label = {g: True for g in topology.homology_generators}
+        self.label = {g: True for g in topology.homology_generators if topology.is_connected_cycle(g)}
+
         self.history = [(self.label, (0,)*topology.dim*2, (0, 0), 0)]
 
         self.reeb_graph = ReebGraph(self.label)
