@@ -15,6 +15,7 @@ from numpy.linalg import norm
 from scipy.integrate import solve_ivp
 
 from boundary_geometry import Domain
+from sensor_network import Sensor
 
 
 ## This class provides the basic interface for a model of motion.
@@ -23,15 +24,11 @@ from boundary_geometry import Domain
 # boundary, motion models and boundaries must be compatible.
 @dataclass
 class MotionModel(ABC):
-    domain: Domain
-
     def local_update(self, sensor, dt):
         if sensor.boundary_flag:
             return
         self.update_velocity(sensor, dt)
         self.update_position(sensor, dt)
-        if sensor.pos not in self.domain:
-            self.domain.reflect(sensor)
 
     @abstractmethod
     def update_position(self, sensor, dt):
@@ -48,6 +45,21 @@ class MotionModel(ABC):
     # then update the sensors when update_position is called.
     def nonlocal_update(self, all_sensors, dt):
         pass
+
+    @staticmethod
+    def reflect(domain: Domain, sensor: Sensor):
+        old = sensor.old_pos
+        while sensor.pos not in domain:
+            intersect = domain.get_intersection_point(old, sensor.pos)
+            unit_normal = domain.normal(intersect)
+            disp = sensor.pos - intersect
+            sensor.pos -= 2 * np.dot(disp, unit_normal) * unit_normal
+
+            V = sensor.pos - intersect
+            unit_v = V / np.linalg.norm(V)
+            sensor.vel = unit_v * np.linalg.norm(sensor.vel)
+
+            old = intersect + 0.00001 * V
 
 
 # Velocity is constant
@@ -125,8 +137,8 @@ class Viscek(BilliardMotion):
 # in compute_update() and then return those values when requested in update().
 class ODEMotion(MotionModel, ABC):
 
-    def __init__(self, domain):
-        super().__init__(domain)
+    def __init__(self):
+        super().__init__()
         self.n_sensors = 0
         self.points = dict()
         self.velocities = dict()
@@ -182,9 +194,9 @@ class Dorsogna(ODEMotion):
     # eta_scale_factor is not used, it was previously used to implement a partition of
     # unity so that the gradient was Cinfinty but still went to 0 outside a given radius.
     # TODO rename and document coeff parameters, give sample values
-    def __init__(self, domain, sensing_radius, eta_scale_factor, coeff):
+    def __init__(self, sensing_radius, eta_scale_factor, coeff):
+        super().__init__()
         assert len(coeff) != 4, 'Not enough parameters in coeff'
-        super().__init__(domain)
         self.sensing_radius = sensing_radius
         self.eta = eta_scale_factor * sensing_radius
         self.DO_coeff = coeff

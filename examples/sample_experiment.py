@@ -17,7 +17,7 @@ timestep_size: float = 0.01
 sensor_velocity = 1
 
 domain = RectangularDomain()
-motion_model = BilliardMotion(domain)
+motion_model = BilliardMotion()
 fence = generate_fence_sensors(domain, sensing_radius)
 
 output_dir: str = "./output"
@@ -28,7 +28,7 @@ n_runs: int = 10
 
 def simulate() -> float:
     mobile_sensors = generate_mobile_sensors(domain, num_sensors, sensing_radius, sensor_velocity)
-    sensor_network = SensorNetwork(mobile_sensors, motion_model, fence, sensing_radius)
+    sensor_network = SensorNetwork(mobile_sensors, motion_model, fence, sensing_radius, domain)
     simulation = EvasionPathSimulation(sensor_network, timestep_size)
 
     return simulation.run()
