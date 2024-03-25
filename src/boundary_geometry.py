@@ -1,5 +1,5 @@
 # ******************************************************************************
-#  Copyright (c) 2023, Kyle Williams - All Rights Reserved.
+#  Copyright (c) 2024, Kyle Williams - All Rights Reserved.
 #  You may use, distribute and modify this code under the terms of the BSD-3
 #  license. You should have received a copy of the BSD-3 license with this file.
 #  If not, visit: https://opensource.org/licenses/BSD-3-Clause
@@ -237,3 +237,127 @@ def UnitCubeFence(spacing):
                 1 + dx + random.uniform(-epsilon, epsilon)) for x, y in grid]
     fence_sensors = np.concatenate((x0_face, y0_face, z0_face, x1_face, y1_face, z1_face))
     return np.unique(fence_sensors, axis=0)
+
+
+class BunimovichStadium(Domain):
+
+    def __init__(self, w, r, L: float):
+        self.w = w
+        self.r = r
+        self.length = L
+        self.dim = 2
+
+    def __contains__(self, point):
+        x, y = point
+        if -self.w <= x <= self.w and -self.r <= y <= self.r:
+            return True
+        if (x + self.w) ** 2 + y ** 2 <= self.r ** 2:
+            return True
+        if (x - self.w) ** 2 + y ** 2 <= self.r ** 2:
+            return True
+        return False
+
+    def normal(self, pt):
+        if pt[0] < -self.w:
+            center_cir = np.array([-self.w, 0])
+            normal = pt - center_cir
+        elif pt[0] > self.w:
+            center_cir = np.array([self.w, 0])
+            normal = pt - center_cir
+        else:
+            normal = np.array([0, pt[1]])
+        return normal / np.linalg.norm(normal)
+
+    def get_circle_center(self, old_pos, new_pos):
+        intersect = self.intersect_flat(old_pos, new_pos)
+        w = self.w if intersect[0] > self.w else -self.w
+        return np.array([w, 0])
+
+    def intersect_circ(self, old_pos, new_pos):
+        center = self.get_circle_center(old_pos, new_pos)
+        a = np.linalg.norm(new_pos - old_pos)**2
+        b = 2 * np.dot(old_pos - center, new_pos - old_pos)
+        c = np.linalg.norm(old_pos - center) ** 2 - self.r ** 2
+        t = min(filter(lambda x: 0 < x < 1, np.roots([a, b, c])))
+        return old_pos + t * (new_pos - old_pos)
+
+    def intersect_flat(self, old_pos, new_pos):
+        r = self.r if new_pos[1] > old_pos[1] else -self.r
+        t = (r - old_pos[1]) / (new_pos[1] - old_pos[1])
+        return old_pos + t * (new_pos - old_pos)
+
+    def get_intersection_point(self, old_pos, new_pos):
+        inter_flat = self.intersect_flat(old_pos, new_pos)
+        if -self.w <= inter_flat[0] <= self.w:
+            return inter_flat
+        return self.intersect_circ(old_pos, new_pos)
+
+    def point_generator(self, N):
+        if self.length > 2 * self.w or self.length > 2 * self.r:
+            raise ValueError("Box doesn't fit in the stadium.")
+
+        points = []
+        while len(points) < N:
+            p = np.random.uniform(-self.length / 2, self.length / 2, 2)
+            if p in self:
+                points.append(p)
+
+        return points
+
+    def domain_boundary_points(self):
+        theta1 = np.linspace(np.pi / 2, 3 * np.pi / 2, 1000)
+        x1 = -self.w + self.r * np.cos(theta1)
+        y1 = self.r * np.sin(theta1)
+
+        x3 = np.array([-self.w, self.w])  # bottom length
+        y3 = np.array([-self.r, -self.r])
+
+        theta2 = np.linspace(-1 * np.pi / 2, np.pi / 2, 1000)
+        x2 = self.w + self.r * np.cos(theta2)
+        y2 = self.r * np.sin(theta2)
+
+        x4 = np.array([-self.w, self.w])  # top length
+        y4 = np.array([self.r, self.r])
+
+        x = np.concatenate((x1, x3, x2,  x4))
+        y = np.concatenate((y1, y3, y2, y4))
+        return x, y
+
+    def fence(self, spacing):
+
+        fence = []  # List to store the fence points
+
+        theta = np.linspace(np.pi / 2, 0.999*3 * np.pi / 2,
+                            int(np.ceil(2 * np.pi * self.r / spacing)))  # Angles spaced apart by 'spacing'
+        x_pts = (self.r + (np.sqrt(3) / 2) * spacing) * np.cos(theta) + -self.w  # x-coordinates of the fence points
+        y_pts = (self.r + (np.sqrt(3) / 2) * spacing) * np.sin(theta)  # y-coordinates of the fence points
+
+        for x, y in zip(x_pts, y_pts):
+            fence.append((x, y))
+
+        for i in range(int(2*self.w // spacing)+1):
+            x1 = -self.w + i * spacing
+            y1 = -self.r - (np.sqrt(3) / 2) * spacing
+
+            if x1 > self.w:
+                break
+
+            fence.append((x1, y1))
+
+        theta2 = np.linspace(-1 * np.pi / 2, 0.999 * np.pi / 2, int(np.ceil(2 * np.pi * self.r / spacing)))
+        x2 = (self.r + (np.sqrt(3) / 2) * spacing) * np.cos(theta2) + self.w  # x-coordinates of the fence points
+        y2 = (self.r + (np.sqrt(3) / 2) * spacing) * np.sin(theta2)  # y-coordinates of the fence points
+
+        for x, y in zip(x2, y2):
+            fence.append((x, y))
+
+        for i in range(int(2*self.w // spacing)+1):
+            x3 = self.w - i * spacing
+            y3 = self.r + (np.sqrt(3) / 2) * spacing
+
+            if x3 < -self.w:
+                break
+
+            fence.append((x3, y3))
+
+        return fence
