@@ -1,30 +1,72 @@
 # Kyle Williams 3/5/20
-import os
+
+import os, sys
+# If you're having difficulty importing modules from the src directory, uncomment below
+# current_dir = os.path.dirname(os.path.realpath(__file__))
+# src_dir = os.path.join(current_dir, "..", "src")
+# sys.path.append(src_dir)
+
 from time_stepping import *
 
+
+############################################################
+# Define the parameters of the simulation
 num_sensors: int = 20
 sensing_radius: float = 0.2
 timestep_size: float = 0.01
 
 unit_square: Boundary = RectangularDomain(spacing=sensing_radius)
 
-# noinspection PyTypeChecker
-billiard: MotionModel = BilliardMotion(dt=timestep_size, boundary=unit_square, vel=1, n_int_sensors=num_sensors)
+my_boundary = unit_square
 
+
+
+############################################################
+# Define the motion model -- see src/motion_model.py for more details
+billiard: MotionModel = BilliardMotion(dt=timestep_size, 
+                                       boundary=my_boundary, 
+                                       vel=1, 
+                                       n_int_sensors=num_sensors)
+
+# See the paper for the Dorsogna model to better understand the parameters
+dorsogna_coeff = {"Ca": 0.45, "la": 1, "Cr": 0.5, "lr": 0.1}
+dorsogna: MotionModel = Dorsogna(dt=timestep_size, 
+                                 boundary=my_boundary, 
+                                 max_vel=1, 
+                                 n_int_sensors=num_sensors, 
+                                 sensing_radius=sensing_radius, 
+                                 DO_coeff=dorsogna_coeff)
+
+brownian: MotionModel = BrownianMotion(dt=timestep_size,
+                                        boundary=my_boundary,
+                                        sigma=0.5)
+
+##############################
+# ASSIGN MOTION MODEL HERE
+my_motion_model = billiard
+
+
+
+############################################################
+# Define how many simulations to run and where to save the resulting times
+# - The simulations will be run sequentially. See parallel_experiments.py for parallel runs
+n_runs: int = 1
 output_dir: str = "./output"
 filename_base: str = "data"
 
-n_runs: int = 1
 
 
-# Unlike the animation, each simulation needs to create its own simulation object
+############################################################
+# Run the simulation
+# - Unlike the animation, each simulation needs to create its own simulation object
 def simulate() -> float:
 
-    simulation = EvasionPathSimulation(boundary=unit_square,
-                                       motion_model=billiard,
+    simulation = EvasionPathSimulation(boundary=my_boundary,
+                                       motion_model=my_motion_model,
                                        n_int_sensors=num_sensors,
                                        sensing_radius=sensing_radius,
                                        dt=timestep_size)
+
 
     return simulation.run()
 
@@ -51,5 +93,7 @@ def main() -> None:
     run_experiment()
 
 
+
+############################################################
 if __name__ == "__main__":
     main()

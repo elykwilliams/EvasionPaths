@@ -7,7 +7,7 @@ eval "$(conda shell.bash hook)"
 conda activate EvasionPaths-env
 
 # nohup will continue to run remotely after logging out
-nohup python3 sample_experiment.py
+python3 sample_experiment.py
 
 # deactivate environment
 conda deactivate

@@ -146,15 +146,15 @@ class Viscek(BilliardMotion):
 
 
 class Dorsogna(MotionModel):
-    def __init__(self, dt, boundary, max_vel, n_int_sensors, sensing_radius, eta_scale_factor, DO_coeff):
+    def __init__(self, dt, boundary, max_vel, n_int_sensors, sensing_radius, DO_coeff):
         super().__init__(dt, boundary)
         self.velocities = np.random.uniform(-max_vel, max_vel, (n_int_sensors, 2))
         self.n_sensors = n_int_sensors
         self.boundary = boundary
         self.sensing_radius = sensing_radius
-        self.eta = eta_scale_factor * sensing_radius
-        if len(DO_coeff) != 4:
-            raise ValueError("Not enough parameters in DO_coeff")
+        if not all(k in DO_coeff for k in ("Ca", "la", "Cr", "lr")):
+            missing = [k for k in ("Ca", "la", "Cr", "lr") if k not in DO_coeff]
+            raise ValueError("Missing parameters in DO_coeff: " + str(missing))
         self.DO_coeff = DO_coeff
 
     def update_point(self, pt: tuple, index: int) -> tuple:
@@ -174,8 +174,8 @@ class Dorsogna(MotionModel):
             for j in range(self.n_sensors):
                 r = norm((xs[i] - xs[j], ys[i] - ys[j]))
                 if 0.0 < r < 2 * self.sensing_radius:
-                    attract_term = (self.DO_coeff[0] * np.exp(-r / self.DO_coeff[1]) / (self.DO_coeff[1] * r))
-                    repel_term = (self.DO_coeff[2] * np.exp(-r / self.DO_coeff[3]) / (self.DO_coeff[3] * r))
+                    attract_term = (self.DO_coeff["Ca"] * np.exp(-r / self.DO_coeff["la"]) / (self.DO_coeff["la"] * r))
+                    repel_term = (self.DO_coeff["Cr"] * np.exp(-r / self.DO_coeff["lr"]) / (self.DO_coeff["lr"] * r))
 
                     gradUx[i] += (xs[i] - xs[j]) * attract_term - (xs[i] - xs[j]) * repel_term
                     gradUy[i] += (ys[i] - ys[j]) * attract_term - (ys[i] - ys[j]) * repel_term

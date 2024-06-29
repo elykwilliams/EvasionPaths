@@ -6,38 +6,80 @@
 # If not, visit: https://opensource.org/licenses/BSD-3-Clause
 # ************************************************************
 
+import sys, os
+# If you're having difficulty importing modules from the src directory, uncomment below
+# current_dir = os.path.dirname(os.path.realpath(__file__))
+# src_dir = os.path.join(current_dir, "..", "src")
+# sys.path.append(src_dir)
+
 from matplotlib.animation import FuncAnimation
 from plotting_tools import *
 from motion_model import *
 from time_stepping import *
 
+
+############################################################
 ## This is a sample script to show how to create animations using matplotlib.
 # In creating an animaiton, the timestepping must be done manually, and plotted
 # after each time step. This is done in the update function. It should be noted
 # that the simulation object should be in the global namespace so that it saves
 # its state (i.e. not passed by value into the update function).
 
-num_sensors = 20
-sensing_radius = 0.2
-timestep_size = 0.01
 
-filename_base = "SampleAnimation"
+
+############################################################
+# Define the parameters of the simulation
+num_sensors: int = 20
+sensing_radius: float = 0.2
+timestep_size: float = 0.01
 
 unit_square = RectangularDomain(spacing=sensing_radius)
 
-billiard = BilliardMotion(dt=timestep_size, vel=1, boundary=unit_square, n_int_sensors=num_sensors)
+my_boundary = unit_square
 
-simulation = EvasionPathSimulation(boundary=unit_square,
-                                   motion_model=billiard,
+
+
+############################################################
+# Define the motion model -- see src/motion_model.py for more details
+billiard = BilliardMotion(dt=timestep_size, 
+                          vel=1, 
+                          boundary=my_boundary, 
+                          n_int_sensors=num_sensors)
+
+# See the paper for the Dorsogna model to better understand the parameters
+dorsogna_coeff = {"Ca": 0.45, "la": 1, "Cr": 0.5, "lr": 0.1}
+dorsogna: MotionModel = Dorsogna(dt=timestep_size, 
+                                 boundary=my_boundary, 
+                                 max_vel=1, 
+                                 n_int_sensors=num_sensors, 
+                                 sensing_radius=sensing_radius, 
+                                 DO_coeff=dorsogna_coeff)
+
+brownian: MotionModel = BrownianMotion(dt=timestep_size,
+                                        boundary=my_boundary,
+                                        sigma=0.5)
+
+##############################
+# ASSIGN MOTION MODEL HERE
+my_motion_model = billiard
+
+
+
+############################################################
+# Run the simulation
+simulation = EvasionPathSimulation(boundary=my_boundary,
+                                   motion_model=my_motion_model,
                                    n_int_sensors=num_sensors,
                                    sensing_radius=sensing_radius,
                                    dt=timestep_size)
 
-
-# raise exception if simulation is over to kill animation.
+# Raise exception when the number of tme steps is reached to stop the simulation. 
 class SimulationOver(Exception):
     pass
 
+# File name for the resulting animation
+output_dir: str = "./output"
+filename_base: str = "SampleAnimation"
 
 # Update takes the frame number as an argument by default, other arguments
 # can be added by specifying fargs= ... in the FuncAnimation parameters
@@ -63,7 +105,7 @@ def update(_):
     show_state(simulation)
 
     # log the steps that were taken
-    with open(filename_base+".log", "a+") as file:
+    with open(output_dir + "/" + filename_base+".log", "a+") as file:
         file.write("{0:5.2f} \n".format(simulation.time))
 
 
@@ -84,8 +126,10 @@ def animate():
     finally:
         # uncomment below to show plot while computing
         # plt.show()
-        ani.save(filename_base+'.mp4')
+        ani.save(output_dir + "/" + filename_base+'.mp4')
 
 
+
+############################################################
 if __name__ == "__main__":
     animate()
