@@ -1,5 +1,5 @@
 # ******************************************************************************
-#  Copyright (c) 2023, Kyle Williams - All Rights Reserved.
+#  Copyright (c) 2024, Kyle Williams - All Rights Reserved.
 #  You may use, distribute and modify this code under the terms of the BSD-3
 #  license. You should have received a copy of the BSD-3 license with this file.
 #  If not, visit: https://opensource.org/licenses/BSD-3-Clause
@@ -86,7 +86,7 @@ class SensorNetwork:
 
         for sensor in self.mobile_sensors:
             self.motion_model.local_update(sensor, dt)
-            if sensor.pos not in self.domain:
+            if self.domain.intersects_boundary(sensor.old_pos, sensor.pos):
                 self.motion_model.reflect(self.domain, sensor)
 
     ## Update each sensor's position.

@@ -37,6 +37,10 @@ class Domain(ABC):
         ...
 
     @abstractmethod
+    def intersects_boundary(self, old_pos: tuple, new_pos: tuple):
+        ...
+
+    @abstractmethod
     def point_generator(self, n_sensors: int) -> list:
         ...
 
@@ -77,6 +81,9 @@ class RectangularDomain(Domain):
     ## Check if point is in domain.
     def __contains__(self, point: tuple) -> bool:
         return all(self.min[i] <= point[i] <= self.max[i] for i in range(self.dim))
+
+    def intersects_boundary(self, old_pos: tuple, new_pos: tuple):
+        return new_pos not in self
 
     @staticmethod
     def eps():
@@ -140,6 +147,9 @@ class CircularDomain(Domain):
     def __contains__(self, point: tuple) -> bool:
         return norm(point) < self.radius
 
+    def intersects_boundary(self, old_pos: tuple, new_pos: tuple):
+        return new_pos not in self
+
     ## Generate points in counter-clockwise order.
     def fence(self, spacing) -> list:
         # Initialize fence
@@ -179,6 +189,9 @@ class UnitCube(Domain):
     ## Determine if given point it in domain or not.
     def __contains__(self, point) -> bool:
         return all(0 <= px <= 1 for px in point)
+
+    def intersects_boundary(self, old_pos: tuple, new_pos: tuple):
+        return new_pos not in self
 
     ## Generate n_int sensors randomly inside the domain.
     def point_generator(self, n_sensors: int):
@@ -256,6 +269,9 @@ class BunimovichStadium(Domain):
         if (x - self.w) ** 2 + y ** 2 <= self.r ** 2:
             return True
         return False
+
+    def intersects_boundary(self, old_pos: tuple, new_pos: tuple):
+        return new_pos not in self
 
     def normal(self, pt):
         if pt[0] < -self.w:
