@@ -1,5 +1,5 @@
 # ******************************************************************************
-#  Copyright (c) 2023, Kyle Williams - All Rights Reserved.
+#  Copyright (c) 2024, Kyle Williams - All Rights Reserved.
 #  You may use, distribute and modify this code under the terms of the BSD-3
 #  license. You should have received a copy of the BSD-3 license with this file.
 #  If not, visit: https://opensource.org/licenses/BSD-3-Clause
@@ -49,7 +49,7 @@ class MotionModel(ABC):
     @staticmethod
     def reflect(domain: Domain, sensor: Sensor):
         old = sensor.old_pos
-        while sensor.pos not in domain:
+        while domain.intersects_boundary(old, sensor.pos):
             intersect = domain.get_intersection_point(old, sensor.pos)
             unit_normal = domain.normal(intersect)
             disp = sensor.pos - intersect
