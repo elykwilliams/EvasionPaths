@@ -6,7 +6,7 @@
 # If not, visit: https://opensource.org/licenses/BSD-3-Clause
 # ************************************************************
 
-from combinatorial_map import *
+from evasionpaths.combinatorial_map import *
 from gudhi.alpha_complex import AlphaComplex
 import networkx as nx
 

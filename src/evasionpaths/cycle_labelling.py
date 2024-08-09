@@ -7,7 +7,7 @@
 # ************************************************************
 
 
-from topological_state import *
+from evasionpaths.topological_state import *
 
 
 ## The CycleLabelling class manages the time dependant labelling of boundary cycles.

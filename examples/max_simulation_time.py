@@ -1,6 +1,6 @@
 # Kyle Williams 3/5/20
 import os
-from time_stepping import *
+from evasionpaths.time_stepping import *
 from joblib import Parallel, delayed
 import signal
 

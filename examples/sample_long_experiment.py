@@ -5,7 +5,7 @@ import os, sys
 # src_dir = os.path.join(current_dir, "..", "src")
 # sys.path.append(src_dir)
 
-from time_stepping import *
+from evasionpaths.time_stepping import *
 from joblib import Parallel, delayed
 
 ############################################################

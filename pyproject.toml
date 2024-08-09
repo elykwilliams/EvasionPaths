@@ -1,0 +1,33 @@
+[build-system]
+requires = ["setuptools>=42", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "EvasionPaths"
+version = "1.0.0"
+description = "Tracking of evasion paths in mobile sensor networks"
+authors = [
+    { name = "Kyle Williams", email = "williams.kyle@gmx.com" }
+]
+license = { text = "BSD-3" }
+readme = "README.md"
+requires-python = ">=3.9"
+dependencies = [
+    "ffmpeg",
+    "gudhi",
+    "matplotlib",
+    "networkx",
+    "numpy",
+    "scipy",
+    "joblib"
+]
+
+[project.urls]
+Homepage = "https://github.com/elykwilliams/EvasionPaths"
+
+#[tool.setuptools]
+#packages = ["evasionpaths"]  
+
+[tool.setuptools.packages.find]
+where = ["src"]  
+
