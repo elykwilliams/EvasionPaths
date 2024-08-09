@@ -24,7 +24,7 @@ To activate:
 `conda activate EvasionPaths-env`
 
 To deactivate:
-`conda deactivate EvasionPaths-env`
+`conda deactivate`
 
 # Configuation in Windows
 Use the Anaconda Navigator to import the environment.yml file. This will create the environment. 
@@ -34,5 +34,21 @@ Finally, be sure to set the `src` folder as a Source folder in your IDE (otherwi
 # Documentation
 Documentation for this project can be found [here](https://elykwilliams.github.io/EvasionPaths/)
 
+# Example Files
+To familiarize yourself with how to run the code, we include four example files in the examples directory. 
 
+- sample_experiment.py
+    - This will run a simulation in a basic manner, running the simulations sequentially and without descriptive exceptions. 
+
+- parallel_experiments.py
+    - This will run a batch of simulations in parallel to reduce run time. 
+
+- sample_long_experiment.py
+    - This will run a batch of simulations in parallel with descriptive exceptions raised if the simulation fails. 
+
+- sample_animation.py
+    - This will run a single simulation and produce an animation so that you can visualize different configurations of sensors and models of motion. 
+
+
+There is also a file sample_run.sh included in the examples directory that can be used to run any of the above scripts. 
 
