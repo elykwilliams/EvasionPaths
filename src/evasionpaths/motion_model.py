@@ -6,7 +6,7 @@
 # If not, visit: https://opensource.org/licenses/BSD-3-Clause
 # ************************************************************
 
-from boundary_geometry import *
+from evasionpaths.boundary_geometry import *
 from numpy import sqrt, random, sin, cos, pi, mean
 from numpy.linalg import norm
 from numpy import array

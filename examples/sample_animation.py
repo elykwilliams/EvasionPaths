@@ -13,9 +13,9 @@ import sys, os
 # sys.path.append(src_dir)
 
 from matplotlib.animation import FuncAnimation
-from plotting_tools import *
-from motion_model import *
-from time_stepping import *
+from evasionpaths.plotting_tools import *
+from evasionpaths.motion_model import *
+from evasionpaths.time_stepping import *
 
 
 ############################################################

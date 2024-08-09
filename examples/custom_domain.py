@@ -7,9 +7,9 @@
 # ************************************************************
 
 from matplotlib.animation import FuncAnimation
-from plotting_tools import *
-from motion_model import *
-from time_stepping import *
+from evasionpaths.plotting_tools import *
+from evasionpaths.motion_model import *
+from evasionpaths.time_stepping import *
 from numpy import arctan2
 
 ## This is a sample script to show how to create animations using matplotlib.

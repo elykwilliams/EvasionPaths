@@ -6,8 +6,8 @@
 # If not, visit: https://opensource.org/licenses/BSD-3-Clause
 # ************************************************************
 
-from time_stepping import *
-from motion_model import *
+from evasionpaths.time_stepping import *
+from evasionpaths.motion_model import *
 import matplotlib.pyplot as plt
 
 
