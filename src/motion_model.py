@@ -51,7 +51,12 @@ class MotionModel(ABC):
         old = sensor.old_pos
         while sensor.pos not in domain:
             intersect = domain.get_intersection_point(old, sensor.pos)
+            if intersect is None:
+                raise ValueError("Intersection point is None. Check the domain's intersection function.")
+
             unit_normal = domain.normal(intersect)
+            if unit_normal is None:
+                raise ValueError("Normal vector is None. Check the domain's normal function.")
             disp = sensor.pos - intersect
             sensor.pos -= 2 * np.dot(disp, unit_normal) * unit_normal
 

@@ -9,6 +9,7 @@ from dataclasses import dataclass
 from itertools import combinations
 
 import networkx as nx
+import numpy as np
 
 from alpha_complex import AlphaComplex, Simplex
 from combinatorial_map import BoundaryCycle, RotationInfo2D, CombinatorialMap2D, CombinatorialMap, CombinatorialMap3D, \
@@ -62,6 +63,9 @@ class Topology:
         return self._graph
 
     def is_connected_cycle(self, cycle):
+        # print(f"All nodes in graph: {self.face_connectivity_graph.nodes}")
+        # print(f"Checking path from {Simplex(next(iter(cycle)).nodes)} to {Simplex(range(self.dim))}")
+
         return nx.has_path(self.face_connectivity_graph, Simplex(next(iter(cycle)).nodes), Simplex(range(self.dim)))
 
     def is_face_connected(self):

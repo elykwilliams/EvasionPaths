@@ -10,7 +10,7 @@ from sensor_network import SensorNetwork
 from state_change import StateChange
 from topology import generate_topology
 from utilities import MaxRecursionDepthError
-
+from tqdm import tqdm
 
 class EvasionPathSimulation:
     """
@@ -51,13 +51,20 @@ class EvasionPathSimulation:
 
         :return: The simulation time.
         """
-        while self.cycle_label.has_intruder():
-            try:
-                self.do_timestep()
-            except MaxRecursionDepthError:
-                raise  # do self_dump
-            if 0 < self.Tend < self.time:
-                break
+        print("Initial state of cycle_label:")
+        print(f"Has intruder? {self.cycle_label.has_intruder()}")
+        # Define the total time for the progress bar if Tend is set, otherwise use an arbitrary large value
+        with tqdm(total=float('inf'), desc="Simulation Progress", unit=" ts") as pbar:
+            while self.cycle_label.has_intruder():
+                try:
+                    self.do_timestep()
+                except MaxRecursionDepthError:
+                    raise  # do self_dump
+
+                pbar.set_description(f"Current Time: {self.time:.2f}")
+                pbar.update(0)  # Do not increment, just update display
+                if 0 < self.Tend < self.time:
+                    break
         # self.cycle_label.finalize(self.time)
         return self.time
 
@@ -71,7 +78,7 @@ class EvasionPathSimulation:
         :param level: The recursion level of the adaptive time-stepping. Defaults to 0.
         """
         adaptive_dt = self.dt / (2 ** level)
-
+        # print("dotimestep, level:", level)
         # Split interval in two
         for loop_id in range(2):
             self.sensor_network.move(adaptive_dt)

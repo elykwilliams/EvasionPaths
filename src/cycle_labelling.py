@@ -14,7 +14,8 @@ class CycleLabelling:
 
     def __init__(self, topology: Topology):
         self.label = {g: True for g in topology.homology_generators if topology.is_connected_cycle(g)}
-
+        # self.label = {g: True for index, g in enumerate(topology.homology_generators) if print(f"Checking cycle at index {index}") or topology.is_connected_cycle(g)}
+        print("Initial labels: ", (list(self.label.values())))
         self.history = [(self.label, (0,)*topology.dim*2, (0, 0), 0)]
 
         self.reeb_graph = ReebGraph(self.label)

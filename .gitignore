@@ -2,7 +2,9 @@
 *.mp4
 output
 experiments
+atomic_changes_frequencies
 env
+
 
 ## Core latex/pdflatex auxiliary files:
 *.aux

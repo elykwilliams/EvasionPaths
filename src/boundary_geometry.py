@@ -15,7 +15,8 @@ from numpy import arange, pi
 from numpy.linalg import norm
 
 from utilities import pol2cart
-
+from alpha_complex import AlphaComplex
+from sensor_network import Sensor
 
 ## Specify domain geometry.
 # The domain class handles all issues relating to the
@@ -81,7 +82,7 @@ class RectangularDomain(Domain):
     @staticmethod
     def eps():
         epsilon = pow(10, -4)
-        return random.uniform(-epsilon, epsilon)*0
+        return random.uniform(-epsilon, epsilon) * 0
 
     ## Generate fence in counter-clockwise order.
     # spacing should be less than 2*sensing_radius.
@@ -92,11 +93,13 @@ class RectangularDomain(Domain):
         vy_min, vy_max = self.min[1] - dx, self.max[1] + dx
 
         points = []
-        points.extend([(x+self.eps(), vy_min+self.eps()) for x in np.arange(vx_min, 0.999 * vx_max, spacing)])  # bottom
-        points.extend([(vx_max+self.eps(), y+self.eps()) for y in np.arange(vy_min, 0.999 * vx_max, spacing)])  # right
-        points.extend([(self.max[0] - x+self.eps(), vy_max+self.eps())
+        points.extend(
+            [(x + self.eps(), vy_min + self.eps()) for x in np.arange(vx_min, 0.999 * vx_max, spacing)])  # bottom
+        points.extend(
+            [(vx_max + self.eps(), y + self.eps()) for y in np.arange(vy_min, 0.999 * vx_max, spacing)])  # right
+        points.extend([(self.max[0] - x + self.eps(), vy_max + self.eps())
                        for x in np.arange(vx_min, 0.999 * vx_max, spacing)])  # top
-        points.extend([(vx_min+self.eps(), self.max[1] - y+self.eps())
+        points.extend([(vx_min + self.eps(), self.max[1] - y + self.eps())
                        for y in np.arange(vy_min, 0.999 * vy_max, spacing)])  # left
         return points
 
@@ -113,8 +116,8 @@ class RectangularDomain(Domain):
         return x_pts, y_pts
 
     def normal(self, boundary_point):
-        center = 0.5*np.array([self.max[0] + self.min[0], self.max[1] + self.min[1]])
-        offset_point = boundary_point - center      # center domain at (0, 0)
+        center = 0.5 * np.array([self.max[0] + self.min[0], self.max[1] + self.min[1]])
+        offset_point = boundary_point - center  # center domain at (0, 0)
         if self.min[0] - center[0] < offset_point[0] < self.max[0] - center[0]:
             normal = np.array([0, offset_point[1]])
         else:
@@ -128,7 +131,7 @@ class RectangularDomain(Domain):
             tvals.append((self.max[dim] - old[dim]) / (new[dim] - old[dim]))
             tvals.append((self.min[dim] - old[dim]) / (new[dim] - old[dim]))
         t = min(filter(lambda x: 0 < x < 1, tvals))
-        return old + t*(new - old)
+        return old + t * (new - old)
 
 
 class CircularDomain(Domain):
@@ -188,13 +191,34 @@ class UnitCube(Domain):
         return []
 
     def normal(self, boundary_point):
-        center = 0.5*np.array([self.max[d] + self.min[d] for d in range(self.dim)])
-        offset_point = boundary_point - center      # center domain at (0, 0)
-        if self.min[0] < boundary_point[0] < self.max[0]:
-            normal = np.array([0, offset_point[1]])
+        """
+        TODO: Fix this!!!!!!
+        """
+        # center = 0.5 * np.array([self.max[d] + self.min[d] for d in range(self.dim)])
+        # offset_point = boundary_point - center  # center domain at (0, 0, 0)
+        # print(f"Boundary Point: {boundary_point}, Center: {center}, Offset: {offset_point}")
+        #
+        # if self.min[0] < boundary_point[0] < self.max[0]:
+        #     normal = np.array([0, offset_point[1]])
+        # else:
+        #     normal = np.array([offset_point[0], 0])
+        # return normal / np.linalg.norm(normal)
+
+        center = 0.5 * np.array([self.max[d] + self.min[d] for d in range(self.dim)])
+        offset_point = boundary_point - center  # Center the domain at (0, 0, 0)
+
+        # Determine which face the boundary point is on by checking x, y, or z coordinates
+        if np.isclose(boundary_point[0], self.min[0]) or np.isclose(boundary_point[0], self.max[0]):
+            normal = np.array([offset_point[0], 0, 0])  # Normal along x-axis
+        elif np.isclose(boundary_point[1], self.min[1]) or np.isclose(boundary_point[1], self.max[1]):
+            normal = np.array([0, offset_point[1], 0])  # Normal along y-axis
+        elif np.isclose(boundary_point[2], self.min[2]) or np.isclose(boundary_point[2], self.max[2]):
+            normal = np.array([0, 0, offset_point[2]])  # Normal along z-axis
         else:
-            normal = np.array([offset_point[0], 0])
+            raise ValueError(f"Point {boundary_point} is not on the boundary of the domain.")
+
         return normal / np.linalg.norm(normal)
+
 
     def get_intersection_point(self, old, new):
         assert (old in self and new not in self)
@@ -203,7 +227,7 @@ class UnitCube(Domain):
             tvals.append((self.max[dim] - old[dim]) / (new[dim] - old[dim]))
             tvals.append((self.min[dim] - old[dim]) / (new[dim] - old[dim]))
         t = min(filter(lambda x: 0 < x < 1, tvals))
-        return old + t*(new - old)
+        return old + t * (new - old)
 
 
 ## Generate boundary points in counterclockwise order.
@@ -238,6 +262,56 @@ def UnitCubeFence(spacing):
     fence_sensors = np.concatenate((x0_face, y0_face, z0_face, x1_face, y1_face, z1_face))
     return np.unique(fence_sensors, axis=0)
 
+
+def reindex_for_simplex(alpha_complex, fence_points):
+    # Traverse the 2-simplices in the alpha complex
+    for simplex, _ in alpha_complex.simplex_tree.get_filtration():
+        if len(simplex) == 3 and 0 in simplex:  # Find the first 2-simplice with vertex 0
+            print(f"Found 2-simplex containing vertex 0: {simplex}")
+            # Swap indices to ensure {0, 1, 2}
+            indices = list(simplex)
+            indices.remove(0)  # Remove 0 to get the other two indices
+            idx1, idx2 = indices
+
+            # Swap points so that they correspond to {0, 1, 2}
+            new_fence = np.copy(fence_points)
+            new_fence[[1, 2]] = fence_points[[idx1, idx2]]
+            new_fence[[idx1, idx2]] = fence_points[[1, 2]]
+            return True, new_fence
+
+
+def get_unitcube_fence(spacing):
+    epsilon = 1e-5  # Perturbation factor
+    dx = np.sqrt(3) * spacing / 2
+
+    # Create a grid of points along x, y, and z coordinates
+    points = np.arange(-dx, 1.001 + dx, spacing)
+    grid = list(product(points, points))
+
+    # Generate perturbed grid points for each face of the unit cube
+    x0_face = [(-dx + random.uniform(-epsilon, epsilon), y + random.uniform(-epsilon, epsilon),
+                z + random.uniform(-epsilon, epsilon)) for y, z in grid]
+    y0_face = [(x + random.uniform(-epsilon, epsilon), -dx + random.uniform(-epsilon, epsilon),
+                z + random.uniform(-epsilon, epsilon)) for x, z in grid]
+    z0_face = [(x + random.uniform(-epsilon, epsilon), y + random.uniform(-epsilon, epsilon),
+                -dx + random.uniform(-epsilon, epsilon)) for x, y in grid]
+    x1_face = [(1 + dx + random.uniform(-epsilon, epsilon), y + random.uniform(-epsilon, epsilon),
+                z + random.uniform(-epsilon, epsilon)) for y, z in grid]
+    y1_face = [(x + random.uniform(-epsilon, epsilon), 1 + random.uniform(-epsilon, epsilon),
+                z + random.uniform(-epsilon, epsilon)) for x, z in grid]
+    z1_face = [(x + random.uniform(-epsilon, epsilon), y + random.uniform(-epsilon, epsilon),
+                1 + random.uniform(-epsilon, epsilon)) for x, y in grid]
+
+    fence_sensors = np.concatenate((x0_face, y0_face, z0_face, x1_face, y1_face, z1_face))
+    fence_sensors = np.unique(fence_sensors, axis=0)
+    # CHECK IF WE NEED THE SQRT!!!!!!!
+    alpha_complex = AlphaComplex(fence_sensors, spacing)
+    _, reordered_sensors = reindex_for_simplex(alpha_complex, fence_sensors)
+    fence = []
+    for sensor in reordered_sensors:
+        s = Sensor(sensor, (0, 0, 0), spacing, True)
+        fence.append(s)
+    return fence
 
 class BunimovichStadium(Domain):
 
@@ -275,7 +349,7 @@ class BunimovichStadium(Domain):
 
     def intersect_circ(self, old_pos, new_pos):
         center = self.get_circle_center(old_pos, new_pos)
-        a = np.linalg.norm(new_pos - old_pos)**2
+        a = np.linalg.norm(new_pos - old_pos) ** 2
         b = 2 * np.dot(old_pos - center, new_pos - old_pos)
         c = np.linalg.norm(old_pos - center) ** 2 - self.r ** 2
         t = min(filter(lambda x: 0 < x < 1, np.roots([a, b, c])))
@@ -319,7 +393,7 @@ class BunimovichStadium(Domain):
         x4 = np.array([-self.w, self.w])  # top length
         y4 = np.array([self.r, self.r])
 
-        x = np.concatenate((x1, x3, x2,  x4))
+        x = np.concatenate((x1, x3, x2, x4))
         y = np.concatenate((y1, y3, y2, y4))
         return x, y
 
@@ -327,7 +401,7 @@ class BunimovichStadium(Domain):
 
         fence = []  # List to store the fence points
 
-        theta = np.linspace(np.pi / 2, 0.999*3 * np.pi / 2,
+        theta = np.linspace(np.pi / 2, 0.999 * 3 * np.pi / 2,
                             int(np.ceil(2 * np.pi * self.r / spacing)))  # Angles spaced apart by 'spacing'
         x_pts = (self.r + (np.sqrt(3) / 2) * spacing) * np.cos(theta) + -self.w  # x-coordinates of the fence points
         y_pts = (self.r + (np.sqrt(3) / 2) * spacing) * np.sin(theta)  # y-coordinates of the fence points
@@ -335,7 +409,7 @@ class BunimovichStadium(Domain):
         for x, y in zip(x_pts, y_pts):
             fence.append((x, y))
 
-        for i in range(int(2*self.w // spacing)+1):
+        for i in range(int(2 * self.w // spacing) + 1):
             x1 = -self.w + i * spacing
             y1 = -self.r - (np.sqrt(3) / 2) * spacing
 
@@ -351,7 +425,7 @@ class BunimovichStadium(Domain):
         for x, y in zip(x2, y2):
             fence.append((x, y))
 
-        for i in range(int(2*self.w // spacing)+1):
+        for i in range(int(2 * self.w // spacing) + 1):
             x3 = self.w - i * spacing
             y3 = self.r + (np.sqrt(3) / 2) * spacing
 

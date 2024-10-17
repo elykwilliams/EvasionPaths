@@ -85,7 +85,7 @@ class StateChange:
 
     def is_local_change_added(self):
         for i in range(1, self.dim):
-            for j in range(i, self.dim+1):
+            for j in range(i+1, self.dim+1):
                 for edge in self.simplices_difference[i].added():
                     for face in self.simplices_difference[j].added():
                         if not face.is_subsimplex(edge):
@@ -94,7 +94,7 @@ class StateChange:
 
     def is_local_change_removed(self):
         for i in range(1, self.dim):
-            for j in range(i, self.dim+1):
+            for j in range(i+1, self.dim+1):
                 for edge in self.simplices_difference[i].removed():
                     for face in self.simplices_difference[j].removed():
                         if not face.is_subsimplex(edge):
@@ -103,7 +103,6 @@ class StateChange:
 
     def is_atomic_change(self):
         case = self.alpha_complex_change()
-
         if case not in atomic_change_list:
             return False
 
