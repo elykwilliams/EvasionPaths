@@ -1,7 +1,7 @@
 *.gif
 *.mp4
 output
-experiments
+#experiments
 atomic_changes_frequencies
 env
 
