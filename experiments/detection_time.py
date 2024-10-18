@@ -20,8 +20,8 @@ from tqdm import tqdm
 
 # 69,42 are working
 
-num_sensors: int = 20
-sensing_radius: float = 0.12
+num_sensors: int = 10
+sensing_radius: float = 0.2
 timestep_size: float = 0.05
 sensor_velocity = 1
 n_runs: int = 10

@@ -106,6 +106,9 @@ class StateChange:
         if case not in atomic_change_list:
             return False
 
+        elif case in trivial:
+            return True
+
         elif case in simplex_added:
             return self.is_local_change_added()
 
