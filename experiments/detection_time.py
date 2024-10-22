@@ -5,7 +5,7 @@
 #  If not, visit: https://opensource.org/licenses/BSD-3-Clause
 # ******************************************************************************
 import os
-
+import logging
 from boundary_geometry import UnitCube, UnitCubeFence, get_unitcube_fence
 from motion_model import BilliardMotion
 from sensor_network import Sensor, generate_mobile_sensors, SensorNetwork, read_fence, generate_fence_sensors
@@ -26,6 +26,11 @@ timestep_size: float = 0.05
 sensor_velocity = 1
 n_runs: int = 10
 
+log_name = f"{num_sensors}sensors_{sensing_radius}r_{n_runs}nr"
+log_file = log_name + ".log"
+logging.basicConfig(filename=log_file, level=logging.INFO,
+                    format='%(asctime)s - %(levelname)s - %(message)s')
+
 
 domain = UnitCube()
 motion_model = BilliardMotion()
@@ -45,21 +50,27 @@ points = domain.point_generator(num_sensors)
 output_dir: str = "./output"
 r_string = str(sensing_radius).replace(".", "")
 
-filename_base: str = f"{n_runs}_runs_{num_sensors}s_{r_string}r_10_12"
+filename_base: str = f"{n_runs}_runs_{num_sensors}s_{r_string}r_10_22"
 
 def simulate() -> float:
-    print("Starting a simulation.")
-    mobile_sensors = generate_mobile_sensors(domain, num_sensors, sensing_radius, sensor_velocity)
-    sensor_network = SensorNetwork(
-        mobile_sensors=mobile_sensors,
-        motion_model=motion_model,
-        fence=fence,
-        sensing_radius=sensing_radius,
-        domain=domain
-    )
-    simulation = EvasionPathSimulation(sensor_network, timestep_size)
-    print("Simulation set up")
-    return simulation.run()
+    logging.info("Starting a simulation.")
+    try:
+
+        mobile_sensors = generate_mobile_sensors(domain, num_sensors, sensing_radius, sensor_velocity)
+        sensor_network = SensorNetwork(
+            mobile_sensors=mobile_sensors,
+            motion_model=motion_model,
+            fence=fence,
+            sensing_radius=sensing_radius,
+            domain=domain
+        )
+        simulation = EvasionPathSimulation(sensor_network, timestep_size)
+        logging.info("Simulation set up")
+        print("Simulation set up")
+        return simulation.run()
+    except Exception as e:
+        logging.error(f"Simulation failed due to {e}. Retrying...")
+        return None
 
 
 def output_data(filename: str, data_points: list) -> None:
@@ -72,8 +83,13 @@ def output_data(filename: str, data_points: list) -> None:
 
 
 def run_experiment() -> None:
-    times = [simulate() for _ in tqdm(range(n_runs))]
-    print(times)
+    times = []
+    while len(times) < n_runs:
+        result = simulate()
+        if result is not None:
+            times.append(result)
+        logging.info(f"Simulation completed successfully: {result}. Total completed: {len(times)}/{n_runs}")
+    logging.info(f"All {n_runs} simulations completed.")
     filename = output_dir + "/" + filename_base + ".txt"
     output_data(filename, times)
 
