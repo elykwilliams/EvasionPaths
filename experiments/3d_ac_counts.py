@@ -167,16 +167,16 @@ def simulate(n_sensors, radii, velocities, dt, output_file, max_atomic_changes) 
 if __name__ == "__main__":
     num_sensors: int = 10
     print("Number of Mobile Sensors: ", num_sensors)
-    sensing_radius: float = 0.3
+    # sensing_radius: float = 0.3
 
     lower_bound = 0.02
     upper_bound = 0.3
     subdivisions = 20  # Adjust this as needed
 
-    # sensing_radii = [round(lower_bound + i * (upper_bound - lower_bound) / (subdivisions - 1), 2) for i in
-    #                  range(subdivisions)]
-    # sensing_radii = sensing_radii[::-1]
-    # print(sensing_radii)
+    sensing_radii = [round(lower_bound + i * (upper_bound - lower_bound) / (subdivisions - 1), 2) for i in
+                     range(subdivisions)]
+    sensing_radii = sensing_radii[::-1]
+    print(sensing_radii)
 
     timestep_size: float = 0.05
     sensor_velocity = 1
@@ -194,22 +194,14 @@ if __name__ == "__main__":
     if not os.path.exists(output_dir):
         os.mkdir(output_dir)
 
-    simulate(
+    for sensing_radius in sensing_radii:
+        print("Current Radius: ", sensing_radius)
+        csv_fn = output_dir + str(sensing_radius)
+        simulate(
             n_sensors=num_sensors,
             radii=sensing_radius,
             velocities=sensor_velocity,
             dt=timestep_size,
-            output_file=log_name,
+            output_file=csv_fn,
             max_atomic_changes=max_changes)
-
-    # for sensing_radius in sensing_radii:
-    #     print("Current Radius: ", sensing_radius)
-    #     csv_fn = output_dir + str(sensing_radius)
-    #     simulate(
-    #         n_sensors=num_sensors,
-    #         radii=sensing_radius,
-    #         velocities=sensor_velocity,
-    #         dt=timestep_size,
-    #         output_file=csv_fn,
-    #         max_atomic_changes=max_changes)
 
