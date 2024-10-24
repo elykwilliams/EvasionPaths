@@ -182,7 +182,7 @@ if __name__ == "__main__":
     sensor_velocity = 1
     n_runs: int = 10
     # how many changes am I looking for.
-    max_changes = 5
+    max_changes = 1000
 
     log_name = f"AC_count_{num_sensors}"
     log_file = log_name + ".log"
