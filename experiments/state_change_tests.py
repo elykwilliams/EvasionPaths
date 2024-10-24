@@ -32,23 +32,36 @@ def is_local_change_added(self):
         return True
 
 if __name__ == "__main__":
-    case = (1, 0, 2, 0, 1, 0)
-    one_added = {Simplex({732, 742})}
+    case = (0, 0, 0, 0, 0, 0)
+    one_added = set()
     one_removed = set()
-    two_added = {Simplex({732, 742, 735}), Simplex({732, 733, 742})}
+    two_added = set()
     two_removed = set()
-    three_added = {Simplex({732, 733, 742, 735})}
+    three_added = set()
     three_removed = set()
 
-    for simplex1 in one_added:
-        for simplex2 in two_added:
-            print("1: ", simplex2.is_subsimplex(simplex1))
+    trivial = [(0, 0, 0, 0), (0, 0, 0, 0, 0, 0)]
 
-    for simplex1 in one_added:
-        for simplex2 in three_added:
-            print("2: ", simplex2.is_subsimplex(simplex1))
-            print(simplex2, simplex1)
+    simplex_removed = [
+        (0, 1, 0, 0),  (0, 1, 0, 1),
+        (0, 0, 0, 1),
+        (0, 1, 0, 0, 0, 0), (0, 1, 0, 1, 0, 0), (0, 1, 0, 2, 0, 1),
+        (0, 0, 0, 1, 0, 0), (0, 0, 0, 1, 0, 1),
+        (0, 0, 0, 0, 0, 1)
+    ]
 
-    for simplex1 in two_added:
-        for simplex2 in three_added:
-            print("3: ", simplex2.is_subsimplex(simplex1))
+    simplex_added = [
+        (1, 0, 0, 0),
+        (0, 0, 1, 0), (1, 0, 1, 0),
+        (1, 0, 0, 0, 0, 0),
+        (0, 0, 1, 0, 0, 0), (1, 0, 1, 0, 0, 0),
+        (0, 0, 0, 0, 1, 0), (0, 0, 1, 0, 1, 0), (1, 0, 2, 0, 1, 0)
+    ]
+
+    delaunay_change = [
+        (1, 1, 2, 2), (0, 1, 1, 3, 2, 3), (1, 0, 3, 1, 3, 2)
+    ]
+
+    atomic_change_list = trivial + simplex_removed + simplex_added + delaunay_change
+    print(case in atomic_change_list)
+    print(case in trivial)
