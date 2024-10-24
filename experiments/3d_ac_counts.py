@@ -38,13 +38,15 @@ class AtomicChangeDetection:
         with tqdm(total=float('inf'), desc="Atomic Changes", unit=" ac") as pbar:
             while True:
                 # Recalculate the total number of atomic changes after each timestep
-                total_atomic_changes = sum(self.atomic_changes.values())
                 print(f"current atomic changes: {self.atomic_changes}")
-                print(f"Total atomic changes so far: {total_atomic_changes} / {self.max_ac}")
+                print(f"Total atomic changes so far: {self.total_atomic_changes()} / {self.max_ac}")
 
                 # Check if we have reached the maximum number of atomic changes
-                if total_atomic_changes >= self.max_ac:
+                if self.total_atomic_changes() >= self.max_ac:
                     print("Reached the maximum number of atomic changes, stopping simulation.")
+                    break
+                elif sum(self.atomic_changes.values()) > 100 * self.max_ac:
+                    print("Too many trivial changes, adjust the radius.")
                     break
 
                 try:
@@ -53,13 +55,12 @@ class AtomicChangeDetection:
                     raise  # Handle recursion depth issues
 
                 # Recalculate total_atomic_changes after a change is detected
-                total_atomic_changes = sum(self.atomic_changes.values())
-                pbar.set_description(f"Num AC's: {total_atomic_changes}")
+                pbar.set_description(f"Num AC's: {self.total_atomic_changes()}")
                 pbar.update(1)  # Increment progress
 
                 self.save_atomic_changes_csv()
 
-                if total_atomic_changes >= self.max_ac:
+                if self.total_atomic_changes() >= self.max_ac:
                     print("Completed required atomic changes.")
                     break
 
@@ -99,8 +100,7 @@ class AtomicChangeDetection:
                 else:
                     self.atomic_changes[case] += 1
 
-                total_atomic_changes = sum(self.atomic_changes.values())
-                sys.stdout.write(f"\rTotal Atomic Changes: {total_atomic_changes}")  # Use carriage return to overwrite
+                sys.stdout.write(f"\rTotal Atomic Changes: {self.total_atomic_changes()}")  # Use carriage return to overwrite
                 sys.stdout.flush()  # Flush to ensure the output is updated immediately
 
                 self.update(state_change, adaptive_dt)
@@ -108,8 +108,11 @@ class AtomicChangeDetection:
             if level == 0:
                 break
 
-            if sum(self.atomic_changes.values()) > self.max_ac:
+            if self.total_atomic_changes() > self.max_ac:
                 break
+
+    def total_atomic_changes(self):
+        return sum(value for key, value in self.atomic_changes.items() if key != "(0, 0, 0, 0, 0, 0)")
 
     def save_atomic_changes_csv(self) -> None:
         output_csv = self.save_file + ".csv"
@@ -170,7 +173,7 @@ if __name__ == "__main__":
     # sensing_radius: float = 0.3
 
     lower_bound = 0.02
-    upper_bound = 0.3
+    upper_bound = 0.24
     subdivisions = 20  # Adjust this as needed
 
     sensing_radii = [round(lower_bound + i * (upper_bound - lower_bound) / (subdivisions - 1), 2) for i in
