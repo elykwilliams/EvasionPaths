@@ -13,6 +13,8 @@ import random
 from tqdm import tqdm
 from state_change import StateChange
 from utilities import MaxRecursionDepthError
+import argparse
+
 
 
 def export_to_csv(counts, number, radius, f_path):
@@ -176,13 +178,32 @@ def simulate(n_sensors, radii, velocities, dt, output_file, max_atomic_changes) 
 
 
 if __name__ == "__main__":
-    num_sensors: int = 10
-    print("Number of Mobile Sensors: ", num_sensors)
-    # sensing_radius: float = 0.3
+    parser = argparse.ArgumentParser(description="Run the atomic change detection simulation with specified parameters.")
 
-    lower_bound = 0.02
-    upper_bound = 0.24
-    subdivisions = 20  # Adjust this as needed
+    # Define arguments for the main parameters
+    parser.add_argument("--num_sensors", type=int, default=10, help="Number of mobile sensors")
+    parser.add_argument("--lower_bound", type=float, default=0.02, help="Lower bound of sensing radius")
+    parser.add_argument("--upper_bound", type=float, default=0.24, help="Upper bound of sensing radius")
+    parser.add_argument("--subdivisions", type=int, default=20, help="Number of subdivisions for sensing radius range")
+    parser.add_argument("--timestep_size", type=float, default=0.05, help="Size of each timestep")
+    parser.add_argument("--sensor_velocity", type=float, default=1, help="Velocity of the sensors")
+    parser.add_argument("--max_changes", type=int, default=5, help="Maximum number of atomic changes to look for")
+    parser.add_argument("--output_dir", type=str, default="./output/atomic_change_counts/", help="Directory to save output CSV files")
+
+    # Parse the arguments
+    args = parser.parse_args()
+
+    # Use parsed arguments
+    num_sensors = args.num_sensors
+    lower_bound = args.lower_bound
+    upper_bound = args.upper_bound
+    subdivisions = args.subdivisions
+    timestep_size = args.timestep_size
+    sensor_velocity = args.sensor_velocity
+    max_changes = args.max_changes
+    output_dir = args.output_dir
+
+    print("Number of Mobile Sensors: ", num_sensors)
 
     sensing_radii = [round(lower_bound + i * (upper_bound - lower_bound) / (subdivisions - 1), 2) for i in
                      range(subdivisions)]
@@ -192,18 +213,10 @@ if __name__ == "__main__":
     # sensing_radii = [0.24]
     print(sensing_radii)
 
-    timestep_size: float = 0.05
-    sensor_velocity = 1
-    n_runs: int = 10
-    # how many changes am I looking for.
-    max_changes = 5
-
     log_name = f"AC_count_{num_sensors}"
     log_file = log_name + ".log"
     logging.basicConfig(filename=log_file, level=logging.INFO,
                         format='%(asctime)s - %(levelname)s - %(message)s')
-
-    output_dir: str = "./output/atomic_change_counts/"
 
     if not os.path.exists(output_dir):
         os.mkdir(output_dir)
