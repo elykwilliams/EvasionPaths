@@ -15,17 +15,35 @@ from state_change import StateChange
 from utilities import MaxRecursionDepthError
 
 
+def export_to_csv(counts, number, radius, f_path):
+    # Create the filename with the timestamp, radius, and number
+    filename = f"radius_{radius}_num_{number}.csv"
+    file_path = os.path.join(f_path, filename)
+    with open(file_path, 'w', newline='') as csvfile:
+        writer = csv.writer(csvfile)
+
+        # Write the header row
+        writer.writerow(['Radius:', radius])
+        writer.writerow(['Number:', number])
+        writer.writerow(['Element', 'Count'])
+
+        # Write each row of data
+        for element, num in counts.items():
+            if element != "((0, 0, 0, 0, 0, 0), (0, 0))":
+                writer.writerow([element, num])
+
+
 class AtomicChangeDetection:
     def __init__(self,
                  sensor_network: SensorNetwork,
                  dt: float,
                  end_time: int = 0,
-                 save_file: str = "atomic_changes.pkl",
+                 f_path: str = ".",
                  max_ac: int = 0) -> None:
         self.dt = dt
         self.Tend = end_time
         self.time = 0
-        self.save_file = save_file
+        self.f_path = f_path
 
         self.sensor_network = sensor_network
         self.topology = generate_topology(sensor_network.points, sensor_network.sensing_radius)
@@ -34,20 +52,18 @@ class AtomicChangeDetection:
         self.max_ac = max_ac
 
     def run(self) -> float:
-        print("max ac", self.max_ac)
         with tqdm(total=float('inf'), desc="Atomic Changes", unit=" ac") as pbar:
             while True:
                 # Recalculate the total number of atomic changes after each timestep
-                print(f"current atomic changes: {self.atomic_changes}")
                 print(f"Total atomic changes so far: {self.total_atomic_changes()} / {self.max_ac}")
 
                 # Check if we have reached the maximum number of atomic changes
                 if self.total_atomic_changes() >= self.max_ac:
                     print("Reached the maximum number of atomic changes, stopping simulation.")
                     break
-                elif sum(self.atomic_changes.values()) > 100 * self.max_ac:
-                    print("Too many trivial changes, adjust the radius.")
-                    break
+                # elif sum(self.atomic_changes.values()) > 100 * self.max_ac:
+                #     print("Too many trivial changes, adjust the radius.")
+                #     break
 
                 try:
                     self.do_timestep()
@@ -61,12 +77,12 @@ class AtomicChangeDetection:
                 self.save_atomic_changes_csv()
 
                 if self.total_atomic_changes() >= self.max_ac:
-                    print("Completed required atomic changes.")
+                    print("breaking")
                     break
 
                 # Check if the time limit is reached (optional)
                 if 0 < self.Tend < self.time:
-                    print("out of time")
+                    print("Out of time")
                     break
 
         return self.time
@@ -93,14 +109,14 @@ class AtomicChangeDetection:
                 # self.topology_stack.append(new_topology)
                 self.do_timestep(level + 1)
             else:
-                case = str(state_change.alpha_complex_change())
+                case = str((state_change.alpha_complex_change(),state_change.boundary_cycle_change()))
                 if case not in self.atomic_changes:
                     self.atomic_changes[case] = 1
                     print(f"Adding new case: {case}")  # Debugging new case
                 else:
                     self.atomic_changes[case] += 1
-
-                sys.stdout.write(f"\rTotal Atomic Changes: {self.total_atomic_changes()}")  # Use carriage return to overwrite
+                sys.stdout.write(
+                    f"\rTotal Atomic Changes: {self.total_atomic_changes()}")  # Use carriage return to overwrite
                 sys.stdout.flush()  # Flush to ensure the output is updated immediately
 
                 self.update(state_change, adaptive_dt)
@@ -108,26 +124,18 @@ class AtomicChangeDetection:
             if level == 0:
                 break
 
-            if self.total_atomic_changes() > self.max_ac:
+            if self.total_atomic_changes() >= self.max_ac:
                 break
 
     def total_atomic_changes(self):
-        return sum(value for key, value in self.atomic_changes.items() if key != "(0, 0, 0, 0, 0, 0)")
+        return sum(value for key, value in self.atomic_changes.items() if key != "((0, 0, 0, 0, 0, 0), (0, 0))")
 
-    def save_atomic_changes_csv(self) -> None:
-        output_csv = self.save_file + ".csv"
-
-        # Open the CSV file for writing
-        with open(output_csv, 'w', newline='') as csvfile:
-            writer = csv.writer(csvfile)
-
-            # Write the header row with the atomic change cases
-            header = list(self.atomic_changes.keys())
-            writer.writerow(header)
-
-            # Write the second row with the counts for each atomic change
-            counts = [self.atomic_changes[case] for case in header]
-            writer.writerow(counts)
+    def save_atomic_changes_csv(self, f_path=".") -> None:
+        export_to_csv(
+            self.atomic_changes,
+            len(self.sensor_network.mobile_sensors) + len(self.sensor_network.fence_sensors),
+            self.sensor_network.sensing_radius,
+            self.f_path)
 
     def update(self, state_change: StateChange, adaptive_dt: float) -> None:
         self.time += adaptive_dt
@@ -154,7 +162,7 @@ def simulate(n_sensors, radii, velocities, dt, output_file, max_atomic_changes) 
         simulation = AtomicChangeDetection(
             sensor_network=sensor_network,
             dt=dt,
-            save_file=output_file,
+            f_path=output_file,
             max_ac=max_atomic_changes
         )
 
@@ -179,13 +187,16 @@ if __name__ == "__main__":
     sensing_radii = [round(lower_bound + i * (upper_bound - lower_bound) / (subdivisions - 1), 2) for i in
                      range(subdivisions)]
     sensing_radii = sensing_radii[::-1]
+
+    # For testing purposes
+    # sensing_radii = [0.24]
     print(sensing_radii)
 
     timestep_size: float = 0.05
     sensor_velocity = 1
     n_runs: int = 10
     # how many changes am I looking for.
-    max_changes = 1000
+    max_changes = 5
 
     log_name = f"AC_count_{num_sensors}"
     log_file = log_name + ".log"
@@ -199,7 +210,7 @@ if __name__ == "__main__":
 
     for sensing_radius in sensing_radii:
         print("Current Radius: ", sensing_radius)
-        csv_fn = output_dir + str(sensing_radius)
+        csv_fn = output_dir
         simulate(
             n_sensors=num_sensors,
             radii=sensing_radius,
@@ -207,4 +218,3 @@ if __name__ == "__main__":
             dt=timestep_size,
             output_file=csv_fn,
             max_atomic_changes=max_changes)
-
