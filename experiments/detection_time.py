@@ -115,6 +115,7 @@ if __name__ == "__main__":
         results_dict[key] = T_max_arr
         print(results_dict)
 
+    print("saving the file in: ", output_dir)
     with open(fn, 'wb') as f:
         pickle.dump(output_dir, f)
 

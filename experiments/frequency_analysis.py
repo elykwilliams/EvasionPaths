@@ -142,10 +142,10 @@ def generate_graphic(folder_path, threshold_value, time, image_path):
 
 
 if __name__ == "__main__":
-    threshold = 100
+    threshold = 10
     time_steps = 10000
 
-    path = "./"
+    path = "./output/atomic_change_counts"
 
     """The following is for when you have a specific folder where you just want a single folder.
     """
