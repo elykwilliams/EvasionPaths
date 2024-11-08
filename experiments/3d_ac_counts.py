@@ -1,3 +1,4 @@
+import itertools
 import os
 import csv
 import sys
@@ -15,6 +16,26 @@ from state_change import StateChange
 from utilities import MaxRecursionDepthError
 import argparse
 
+def generate_unit_cube_fence_with_faces_only(spacing=0.5, perturbation=0.01):
+    # Define the boundaries with a slight offset to cover the cube
+    margin = np.sqrt(3) / 2 * spacing
+    grid_min, grid_max = -margin, 1 + margin
+
+    # Create a regular grid that extends slightly beyond the unit cube boundaries
+    x = np.arange(grid_min, grid_max, spacing)
+    grid_points = np.array(list(itertools.product(x, x, x)))
+
+    # Apply a small random perturbation to each point for general position
+    perturbed_points = grid_points + np.random.uniform(-perturbation, perturbation, grid_points.shape)
+
+    # Keep only points that lie outside the unit cube to create the "fence"
+    fence_points = perturbed_points[
+        (perturbed_points[:, 0] < 0) | (perturbed_points[:, 0] > 1) |
+        (perturbed_points[:, 1] < 0) | (perturbed_points[:, 1] > 1) |
+        (perturbed_points[:, 2] < 0) | (perturbed_points[:, 2] > 1)
+    ]
+
+    return fence_points
 
 
 def export_to_csv(counts, number, radius, f_path):
@@ -105,13 +126,26 @@ class AtomicChangeDetection:
             state_change = StateChange(new_topology, self.topology)
 
             if level == 25:
-                raise MaxRecursionDepthError(state_change)
+                # raise MaxRecursionDepthError(state_change)
+                case = str((state_change.alpha_complex_change(), state_change.boundary_cycle_change()))
+                if case not in self.atomic_changes:
+                    self.atomic_changes[case] = 1
+                    print(f"Adding new case: {case}")  # Debugging new case
+                else:
+                    self.atomic_changes[case] += 1
+
+                print("Rare edge change occured. Might be due to disconnections.")
+                sys.stdout.write(
+                    f"\rTotal Atomic Changes: {self.total_atomic_changes()}")  # Use carriage return to overwrite
+                sys.stdout.flush()  # Flush to ensure the output is updated immediately
+
+                self.update(state_change, adaptive_dt)
 
             if not state_change.is_atomic_change():
                 # self.topology_stack.append(new_topology)
                 self.do_timestep(level + 1)
             else:
-                case = str((state_change.alpha_complex_change(),state_change.boundary_cycle_change()))
+                case = str((state_change.alpha_complex_change(), state_change.boundary_cycle_change()))
                 if case not in self.atomic_changes:
                     self.atomic_changes[case] = 1
                     print(f"Adding new case: {case}")  # Debugging new case
@@ -152,6 +186,7 @@ def simulate(n_sensors, radii, velocities, dt, output_file, max_atomic_changes) 
         motion_model = BilliardMotion()
 
         fence = get_unitcube_fence(spacing=radii)
+        print(fence)
         mobile_sensors = generate_mobile_sensors(domain, n_sensors, radii, velocities)
 
         sensor_network = SensorNetwork(
@@ -182,12 +217,12 @@ if __name__ == "__main__":
 
     # Define arguments for the main parameters
     parser.add_argument("--num_sensors", type=int, default=10, help="Number of mobile sensors")
-    parser.add_argument("--lower_bound", type=float, default=0.02, help="Lower bound of sensing radius")
-    parser.add_argument("--upper_bound", type=float, default=0.24, help="Upper bound of sensing radius")
-    parser.add_argument("--subdivisions", type=int, default=20, help="Number of subdivisions for sensing radius range")
+    parser.add_argument("--lower_bound", type=float, default=0.05, help="Lower bound of sensing radius")
+    parser.add_argument("--upper_bound", type=float, default=0.45, help="Upper bound of sensing radius")
+    parser.add_argument("--subdivisions", type=int, default=21, help="Number of subdivisions for sensing radius range")
     parser.add_argument("--timestep_size", type=float, default=0.05, help="Size of each timestep")
     parser.add_argument("--sensor_velocity", type=float, default=1, help="Velocity of the sensors")
-    parser.add_argument("--max_changes", type=int, default=5, help="Maximum number of atomic changes to look for")
+    parser.add_argument("--max_changes", type=int, default=1000, help="Maximum number of atomic changes to look for")
     parser.add_argument("--output_dir", type=str, default="./output/atomic_change_counts/", help="Directory to save output CSV files")
 
     # Parse the arguments
