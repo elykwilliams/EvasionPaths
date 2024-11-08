@@ -76,8 +76,8 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Run the atomic change detection simulation with specified parameters.")
 
     # Define arguments for the main parameters
-    parser.add_argument("--min_sensors", type=int, default=15, help="Min number of mobile sensors")
-    parser.add_argument("--max_sensors", type=int, default=25, help="Max number of mobile sensors")
+    parser.add_argument("--min_sensors", type=int, default=20, help="Min number of mobile sensors")
+    parser.add_argument("--max_sensors", type=int, default=30, help="Max number of mobile sensors")
     parser.add_argument("--lower_r", type=float, default=0.35, help="Lower bound of sensing radius")
     parser.add_argument("--upper_r", type=float, default=0.45, help="Upper bound of sensing radius")
     parser.add_argument("--subdivisions", type=int, default=11, help="Number of subdivisions for sensing radius range")
