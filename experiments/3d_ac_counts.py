@@ -1,41 +1,52 @@
 import itertools
 import os
 import csv
-import sys
-import pickle
 import logging
 from boundary_geometry import UnitCube, UnitCubeFence, get_unitcube_fence
 from motion_model import BilliardMotion
+import numpy as np
 from sensor_network import Sensor, generate_mobile_sensors, SensorNetwork, read_fence, generate_fence_sensors
 from topology import generate_topology
-from time_stepping import EvasionPathSimulation
-import numpy as np
-import random
-from tqdm import tqdm
 from state_change import StateChange
 from utilities import MaxRecursionDepthError
 import argparse
 
-def generate_unit_cube_fence_with_faces_only(spacing=0.5, perturbation=0.01):
-    # Define the boundaries with a slight offset to cover the cube
-    margin = np.sqrt(3) / 2 * spacing
-    grid_min, grid_max = -margin, 1 + margin
+import sys
+from contextlib import contextmanager
+import io
 
-    # Create a regular grid that extends slightly beyond the unit cube boundaries
-    x = np.arange(grid_min, grid_max, spacing)
-    grid_points = np.array(list(itertools.product(x, x, x)))
+@contextmanager
+def no_stdout():
+    # Save original stdout object
+    old_stdout = sys.stdout
+    try:
+        # Redirect stdout to an in-memory stream that does nothing
+        sys.stdout = io.StringIO()
+        yield
+    finally:
+        # Restore original stdout
+        sys.stdout = old_stdout
 
-    # Apply a small random perturbation to each point for general position
-    perturbed_points = grid_points + np.random.uniform(-perturbation, perturbation, grid_points.shape)
-
-    # Keep only points that lie outside the unit cube to create the "fence"
-    fence_points = perturbed_points[
-        (perturbed_points[:, 0] < 0) | (perturbed_points[:, 0] > 1) |
-        (perturbed_points[:, 1] < 0) | (perturbed_points[:, 1] > 1) |
-        (perturbed_points[:, 2] < 0) | (perturbed_points[:, 2] > 1)
-    ]
-
-    return fence_points
+# def generate_unit_cube_fence_with_faces_only(spacing=0.5, perturbation=0.01):
+#     # Define the boundaries with a slight offset to cover the cube
+#     margin = np.sqrt(3) / 2 * spacing
+#     grid_min, grid_max = -margin, 1 + margin
+#
+#     # Create a regular grid that extends slightly beyond the unit cube boundaries
+#     x = np.arange(grid_min, grid_max, spacing)
+#     grid_points = np.array(list(itertools.product(x, x, x)))
+#
+#     # Apply a small random perturbation to each point for general position
+#     perturbed_points = grid_points + np.random.uniform(-perturbation, perturbation, grid_points.shape)
+#
+#     # Keep only points that lie outside the unit cube to create the "fence"
+#     fence_points = perturbed_points[
+#         (perturbed_points[:, 0] < 0) | (perturbed_points[:, 0] > 1) |
+#         (perturbed_points[:, 1] < 0) | (perturbed_points[:, 1] > 1) |
+#         (perturbed_points[:, 2] < 0) | (perturbed_points[:, 2] > 1)
+#     ]
+#
+#     return fence_points
 
 
 def export_to_csv(counts, number, radius, f_path):
@@ -75,45 +86,34 @@ class AtomicChangeDetection:
         self.max_ac = max_ac
 
     def run(self) -> float:
-        with tqdm(total=float('inf'), desc="Atomic Changes", unit=" ac") as pbar:
-            while True:
-                # Recalculate the total number of atomic changes after each timestep
-                print(f"Total atomic changes so far: {self.total_atomic_changes()} / {self.max_ac}")
+        print("max atomic changes", self.max_ac)
+        while True:
+            # Recalculate the total number of atomic changes after each timestep
+            print(f"Total atomic changes so far: {self.total_atomic_changes()} / {self.max_ac}")
 
-                # Check if we have reached the maximum number of atomic changes
-                if self.total_atomic_changes() >= self.max_ac:
-                    print("Reached the maximum number of atomic changes, stopping simulation.")
-                    break
-                # elif sum(self.atomic_changes.values()) > 100 * self.max_ac:
-                #     print("Too many trivial changes, adjust the radius.")
-                #     break
+            # Check if we have reached the maximum number of atomic changes
+            if self.total_atomic_changes() >= self.max_ac:
+                print("Reached the maximum number of atomic changes, stopping simulation.")
+                break
 
-                try:
-                    self.do_timestep()
-                except MaxRecursionDepthError:
-                    raise  # Handle recursion depth issues
+            try:
+                self.do_timestep()
+            except MaxRecursionDepthError:
+                raise  # Handle recursion depth issues
 
-                # Recalculate total_atomic_changes after a change is detected
-                pbar.set_description(f"Num AC's: {self.total_atomic_changes()}")
-                pbar.update(1)  # Increment progress
+            self.save_atomic_changes_csv()
+            # Check if the time limit is reached (optional)
+            if 0 < self.Tend < self.time:
+                print("Out of time")
+                break
 
-                self.save_atomic_changes_csv()
-
-                if self.total_atomic_changes() >= self.max_ac:
-                    print("breaking")
-                    break
-
-                # Check if the time limit is reached (optional)
-                if 0 < self.Tend < self.time:
-                    print("Out of time")
-                    break
+        print("sim over")
 
         return self.time
 
     def do_timestep(self, level: int = 0) -> None:
 
         adaptive_dt = self.dt / (2 ** level)
-
         for loop_id in range(2):
             self.sensor_network.move(adaptive_dt)
 
@@ -124,49 +124,48 @@ class AtomicChangeDetection:
                 new_topology = generate_topology(self.sensor_network.points, self.sensor_network.sensing_radius)
 
             state_change = StateChange(new_topology, self.topology)
+            case = str((state_change.alpha_complex_change(), state_change.boundary_cycle_change()))
 
-            if level == 25:
-                # raise MaxRecursionDepthError(state_change)
-                case = str((state_change.alpha_complex_change(), state_change.boundary_cycle_change()))
-                if case not in self.atomic_changes:
-                    self.atomic_changes[case] = 1
-                    print(f"Adding new case: {case}")  # Debugging new case
-                else:
-                    self.atomic_changes[case] += 1
-
-                print("Rare edge change occured. Might be due to disconnections.")
-                sys.stdout.write(
-                    f"\rTotal Atomic Changes: {self.total_atomic_changes()}")  # Use carriage return to overwrite
-                sys.stdout.flush()  # Flush to ensure the output is updated immediately
-
+            if case == "((0, 0, 0, 0, 0, 0), (0, 0))":
                 self.update(state_change, adaptive_dt)
-
-            if not state_change.is_atomic_change():
-                # self.topology_stack.append(new_topology)
-                self.do_timestep(level + 1)
             else:
-                case = str((state_change.alpha_complex_change(), state_change.boundary_cycle_change()))
-                if case not in self.atomic_changes:
-                    self.atomic_changes[case] = 1
-                    print(f"Adding new case: {case}")  # Debugging new case
+                if level == 25:
+                    # raise MaxRecursionDepthError(state_change)
+                    if case not in self.atomic_changes:
+                        self.atomic_changes[case] = 1
+                        print(f"Adding new case: {case}")
+                    else:
+                        self.atomic_changes[case] += 1
+
+                    print("Unknown edge change occured. Might be due to disconnections.")
+                    self.update(state_change, adaptive_dt)
+                    if self.total_atomic_changes() >= self.max_ac:
+                        self.save_atomic_changes_csv()
+                        print("Reached max number of atomic changes")
+                        return
+
+                if not state_change.is_atomic_change():
+                    # self.topology_stack.append(new_topology)
+                    self.do_timestep(level + 1)
                 else:
-                    self.atomic_changes[case] += 1
-                sys.stdout.write(
-                    f"\rTotal Atomic Changes: {self.total_atomic_changes()}")  # Use carriage return to overwrite
-                sys.stdout.flush()  # Flush to ensure the output is updated immediately
+                    if case not in self.atomic_changes:
+                        self.atomic_changes[case] = 1
+                        print(f"Adding new case: {case}")
+                    else:
+                        self.atomic_changes[case] += 1
 
-                self.update(state_change, adaptive_dt)
-
-            if level == 0:
-                break
-
-            if self.total_atomic_changes() >= self.max_ac:
-                break
+                    self.update(state_change, adaptive_dt)
+                    if self.total_atomic_changes() >= self.max_ac:
+                        self.save_atomic_changes_csv()
+                        print("Reached max number of atomic changes")
+                        return
+                if level == 0:
+                    break
 
     def total_atomic_changes(self):
         return sum(value for key, value in self.atomic_changes.items() if key != "((0, 0, 0, 0, 0, 0), (0, 0))")
 
-    def save_atomic_changes_csv(self, f_path=".") -> None:
+    def save_atomic_changes_csv(self) -> None:
         export_to_csv(
             self.atomic_changes,
             len(self.sensor_network.mobile_sensors) + len(self.sensor_network.fence_sensors),
@@ -179,20 +178,18 @@ class AtomicChangeDetection:
         self.sensor_network.update()
 
 
-def simulate(n_sensors, radii, velocities, dt, output_file, max_atomic_changes) -> float:
+def simulate(n_sensors, radii, velocities, dt, output_file, max_atomic_changes, debug) -> float:
     logging.info("Starting a simulation.")
     try:
         domain = UnitCube()
         motion_model = BilliardMotion()
 
-        fence = get_unitcube_fence(spacing=radii)
-        print(fence)
         mobile_sensors = generate_mobile_sensors(domain, n_sensors, radii, velocities)
 
         sensor_network = SensorNetwork(
             mobile_sensors=mobile_sensors,
             motion_model=motion_model,
-            fence=fence,
+            fence=[],
             sensing_radius=radii,
             domain=domain
         )
@@ -206,7 +203,11 @@ def simulate(n_sensors, radii, velocities, dt, output_file, max_atomic_changes) 
         logging.info("Simulation set up")
         print("Simulation set up")
 
-        return simulation.run()
+        if not debug:
+            with no_stdout():
+                return simulation.run()
+        else:
+            return simulation.run()
     except Exception as e:
         logging.error(f"Simulation failed due to {e}. Retrying...")
         return -1
@@ -216,10 +217,10 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Run the atomic change detection simulation with specified parameters.")
 
     # Define arguments for the main parameters
-    parser.add_argument("--num_sensors", type=int, default=10, help="Number of mobile sensors")
+    parser.add_argument("--num_sensors", type=int, default=30, help="Number of mobile sensors")
     parser.add_argument("--lower_bound", type=float, default=0.05, help="Lower bound of sensing radius")
     parser.add_argument("--upper_bound", type=float, default=0.45, help="Upper bound of sensing radius")
-    parser.add_argument("--subdivisions", type=int, default=21, help="Number of subdivisions for sensing radius range")
+    parser.add_argument("--delta", type=int, default=0.01, help="Subdivision increase for the sensing radius.")
     parser.add_argument("--timestep_size", type=float, default=0.05, help="Size of each timestep")
     parser.add_argument("--sensor_velocity", type=float, default=1, help="Velocity of the sensors")
     parser.add_argument("--max_changes", type=int, default=1000, help="Maximum number of atomic changes to look for")
@@ -232,7 +233,7 @@ if __name__ == "__main__":
     num_sensors = args.num_sensors
     lower_bound = args.lower_bound
     upper_bound = args.upper_bound
-    subdivisions = args.subdivisions
+    delta = args.delta
     timestep_size = args.timestep_size
     sensor_velocity = args.sensor_velocity
     max_changes = args.max_changes
@@ -240,12 +241,11 @@ if __name__ == "__main__":
 
     print("Number of Mobile Sensors: ", num_sensors)
 
-    sensing_radii = [round(lower_bound + i * (upper_bound - lower_bound) / (subdivisions - 1), 2) for i in
-                     range(subdivisions)]
-    sensing_radii = sensing_radii[::-1]
+    sensing_radii = np.arange(lower_bound, upper_bound + delta, delta)
+    sensing_radii = np.round(sensing_radii, 2)
 
     # For testing purposes
-    # sensing_radii = [0.24]
+    # sensing_radii = [0.05]
     print(sensing_radii)
 
     log_name = f"AC_count_{num_sensors}"
@@ -265,4 +265,5 @@ if __name__ == "__main__":
             velocities=sensor_velocity,
             dt=timestep_size,
             output_file=csv_fn,
-            max_atomic_changes=max_changes)
+            max_atomic_changes=max_changes,
+            debug=False)
