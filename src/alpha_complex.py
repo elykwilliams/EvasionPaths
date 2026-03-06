@@ -63,9 +63,15 @@ class Simplex(frozenset):
 
 
 class AlphaComplex:
-    def __init__(self, points, radius):
-        alpha_complex = gudhi.alpha_complex.AlphaComplex(points)
-        self.simplex_tree = alpha_complex.create_simplex_tree(max_alpha_square=radius ** 2)
+    def __init__(self, points, radius, point_radii=None):
+        if point_radii is None:
+            alpha_complex = gudhi.alpha_complex.AlphaComplex(points)
+            max_alpha_square = radius ** 2
+            self.simplex_tree = alpha_complex.create_simplex_tree(max_alpha_square=max_alpha_square)
+        else:
+            weights = [float(r) ** 2 for r in point_radii]
+            max_alpha_square = max(float(radius) ** 2, max(weights) if weights else 0.0)
+            self.simplex_tree = _build_weighted_simplex_tree(points, weights, max_alpha_square)
         self.dim = len(points[0])
 
         self._simplices = defaultdict(set)
@@ -81,3 +87,31 @@ class AlphaComplex:
 
     def simplices(self, dim):
         return self._simplices[dim]
+
+
+def _build_weighted_simplex_tree(points, weights, max_alpha_square):
+    attempts = []
+
+    # Most common Python API in recent gudhi releases.
+    if hasattr(gudhi, "WeightedAlphaComplex"):
+        try:
+            wac = gudhi.WeightedAlphaComplex(points=points, weights=weights)
+            print("Using gudhi weighted alpha complex WeightedAlphaComplex")
+            return wac.create_simplex_tree(max_alpha_square=max_alpha_square)
+        except Exception as exc:  # pragma: no cover - depends on installed gudhi
+            attempts.append(f"gudhi.WeightedAlphaComplex failed: {exc}")
+
+    # Alternate module path.
+    try:
+        from gudhi.weighted_alpha_complex import WeightedAlphaComplex as WAC  # type: ignore
+
+        wac = WAC(points=points, weights=weights)
+        print("Using the other version of WAC")
+        return wac.create_simplex_tree(max_alpha_square=max_alpha_square)
+    except Exception as exc:  # pragma: no cover - depends on installed gudhi
+        attempts.append(f"gudhi.weighted_alpha_complex.WeightedAlphaComplex failed: {exc}")
+
+    raise RuntimeError(
+        "Weighted alpha complex is not available in this gudhi build or API signature differs. "
+        f"Attempts: {' | '.join(attempts)}"
+    )

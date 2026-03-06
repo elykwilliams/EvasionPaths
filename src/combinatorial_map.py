@@ -76,6 +76,11 @@ class BoundaryCycle(frozenset):
     def nodes(self) -> FrozenSet[int]:
         return frozenset(chain.from_iterable([face.nodes for face in self]))
 
+    def __repr__(self):
+        # Stable string representation: sort edges, then represent
+        sorted_edges = sorted(tuple(sorted(face.nodes)) for face in self)
+        return f"BoundaryCycle({sorted_edges})"
+
 
 @dataclass
 class RotationInfo(ABC):

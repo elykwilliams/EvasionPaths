@@ -71,7 +71,7 @@ if __name__ == "__main__":
     parser.add_argument("--subdivisions", type=int, default=11, help="Number of subdivisions for sensing radius range")
     parser.add_argument("--output_dir", type=str, default="./output/Tmax/", help="Directory to save output CSV files")
     parser.add_argument("--fn", type=str, default="tmax.pkl", help="filename for tmax")
-    parser.add_argument("--n_runs", type=int, default=10, help="Number of simulations")
+    parser.add_argument("--n_runs", type=int, default=100, help="Number of simulations")
 
     args = parser.parse_args()
 

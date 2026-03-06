@@ -30,13 +30,15 @@ class EvasionPathSimulation:
         :param dt: The timestep for the simulation.
         :param end_time: The end time for the simulation. Set to 0 to run until no possible intruder.
         """
+        print("initializing sim")
         # time settings
         self.dt = dt
         self.Tend = end_time
         self.time = 0
 
         self.sensor_network = sensor_network
-        self.topology = generate_topology(sensor_network.points, sensor_network.sensing_radius)
+        point_radii = sensor_network.point_radii if getattr(sensor_network, "use_weighted_alpha", False) else None
+        self.topology = generate_topology(sensor_network.points, sensor_network.sensing_radius, point_radii=point_radii)
         # if not self.topology.is_face_connected():
         #     raise ValueError("The provided sensor network is not face connected")
 
@@ -84,15 +86,30 @@ class EvasionPathSimulation:
             self.sensor_network.move(adaptive_dt)
 
             if loop_id == 0:
-                new_topology = generate_topology(self.sensor_network.points, self.sensor_network.sensing_radius)
+                point_radii = self.sensor_network.point_radii if getattr(self.sensor_network, "use_weighted_alpha", False) else None
+                new_topology = generate_topology(
+                    self.sensor_network.points,
+                    self.sensor_network.sensing_radius,
+                    point_radii=point_radii,
+                )
             else:
                 # new_topology = self.topology_stack.pop()
-                new_topology = generate_topology(self.sensor_network.points, self.sensor_network.sensing_radius)
+                point_radii = self.sensor_network.point_radii if getattr(self.sensor_network, "use_weighted_alpha", False) else None
+                new_topology = generate_topology(
+                    self.sensor_network.points,
+                    self.sensor_network.sensing_radius,
+                    point_radii=point_radii,
+                )
 
             state_change = StateChange(new_topology, self.topology)
 
             if level == 25:
-                raise MaxRecursionDepthError(state_change)
+                raise MaxRecursionDepthError(
+                    state_change,
+                    level=level,
+                    adaptive_dt=adaptive_dt,
+                    sim_time=self.time,
+                )
 
             if not state_change.is_atomic_change():
                 # self.topology_stack.append(new_topology)

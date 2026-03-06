@@ -43,3 +43,9 @@ examples = ["joblib"]
 [project.urls]
 "Homepage" = "https://github.com/elykwilliams/EvasionPaths"
 "Bug Tracker" = "https://github.com/elykwilliams/EvasionPaths/issues"
+
+[tool.setuptools]
+package-dir = {"" = "src"}
+
+[tool.setuptools.packages.find]
+where = ["src"]

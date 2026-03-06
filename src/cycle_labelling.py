@@ -16,7 +16,7 @@ class CycleLabelling:
         self.label = {g: True for g in topology.homology_generators if topology.is_connected_cycle(g)}
         # self.label = {g: True for index, g in enumerate(topology.homology_generators) if print(f"Checking cycle at index {index}") or topology.is_connected_cycle(g)}
         print("Initial labels: ", (list(self.label.values())))
-        self.history = [(self.label, (0,)*topology.dim*2, (0, 0), 0)]
+        self.history = [(self.label.copy(), (0,)*topology.dim*2, (0, 0), 0)]
 
         self.reeb_graph = ReebGraph(self.label)
 
@@ -50,8 +50,14 @@ class CycleLabelling:
         for cycle in removed_cycles.union(disconnected_cycles):
             del self.label[cycle]
 
+        # for cycle in self.label:
+        #     canon_key = self.reeb_graph._canon(cycle)
+        #     if canon_key not in self.reeb_graph.stack:
+        #         print("⚠️  Cycle in label but missing from stack:", cycle)
+
         self.reeb_graph.update(time, self.label, self.history[-1][0])
-        self.history.append((self.label, state_change.alpha_complex_change(), state_change.boundary_cycle_change(), time))
+        self.history.append((self.label.copy(), state_change.alpha_complex_change(), state_change.boundary_cycle_change(), time))
+
 
     def finalize(self, time):
         self.reeb_graph.finalize(time, self.label)

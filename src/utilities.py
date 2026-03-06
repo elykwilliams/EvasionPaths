@@ -37,28 +37,49 @@ class EvasionPathError(Exception, ABC):
 # simulations. It can also indicate that a sensor has broken free of the
 # virtual boundary and is interfering with the fence boundary cycle.
 class MaxRecursionDepthError(EvasionPathError):
-    def __init__(self, state_change):
+    def __init__(self, state_change, *, level=None, adaptive_dt=None, sim_time=None):
         self.state_change = state_change
+        self.level = level
+        self.adaptive_dt = adaptive_dt
+        self.sim_time = sim_time
 
     def __str__(self):
-        old_nodes = list(chain(*[simplex.nodes for simplex in self.state_change.simplices_difference[2].removed()]))
-        new_nodes = list(chain(*[simplex.nodes for simplex in self.state_change.simplices_difference[2].added()]))
+        details = []
+        if self.level is not None:
+            details.append(f"level={self.level}")
+        if self.adaptive_dt is not None:
+            details.append(f"adaptive_dt={self.adaptive_dt}")
+        if self.sim_time is not None:
+            details.append(f"time={self.sim_time}")
+        try:
+            details.append(f"alpha_change={self.state_change.alpha_complex_change()}")
+            details.append(f"boundary_change={self.state_change.boundary_cycle_change()}")
+        except Exception:
+            pass
+        suffix = ""
+        if details:
+            suffix = "\n" + " | ".join(details)
         return (
-            f'{self.message}Max Recursion depth exceeded!'
-            f'This exception was raised because the adaptive timestep was unable to resolve\n' 
-            f'a small enough time step so that the topological change is atomic. This may be \n' 
-            f'because your timestep was too large or the sensors are not in general position.\n'
-            f'Be sure that the sensors (including the fence) were initialized in general position'
-            f'Alpha complex change: {self.state_change.alpha_complex_change()}\n'
-            f'Boundary cycle change: {self.state_change.boundary_cycle_change()}\n'
-            f'Old nodes: {set(old_nodes)}\n'
-            f'New nodes: {set(new_nodes)}\n'
-            f'new faces: {self.state_change.simplices_difference[2].added()}\n'
-            f'Old faces: {self.state_change.simplices_difference[2].removed()}\n'
-            f'new edges: {self.state_change.simplices_difference[1].added()}\n'
-            f'Old edges: {self.state_change.simplices_difference[1].removed()}\n'
-
+            f"{self.message}Max Recursion depth exceeded!{suffix}"
         )
+        # old_nodes = list(chain(*[simplex.nodes for simplex in self.state_change.simplices_difference[2].removed()]))
+        # new_nodes = list(chain(*[simplex.nodes for simplex in self.state_change.simplices_difference[2].added()]))
+        # return (
+        #     f'{self.message}Max Recursion depth exceeded!'
+        #     f'This exception was raised because the adaptive timestep was unable to resolve\n'
+        #     f'a small enough time step so that the topological change is atomic. This may be \n'
+        #     f'because your timestep was too large or the sensors are not in general position.\n'
+        #     f'Be sure that the sensors (including the fence) were initialized in general position'
+        #     f'Alpha complex change: {self.state_change.alpha_complex_change()}\n'
+        #     f'Boundary cycle change: {self.state_change.boundary_cycle_change()}\n'
+        #     f'Old nodes: {set(old_nodes)}\n'
+        #     f'New nodes: {set(new_nodes)}\n'
+        #     f'new faces: {self.state_change.simplices_difference[2].added()}\n'
+        #     f'Old faces: {self.state_change.simplices_difference[2].removed()}\n'
+        #     f'new edges: {self.state_change.simplices_difference[1].added()}\n'
+        #     f'Old edges: {self.state_change.simplices_difference[1].removed()}\n'
+        #
+        # )
 
 
 ## Exception indicating non-atomic state change.

@@ -5,6 +5,8 @@ output
 atomic_changes_frequencies
 env
 
+ui_ti*
+ui_li*
 
 ## Core latex/pdflatex auxiliary files:
 *.aux

@@ -63,17 +63,45 @@ class Topology:
         return self._graph
 
     def is_connected_cycle(self, cycle):
-        # print(f"All nodes in graph: {self.face_connectivity_graph.nodes}")
-        # print(f"Checking path from {Simplex(next(iter(cycle)).nodes)} to {Simplex(range(self.dim))}")
+        graph = self.face_connectivity_graph
+        source = Simplex(next(iter(cycle)).nodes)
+        if source not in graph:
+            return False
 
-        return nx.has_path(self.face_connectivity_graph, Simplex(next(iter(cycle)).nodes), Simplex(range(self.dim)))
+        target = self._outer_anchor_face()
+        if target is None:
+            return False
+
+        return nx.has_path(graph, source, target)
+
+    def _outer_anchor_face(self):
+        """
+        Pick a stable exterior-anchor face for connectivity tests.
+        Prefer the historical {0,1,...,dim-1} face when present, otherwise
+        fall back to any face in alpha_cycle that is present in the graph.
+        """
+        graph = self.face_connectivity_graph
+        preferred = Simplex(range(self.dim))
+        if preferred in graph:
+            return preferred
+
+        try:
+            alpha_cycle = self.alpha_cycle
+        except KeyError:
+            return None
+
+        for face in alpha_cycle:
+            candidate = Simplex(face.nodes)
+            if candidate in graph:
+                return candidate
+        return None
 
     def is_face_connected(self):
         return nx.is_connected(self.face_connectivity_graph)
 
 
-def generate_topology(points, radius):
-    ac = AlphaComplex(points, radius)
+def generate_topology(points, radius, point_radii=None):
+    ac = AlphaComplex(points, radius, point_radii=point_radii)
     if ac.dim == 2:
         rot_info = RotationInfo2D(points, ac)
         cmap = CombinatorialMap2D(rot_info)

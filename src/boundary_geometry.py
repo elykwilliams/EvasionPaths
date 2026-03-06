@@ -267,7 +267,6 @@ def reindex_for_simplex(alpha_complex, fence_points):
     # Traverse the 2-simplices in the alpha complex
     for simplex, _ in alpha_complex.simplex_tree.get_filtration():
         if len(simplex) == 3 and 0 in simplex:  # Find the first 2-simplice with vertex 0
-            print(f"Found 2-simplex containing vertex 0: {simplex}")
             # Swap indices to ensure {0, 1, 2}
             indices = list(simplex)
             indices.remove(0)  # Remove 0 to get the other two indices
@@ -278,6 +277,7 @@ def reindex_for_simplex(alpha_complex, fence_points):
             new_fence[[1, 2]] = fence_points[[idx1, idx2]]
             new_fence[[idx1, idx2]] = fence_points[[1, 2]]
             return True, new_fence
+    return False, fence_points
 
 
 def get_unitcube_fence(spacing):
@@ -297,10 +297,10 @@ def get_unitcube_fence(spacing):
                 -dx + random.uniform(-epsilon, epsilon)) for x, y in grid]
     x1_face = [(1 + dx + random.uniform(-epsilon, epsilon), y + random.uniform(-epsilon, epsilon),
                 z + random.uniform(-epsilon, epsilon)) for y, z in grid]
-    y1_face = [(x + random.uniform(-epsilon, epsilon), 1 + random.uniform(-epsilon, epsilon),
+    y1_face = [(x + random.uniform(-epsilon, epsilon), 1 + dx + random.uniform(-epsilon, epsilon),
                 z + random.uniform(-epsilon, epsilon)) for x, z in grid]
     z1_face = [(x + random.uniform(-epsilon, epsilon), y + random.uniform(-epsilon, epsilon),
-                1 + random.uniform(-epsilon, epsilon)) for x, y in grid]
+                1 + dx + random.uniform(-epsilon, epsilon)) for x, y in grid]
 
     fence_sensors = np.concatenate((x0_face, y0_face, z0_face, x1_face, y1_face, z1_face))
     fence_sensors = np.unique(fence_sensors, axis=0)
