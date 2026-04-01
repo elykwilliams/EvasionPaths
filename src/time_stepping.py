@@ -11,6 +11,30 @@ from state_change import StateChange
 from topology import generate_topology
 from utilities import MaxRecursionDepthError
 from tqdm import tqdm
+import numpy as np
+
+
+def _domain_interior_point(sensor_network: SensorNetwork):
+    domain = sensor_network.domain
+    if hasattr(domain, "min") and hasattr(domain, "max"):
+        return 0.5 * (np.asarray(domain.min, dtype=float) + np.asarray(domain.max, dtype=float))
+
+    point_generator = getattr(domain, "point_generator", None)
+    if callable(point_generator):
+        try:
+            sample = point_generator(1)
+            sample_array = np.asarray(sample, dtype=float)
+            if sample_array.size:
+                if sample_array.ndim == 1:
+                    return sample_array
+                return sample_array[0]
+        except Exception:
+            pass
+
+    fence = np.asarray([s.pos for s in sensor_network.fence_sensors], dtype=float)
+    if fence.size:
+        return np.mean(fence, axis=0)
+    return None
 
 class EvasionPathSimulation:
     """
@@ -20,7 +44,13 @@ class EvasionPathSimulation:
     max time is reached.
     """
 
-    def __init__(self, sensor_network: SensorNetwork, dt: float, end_time: int = 0) -> None:
+    def __init__(
+        self,
+        sensor_network: SensorNetwork,
+        dt: float,
+        end_time: int = 0,
+        outer_winding_sign: int = -1,
+    ) -> None:
         """
         Initialize from a given sensor_network.
         If end_time is set to a non-zero value, use minimum of end_time time and cleared
@@ -37,14 +67,50 @@ class EvasionPathSimulation:
         self.time = 0
 
         self.sensor_network = sensor_network
+        self._fence_node_count = len(sensor_network.fence_sensors)
+        self._interior_point = _domain_interior_point(sensor_network)
+        self._outer_winding_sign = -1 if outer_winding_sign < 0 else 1
         point_radii = sensor_network.point_radii if getattr(sensor_network, "use_weighted_alpha", False) else None
-        self.topology = generate_topology(sensor_network.points, sensor_network.sensing_radius, point_radii=point_radii)
+        self.topology = self._build_topology(point_radii=point_radii, topology_cache=None)
         # if not self.topology.is_face_connected():
         #     raise ValueError("The provided sensor network is not face connected")
 
         self.cycle_label = CycleLabelling(self.topology)
+        self._push_motion_model_context()
 
         self.topology_stack = []
+
+    def _push_motion_model_context(self):
+        context_setter = getattr(self.sensor_network.motion_model, "set_homology_context", None)
+        if callable(context_setter):
+            context_setter(self.topology, self.cycle_label.label, self.time)
+
+    def _build_topology(self, *, point_radii, topology_cache=None):
+        points = np.asarray(self.sensor_network.points, dtype=float)
+        radii_key = None
+        if point_radii is not None:
+            radii_key = np.asarray(point_radii, dtype=float).tobytes()
+
+        cache_key = None
+        if topology_cache is not None:
+            cache_key = (points.tobytes(), radii_key)
+            cached = topology_cache.get(cache_key)
+            if cached is not None:
+                return cached
+
+        topology = generate_topology(
+            points,
+            self.sensor_network.sensing_radius,
+            point_radii=point_radii,
+            fence_node_count=self._fence_node_count,
+            fence_node_groups=getattr(self.sensor_network, "fence_groups", ()),
+            excluded_fence_groups=getattr(self.sensor_network, "excluded_fence_groups", ()),
+            interior_point=self._interior_point,
+            outer_winding_sign=self._outer_winding_sign,
+        )
+        if topology_cache is not None and cache_key is not None:
+            topology_cache[cache_key] = topology
+        return topology
 
     def run(self) -> float:
         """
@@ -70,7 +136,7 @@ class EvasionPathSimulation:
         # self.cycle_label.finalize(self.time)
         return self.time
 
-    def do_timestep(self, level: int = 0) -> None:
+    def do_timestep(self, level: int = 0, topology_cache=None) -> None:
         """
         Do single timestep.
         Will attempt to move sensors forward and test if atomic topological change happens.
@@ -79,41 +145,32 @@ class EvasionPathSimulation:
 
         :param level: The recursion level of the adaptive time-stepping. Defaults to 0.
         """
+        if topology_cache is None:
+            topology_cache = {}
+
         adaptive_dt = self.dt / (2 ** level)
         # print("dotimestep, level:", level)
         # Split interval in two
-        for loop_id in range(2):
+        for _ in range(2):
+            self._push_motion_model_context()
             self.sensor_network.move(adaptive_dt)
 
-            if loop_id == 0:
-                point_radii = self.sensor_network.point_radii if getattr(self.sensor_network, "use_weighted_alpha", False) else None
-                new_topology = generate_topology(
-                    self.sensor_network.points,
-                    self.sensor_network.sensing_radius,
-                    point_radii=point_radii,
-                )
-            else:
-                # new_topology = self.topology_stack.pop()
-                point_radii = self.sensor_network.point_radii if getattr(self.sensor_network, "use_weighted_alpha", False) else None
-                new_topology = generate_topology(
-                    self.sensor_network.points,
-                    self.sensor_network.sensing_radius,
-                    point_radii=point_radii,
-                )
+            # new_topology = self.topology_stack.pop()  # kept for potential future caching strategy
+            point_radii = self.sensor_network.point_radii if getattr(self.sensor_network, "use_weighted_alpha", False) else None
+            new_topology = self._build_topology(point_radii=point_radii, topology_cache=topology_cache)
 
             state_change = StateChange(new_topology, self.topology)
-
-            if level == 25:
-                raise MaxRecursionDepthError(
-                    state_change,
-                    level=level,
-                    adaptive_dt=adaptive_dt,
-                    sim_time=self.time,
-                )
-
-            if not state_change.is_atomic_change():
+            is_atomic = state_change.is_atomic_change()
+            if not is_atomic:
+                if level == 25:
+                    raise MaxRecursionDepthError(
+                        state_change,
+                        level=level,
+                        adaptive_dt=adaptive_dt,
+                        sim_time=self.time,
+                    )
                 # self.topology_stack.append(new_topology)
-                self.do_timestep(level + 1)
+                self.do_timestep(level + 1, topology_cache=topology_cache)
             else:
                 self.update(state_change, adaptive_dt)
 
@@ -130,4 +187,5 @@ class EvasionPathSimulation:
         self.time += adaptive_dt
         self.cycle_label.update(state_change, self.time)
         self.topology = state_change.new_topology
+        self._push_motion_model_context()
         self.sensor_network.update()

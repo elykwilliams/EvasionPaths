@@ -4,6 +4,8 @@ output
 #experiments
 atomic_changes_frequencies
 env
+latex
+docs
 
 ui_ti*
 ui_li*

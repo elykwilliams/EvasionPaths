@@ -54,6 +54,16 @@ class MaxRecursionDepthError(EvasionPathError):
         try:
             details.append(f"alpha_change={self.state_change.alpha_complex_change()}")
             details.append(f"boundary_change={self.state_change.boundary_cycle_change()}")
+            details.append(f"is_atomic={self.state_change.is_atomic_change()}")
+            dim = self.state_change.dim
+            removed = self.state_change.simplices_difference[dim].removed()
+            added = self.state_change.simplices_difference[dim].added()
+            details.append(f"{dim}-simplices_removed={len(removed)}")
+            details.append(f"{dim}-simplices_added={len(added)}")
+            old_nodes = set(chain.from_iterable(removed))
+            new_nodes = set(chain.from_iterable(added))
+            details.append(f"node_set_overlap={len(old_nodes.intersection(new_nodes))}")
+            details.append(f"node_set_symdiff={len(old_nodes.symmetric_difference(new_nodes))}")
         except Exception:
             pass
         suffix = ""

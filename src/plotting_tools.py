@@ -21,7 +21,9 @@ from time_stepping import EvasionPathSimulation
 def show_domain_boundary(domain: Domain, **kwargs) -> None:
     ax = kwargs.get('ax', plt.gca())
     xpts, ypts = domain.domain_boundary_points()
-    ax.plot(xpts, ypts)
+    plot_kwargs = dict(kwargs)
+    plot_kwargs.pop('ax', None)
+    ax.plot(xpts, ypts, **plot_kwargs)
 
 
 ## Show Sensor Network graph.
@@ -56,8 +58,8 @@ def show_sensor_ids(sensors: SensorNetwork, **kwargs) -> None:
 ## Display sensing disks.
 def show_sensor_radius(sensors: SensorNetwork, **kwargs) -> None:
     ax = kwargs.get('ax', plt.gca())
-    for pt in sensors.points:
-        ax.add_artist(plt.Circle(pt, sensors.sensing_radius, color='b', alpha=1, clip_on=False))
+    for sensor in sensors:
+        ax.add_artist(plt.Circle(sensor.pos, sensor.radius, color='b', alpha=1, clip_on=False))
 
 
 ## Shade holes in AlphaComplex with possible intruder.
@@ -74,7 +76,7 @@ def show_possible_intruder(sim: EvasionPathSimulation, **kwargs) -> None:
         xpts, ypts = zip(*[sim.sensor_network.points[n] for n in cycle_nodes])
 
         # Exclude alpha-cycle
-        if cycle == sim.topology.alpha_cycle:
+        if sim.topology.is_excluded_cycle(cycle):
             continue
 
         # fill contaminated cycles transparent black

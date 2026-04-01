@@ -10,6 +10,8 @@ from typing import Iterable
 
 import gudhi
 
+_WEIGHTED_ALPHA_BACKEND_ANNOUNCED = False
+
 
 class Simplex(frozenset):
     """
@@ -70,7 +72,13 @@ class AlphaComplex:
             self.simplex_tree = alpha_complex.create_simplex_tree(max_alpha_square=max_alpha_square)
         else:
             weights = [float(r) ** 2 for r in point_radii]
-            max_alpha_square = max(float(radius) ** 2, max(weights) if weights else 0.0)
+            # For weighted points, we want the complex corresponding to the
+            # actual union of sensing balls with radii sqrt(weight_i). In Gudhi's
+            # weighted alpha filtration, that is the alpha=0 slice; using a
+            # positive max_alpha_square would inflate every radius to
+            # sqrt(weight_i + alpha^2) and add edges between visibly
+            # non-intersecting disks.
+            max_alpha_square = 0.0
             self.simplex_tree = _build_weighted_simplex_tree(points, weights, max_alpha_square)
         self.dim = len(points[0])
 
@@ -90,13 +98,27 @@ class AlphaComplex:
 
 
 def _build_weighted_simplex_tree(points, weights, max_alpha_square):
+    global _WEIGHTED_ALPHA_BACKEND_ANNOUNCED
     attempts = []
+
+    # Some gudhi builds expose weighted alpha through the standard AlphaComplex
+    # constructor via a `weights=` keyword instead of a separate class.
+    try:
+        alpha_complex = gudhi.AlphaComplex(points=points, weights=weights)
+        if not _WEIGHTED_ALPHA_BACKEND_ANNOUNCED:
+            print("Using gudhi.AlphaComplex(..., weights=...) for weighted alpha complex")
+            _WEIGHTED_ALPHA_BACKEND_ANNOUNCED = True
+        return alpha_complex.create_simplex_tree(max_alpha_square=max_alpha_square)
+    except Exception as exc:  # pragma: no cover - depends on installed gudhi
+        attempts.append(f"gudhi.AlphaComplex(weights=...) failed: {exc}")
 
     # Most common Python API in recent gudhi releases.
     if hasattr(gudhi, "WeightedAlphaComplex"):
         try:
             wac = gudhi.WeightedAlphaComplex(points=points, weights=weights)
-            print("Using gudhi weighted alpha complex WeightedAlphaComplex")
+            if not _WEIGHTED_ALPHA_BACKEND_ANNOUNCED:
+                print("Using gudhi weighted alpha complex WeightedAlphaComplex")
+                _WEIGHTED_ALPHA_BACKEND_ANNOUNCED = True
             return wac.create_simplex_tree(max_alpha_square=max_alpha_square)
         except Exception as exc:  # pragma: no cover - depends on installed gudhi
             attempts.append(f"gudhi.WeightedAlphaComplex failed: {exc}")
@@ -106,7 +128,9 @@ def _build_weighted_simplex_tree(points, weights, max_alpha_square):
         from gudhi.weighted_alpha_complex import WeightedAlphaComplex as WAC  # type: ignore
 
         wac = WAC(points=points, weights=weights)
-        print("Using the other version of WAC")
+        if not _WEIGHTED_ALPHA_BACKEND_ANNOUNCED:
+            print("Using the other version of WAC")
+            _WEIGHTED_ALPHA_BACKEND_ANNOUNCED = True
         return wac.create_simplex_tree(max_alpha_square=max_alpha_square)
     except Exception as exc:  # pragma: no cover - depends on installed gudhi
         attempts.append(f"gudhi.weighted_alpha_complex.WeightedAlphaComplex failed: {exc}")

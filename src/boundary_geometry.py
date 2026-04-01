@@ -86,9 +86,10 @@ class RectangularDomain(Domain):
 
     ## Generate fence in counter-clockwise order.
     # spacing should be less than 2*sensing_radius.
-    def fence(self, spacing) -> list:
+    # offset_distance optionally overrides the historical sqrt(3)/2 spacing rule.
+    def fence(self, spacing, offset_distance=None) -> list:
         # Initialize fence position
-        dx = spacing * np.sin(np.pi / 3)  # virtual boundary width
+        dx = spacing * np.sin(np.pi / 3) if offset_distance is None else float(offset_distance)
         vx_min, vx_max = self.min[0] - dx, self.max[0] + dx
         vy_min, vy_max = self.min[1] - dx, self.max[1] + dx
 
@@ -128,9 +129,15 @@ class RectangularDomain(Domain):
         assert (old in self and new not in self)
         tvals = []
         for dim in range(self.dim):
-            tvals.append((self.max[dim] - old[dim]) / (new[dim] - old[dim]))
-            tvals.append((self.min[dim] - old[dim]) / (new[dim] - old[dim]))
-        t = min(filter(lambda x: 0 < x < 1, tvals))
+            delta = new[dim] - old[dim]
+            if abs(delta) <= 1e-12:
+                continue
+            tvals.append((self.max[dim] - old[dim]) / delta)
+            tvals.append((self.min[dim] - old[dim]) / delta)
+        candidates = [t for t in tvals if 0 < t < 1]
+        if not candidates:
+            raise ValueError("No valid boundary intersection found for reflected step.")
+        t = min(candidates)
         return old + t * (new - old)
 
 
@@ -153,7 +160,8 @@ class CircularDomain(Domain):
     ## Generate points distributed randomly (uniformly) in the interior.
     def point_generator(self, n_sensors):
         theta = np.random.uniform(0, 2 * pi, size=n_sensors)
-        radius = np.random.uniform(0, self.radius, size=n_sensors)
+        # Sample radius via sqrt(U) so the induced planar density is uniform.
+        radius = self.radius * np.sqrt(np.random.uniform(0.0, 1.0, size=n_sensors))
         return [pol2cart(p) for p in zip(radius, theta)]
 
     ## Generate Points to plot domain boundary.
@@ -170,6 +178,135 @@ class CircularDomain(Domain):
         tvals = np.roots([norm(disp) ** 2, 2 * np.dot(disp, old), norm(old) ** 2 - self.radius ** 2])
         t = min(filter(lambda x: 0 < x < 1, tvals))
         return old + t * disp
+
+
+class SquareAnnulusDomain(Domain):
+    def __init__(self, sensor_radius: float) -> None:
+        self.sensor_radius = float(sensor_radius)
+        self.outer_half_side = 5.0 * self.sensor_radius
+        self.inner_half_side = 2.0 * self.sensor_radius
+        self.dim = 2
+
+    @staticmethod
+    def _tol() -> float:
+        return 1.0e-9
+
+    def __contains__(self, point: tuple) -> bool:
+        x, y = map(float, point)
+        tol = self._tol()
+        inside_outer = abs(x) <= self.outer_half_side + tol and abs(y) <= self.outer_half_side + tol
+        inside_hole = abs(x) < self.inner_half_side - tol and abs(y) < self.inner_half_side - tol
+        return inside_outer and not inside_hole
+
+    def point_generator(self, n_sensors: int) -> list:
+        points = []
+        while len(points) < n_sensors:
+            p = np.array(
+                [
+                    np.random.uniform(-self.outer_half_side, self.outer_half_side),
+                    np.random.uniform(-self.outer_half_side, self.outer_half_side),
+                ],
+                dtype=float,
+            )
+            if p in self:
+                points.append(p)
+        return points
+
+    def domain_boundary_points(self):
+        outer = [
+            (-self.outer_half_side, -self.outer_half_side),
+            (self.outer_half_side, -self.outer_half_side),
+            (self.outer_half_side, self.outer_half_side),
+            (-self.outer_half_side, self.outer_half_side),
+            (-self.outer_half_side, -self.outer_half_side),
+        ]
+        inner = [
+            (-self.inner_half_side, -self.inner_half_side),
+            (-self.inner_half_side, self.inner_half_side),
+            (self.inner_half_side, self.inner_half_side),
+            (self.inner_half_side, -self.inner_half_side),
+            (-self.inner_half_side, -self.inner_half_side),
+        ]
+        xpts = [pt[0] for pt in outer] + [np.nan] + [pt[0] for pt in inner]
+        ypts = [pt[1] for pt in outer] + [np.nan] + [pt[1] for pt in inner]
+        return xpts, ypts
+
+    def _face_distance_candidates(self, pt):
+        x, y = map(float, pt)
+        return [
+            (abs(x - self.outer_half_side), np.array([1.0, 0.0], dtype=float)),
+            (abs(x + self.outer_half_side), np.array([-1.0, 0.0], dtype=float)),
+            (abs(y - self.outer_half_side), np.array([0.0, 1.0], dtype=float)),
+            (abs(y + self.outer_half_side), np.array([0.0, -1.0], dtype=float)),
+            (abs(x - self.inner_half_side), np.array([-1.0, 0.0], dtype=float)),
+            (abs(x + self.inner_half_side), np.array([1.0, 0.0], dtype=float)),
+            (abs(y - self.inner_half_side), np.array([0.0, -1.0], dtype=float)),
+            (abs(y + self.inner_half_side), np.array([0.0, 1.0], dtype=float)),
+        ]
+
+    def normal(self, boundary_point):
+        tol = 1.0e-7
+        candidates = [(dist, normal) for dist, normal in self._face_distance_candidates(boundary_point) if dist <= tol]
+        if not candidates:
+            candidates = self._face_distance_candidates(boundary_point)
+        _, normal = min(candidates, key=lambda item: item[0])
+        return normal
+
+    def _line_intersections(self, old, new):
+        old = np.asarray(old, dtype=float)
+        new = np.asarray(new, dtype=float)
+        disp = new - old
+        tol = self._tol()
+        candidates = []
+
+        def add_candidate(axis: int, boundary: float, other_limit: float):
+            delta = disp[axis]
+            if abs(delta) <= tol:
+                return
+            t = (boundary - old[axis]) / delta
+            if not (-tol <= t <= 1.0 + tol):
+                return
+            t = float(np.clip(t, 0.0, 1.0))
+            point = old + t * disp
+            other = point[1 - axis]
+            if abs(other) <= other_limit + tol:
+                candidates.append((t, point))
+
+        for boundary in (-self.outer_half_side, self.outer_half_side):
+            add_candidate(axis=0, boundary=boundary, other_limit=self.outer_half_side)
+            add_candidate(axis=1, boundary=boundary, other_limit=self.outer_half_side)
+
+        for boundary in (-self.inner_half_side, self.inner_half_side):
+            add_candidate(axis=0, boundary=boundary, other_limit=self.inner_half_side)
+            add_candidate(axis=1, boundary=boundary, other_limit=self.inner_half_side)
+
+        return candidates
+
+    def _boundary_anchor(self, point):
+        tol = 1.0e-7
+        x, y = map(float, point)
+
+        if abs(abs(x) - self.outer_half_side) <= tol and abs(y) <= self.outer_half_side + tol:
+            return np.array([np.sign(x) * self.outer_half_side if x != 0 else self.outer_half_side, np.clip(y, -self.outer_half_side, self.outer_half_side)], dtype=float)
+        if abs(abs(y) - self.outer_half_side) <= tol and abs(x) <= self.outer_half_side + tol:
+            return np.array([np.clip(x, -self.outer_half_side, self.outer_half_side), np.sign(y) * self.outer_half_side if y != 0 else self.outer_half_side], dtype=float)
+        if abs(abs(x) - self.inner_half_side) <= tol and abs(y) <= self.inner_half_side + tol:
+            return np.array([np.sign(x) * self.inner_half_side if x != 0 else self.inner_half_side, np.clip(y, -self.inner_half_side, self.inner_half_side)], dtype=float)
+        if abs(abs(y) - self.inner_half_side) <= tol and abs(x) <= self.inner_half_side + tol:
+            return np.array([np.clip(x, -self.inner_half_side, self.inner_half_side), np.sign(y) * self.inner_half_side if y != 0 else self.inner_half_side], dtype=float)
+        return None
+
+    def get_intersection_point(self, old, new):
+        old = np.asarray(old, dtype=float)
+        new = np.asarray(new, dtype=float)
+        candidates = self._line_intersections(old, new)
+        if not candidates:
+            anchor = self._boundary_anchor(old)
+            if anchor is not None:
+                return anchor
+            raise ValueError("No valid square-annulus boundary intersection found for reflected step.")
+        _, point = min(candidates, key=lambda item: item[0])
+        return point
 
 
 class UnitCube(Domain):
@@ -267,16 +404,14 @@ def reindex_for_simplex(alpha_complex, fence_points):
     # Traverse the 2-simplices in the alpha complex
     for simplex, _ in alpha_complex.simplex_tree.get_filtration():
         if len(simplex) == 3 and 0 in simplex:  # Find the first 2-simplice with vertex 0
-            # Swap indices to ensure {0, 1, 2}
-            indices = list(simplex)
-            indices.remove(0)  # Remove 0 to get the other two indices
-            idx1, idx2 = indices
-
-            # Swap points so that they correspond to {0, 1, 2}
-            new_fence = np.copy(fence_points)
-            new_fence[[1, 2]] = fence_points[[idx1, idx2]]
-            new_fence[[idx1, idx2]] = fence_points[[1, 2]]
-            return True, new_fence
+            # Reorder rows so simplex vertices become indices {0, 1, 2}.
+            # This avoids overlapping swaps that can duplicate points.
+            idx1, idx2 = [idx for idx in simplex if idx != 0]
+            n = len(fence_points)
+            front = [0, idx1, idx2]
+            seen = set(front)
+            perm = np.array(front + [i for i in range(n) if i not in seen], dtype=int)
+            return True, np.asarray(fence_points)[perm]
     return False, fence_points
 
 
@@ -315,19 +450,26 @@ def get_unitcube_fence(spacing):
 
 class BunimovichStadium(Domain):
 
-    def __init__(self, w, r, L: float):
+    def __init__(self, w, r, L: float, square_init: bool = False, square_init_length: float | None = None):
         self.w = w
         self.r = r
         self.length = L
         self.dim = 2
+        self.square_init = bool(square_init)
+        self.square_init_length = float(square_init_length) if square_init_length is not None else float(min(w, r))
+
+    @staticmethod
+    def _tol():
+        return 1.0e-9
 
     def __contains__(self, point):
         x, y = point
-        if -self.w <= x <= self.w and -self.r <= y <= self.r:
+        tol = self._tol()
+        if -self.w - tol <= x <= self.w + tol and -self.r - tol <= y <= self.r + tol:
             return True
-        if (x + self.w) ** 2 + y ** 2 <= self.r ** 2:
+        if (x + self.w) ** 2 + y ** 2 <= self.r ** 2 + tol:
             return True
-        if (x - self.w) ** 2 + y ** 2 <= self.r ** 2:
+        if (x - self.w) ** 2 + y ** 2 <= self.r ** 2 + tol:
             return True
         return False
 
@@ -342,37 +484,108 @@ class BunimovichStadium(Domain):
             normal = np.array([0, pt[1]])
         return normal / np.linalg.norm(normal)
 
-    def get_circle_center(self, old_pos, new_pos):
-        intersect = self.intersect_flat(old_pos, new_pos)
-        w = self.w if intersect[0] > self.w else -self.w
-        return np.array([w, 0])
+    @staticmethod
+    def _is_real_root(root, tol=1e-10):
+        return abs(np.imag(root)) <= tol
 
-    def intersect_circ(self, old_pos, new_pos):
-        center = self.get_circle_center(old_pos, new_pos)
-        a = np.linalg.norm(new_pos - old_pos) ** 2
-        b = 2 * np.dot(old_pos - center, new_pos - old_pos)
-        c = np.linalg.norm(old_pos - center) ** 2 - self.r ** 2
-        t = min(filter(lambda x: 0 < x < 1, np.roots([a, b, c])))
-        return old_pos + t * (new_pos - old_pos)
+    def _flat_intersection_candidates(self, old_pos, new_pos):
+        disp = new_pos - old_pos
+        tol = self._tol()
+        if abs(disp[1]) <= tol:
+            return []
 
-    def intersect_flat(self, old_pos, new_pos):
-        r = self.r if new_pos[1] > old_pos[1] else -self.r
-        t = (r - old_pos[1]) / (new_pos[1] - old_pos[1])
-        return old_pos + t * (new_pos - old_pos)
+        candidates = []
+        for y_boundary in (self.r, -self.r):
+            t = (y_boundary - old_pos[1]) / disp[1]
+            if not (-tol <= t <= 1.0 + tol):
+                continue
+
+            t = float(np.clip(t, 0.0, 1.0))
+            point = old_pos + t * disp
+            if -self.w - tol <= point[0] <= self.w + tol:
+                candidates.append((t, point))
+        return candidates
+
+    def _circle_intersection_candidates(self, old_pos, new_pos):
+        disp = new_pos - old_pos
+        tol = self._tol()
+        a = float(np.dot(disp, disp))
+        if a <= tol ** 2:
+            return []
+
+        candidates = []
+        for center_x, side in ((-self.w, "left"), (self.w, "right")):
+            center = np.array([center_x, 0.0], dtype=float)
+            rel = old_pos - center
+            b = 2.0 * float(np.dot(rel, disp))
+            c = float(np.dot(rel, rel) - self.r ** 2)
+
+            for root in np.roots([a, b, c]):
+                if not self._is_real_root(root, tol=1e-8):
+                    continue
+
+                t = float(np.real(root))
+                if not (-tol <= t <= 1.0 + tol):
+                    continue
+
+                t = float(np.clip(t, 0.0, 1.0))
+                point = old_pos + t * disp
+                if side == "left" and point[0] <= -self.w + tol:
+                    candidates.append((t, point))
+                elif side == "right" and point[0] >= self.w - tol:
+                    candidates.append((t, point))
+        return candidates
+
+    def _boundary_anchor(self, point):
+        tol = 1.0e-7
+        x, y = map(float, point)
+
+        if -self.w - tol <= x <= self.w + tol and abs(abs(y) - self.r) <= tol:
+            return np.array([np.clip(x, -self.w, self.w), self.r if y >= 0.0 else -self.r], dtype=float)
+
+        for center_x, side in ((-self.w, "left"), (self.w, "right")):
+            rel = np.array([x - center_x, y], dtype=float)
+            rel_norm = float(np.linalg.norm(rel))
+            if rel_norm <= tol:
+                continue
+            if abs(rel_norm - self.r) <= tol:
+                if side == "left" and x <= -self.w + tol:
+                    return np.array([center_x, 0.0], dtype=float) + (self.r / rel_norm) * rel
+                if side == "right" and x >= self.w - tol:
+                    return np.array([center_x, 0.0], dtype=float) + (self.r / rel_norm) * rel
+        return None
 
     def get_intersection_point(self, old_pos, new_pos):
-        inter_flat = self.intersect_flat(old_pos, new_pos)
-        if -self.w <= inter_flat[0] <= self.w:
-            return inter_flat
-        return self.intersect_circ(old_pos, new_pos)
+        candidates = self._flat_intersection_candidates(old_pos, new_pos)
+        candidates.extend(self._circle_intersection_candidates(old_pos, new_pos))
+        if not candidates:
+            anchor = self._boundary_anchor(old_pos)
+            if anchor is not None:
+                return anchor
+            raise ValueError("No valid Bunimovich stadium boundary intersection found for reflected step.")
+
+        _, point = min(candidates, key=lambda item: item[0])
+        return point
 
     def point_generator(self, N):
-        if self.length > 2 * self.w or self.length > 2 * self.r:
-            raise ValueError("Box doesn't fit in the stadium.")
-
         points = []
+        if self.square_init:
+            if self.square_init_length > 2 * self.w or self.square_init_length > 2 * self.r:
+                raise ValueError("Square initialization box does not fit in the stadium.")
+            while len(points) < N:
+                p = np.random.uniform(-self.square_init_length / 2.0, self.square_init_length / 2.0, 2)
+                if p in self:
+                    points.append(p)
+            return points
+
+        x_extent = self.w + self.r
         while len(points) < N:
-            p = np.random.uniform(-self.length / 2, self.length / 2, 2)
+            # Rejection sample from the full stadium bounding box so the accepted
+            # points are uniform over the stadium interior.
+            p = np.array([
+                np.random.uniform(-x_extent, x_extent),
+                np.random.uniform(-self.r, self.r),
+            ])
             if p in self:
                 points.append(p)
 

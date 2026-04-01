@@ -129,6 +129,14 @@ def is_true(label_value: bool) -> bool:
     return bool(label_value)
 
 
+def _normalize_excluded_cycles(excluded_cycles):
+    if excluded_cycles is None:
+        return ()
+    if isinstance(excluded_cycles, (list, tuple, set, frozenset)):
+        return tuple(excluded_cycles)
+    return (excluded_cycles,)
+
+
 @dataclass
 class StepSummary:
     step: int
@@ -189,10 +197,14 @@ class ReebEventGraphBuilder:
             return "split"
         return "transform"
 
-    def add_snapshot(self, *, step: int, time: float, labels: Dict, alpha_cycle) -> None:
-        alpha_key = cycle_key(alpha_cycle)
-        self.excluded_cycle_keys.add(alpha_key)
-        interior_items = [(c, v) for c, v in labels.items() if cycle_key(c) != alpha_key]
+    def add_snapshot(self, *, step: int, time: float, labels: Dict, alpha_cycle=None, excluded_cycles=None) -> None:
+        excluded = _normalize_excluded_cycles(excluded_cycles)
+        if not excluded and alpha_cycle is not None:
+            excluded = (alpha_cycle,)
+
+        excluded_keys = {cycle_key(cycle) for cycle in excluded}
+        self.excluded_cycle_keys.update(excluded_keys)
+        interior_items = [(c, v) for c, v in labels.items() if cycle_key(c) not in excluded_keys]
         curr_label_by_key = {cycle_key(c): is_true(v) for c, v in interior_items}
         curr_nodeset_by_key = {cycle_key(c): cycle_nodes(c) for c, _ in interior_items}
         curr_keys = set(curr_label_by_key)
@@ -385,9 +397,9 @@ class ReebEventGraphBuilder:
             self.graph.add_edge(prev_id, end_id, event="terminate", label_flip=False)
 
 
-def all_interior_cycles_false(labels: Dict, alpha_cycle) -> bool:
-    alpha_key = cycle_key(alpha_cycle)
-    interior_truths = [is_true(v) for c, v in labels.items() if cycle_key(c) != alpha_key]
+def all_interior_cycles_false(labels: Dict, excluded_cycles) -> bool:
+    excluded_keys = {cycle_key(cycle) for cycle in _normalize_excluded_cycles(excluded_cycles)}
+    interior_truths = [is_true(v) for c, v in labels.items() if cycle_key(c) not in excluded_keys]
     if not interior_truths:
         return True
     return not any(interior_truths)
@@ -438,27 +450,48 @@ def run_online_reeb_simulation(
     max_steps: int = 1200,
     clear_streak_needed: int = 8,
 ) -> Tuple["EvasionPathSimulation", ReebEventGraphBuilder, int, int]:
+    def nontrivial_history_entries(history_entries):
+        return [
+            (labels, alpha_change, boundary_change, time)
+            for labels, alpha_change, boundary_change, time in history_entries
+            if any(alpha_change) or boundary_change != (0, 0)
+        ]
+
     builder = ReebEventGraphBuilder()
     builder.add_snapshot(
         step=0,
         time=simulation.time,
         labels=simulation.cycle_label.label,
-        alpha_cycle=simulation.topology.alpha_cycle,
+        excluded_cycles=simulation.topology.excluded_cycles,
     )
 
     clear_streak = 0
     step = 0
+    history_cursor = len(simulation.cycle_label.history)
     while step < max_steps:
         simulation.do_timestep()
         step += 1
-        builder.add_snapshot(
-            step=step,
-            time=simulation.time,
-            labels=simulation.cycle_label.label,
-            alpha_cycle=simulation.topology.alpha_cycle,
-        )
+        new_history_entries = simulation.cycle_label.history[history_cursor:]
+        history_cursor = len(simulation.cycle_label.history)
+        nontrivial_entries = nontrivial_history_entries(new_history_entries)
 
-        if all_interior_cycles_false(simulation.cycle_label.label, simulation.topology.alpha_cycle):
+        if nontrivial_entries:
+            for labels, _alpha_change, _boundary_change, event_time in nontrivial_entries:
+                builder.add_snapshot(
+                    step=step,
+                    time=float(event_time),
+                    labels=labels,
+                    excluded_cycles=simulation.topology.excluded_cycles,
+                )
+        else:
+            builder.add_snapshot(
+                step=step,
+                time=simulation.time,
+                labels=simulation.cycle_label.label,
+                excluded_cycles=simulation.topology.excluded_cycles,
+            )
+
+        if all_interior_cycles_false(simulation.cycle_label.label, simulation.topology.excluded_cycles):
             clear_streak += 1
         else:
             clear_streak = 0
@@ -629,24 +662,8 @@ def _optimize_compact_layout(compact: nx.DiGraph, event_nodes: List[int]) -> Dic
     for s in steps:
         layers[s].sort(key=lambda n: (y_by_node[n], n))
 
-    time_values = sorted({float(compact.nodes[n]["time"]) for n in event_nodes})
-    if len(time_values) > 1:
-        min_dt = min(b - a for a, b in zip(time_values, time_values[1:]) if b > a)
-    else:
-        min_dt = 0.01
-    dx = max(0.001, 0.30 * min_dt)
-
+    # Keep x as true event time so arrows always read forward in time.
     x_by_node = {n: float(compact.nodes[n]["time"]) for n in event_nodes}
-    first_step = min(steps) if steps else 0
-    for s in steps:
-        if s == first_step:
-            continue
-        nodes = layers[s]
-        if len(nodes) <= 1:
-            continue
-        center = 0.5 * (len(nodes) - 1)
-        for idx, node in enumerate(nodes):
-            x_by_node[node] += (idx - center) * dx
 
     bucket: Dict[Tuple[int, int], List[int]] = {}
     for n in event_nodes:
@@ -899,7 +916,7 @@ def animate_sensor_and_reeb(
         if frame_idx > 0 and state["step"] < run_steps:
             simulation.do_timestep()
             state["step"] += 1
-            if all_interior_cycles_false(simulation.cycle_label.label, simulation.topology.alpha_cycle):
+            if all_interior_cycles_false(simulation.cycle_label.label, simulation.topology.outer_cycle):
                 state["clear_streak"] += 1
             else:
                 state["clear_streak"] = 0
@@ -937,12 +954,25 @@ def animate_online_reeb_graph(
             step=0,
             time=simulation.time,
             labels=simulation.cycle_label.label,
-            alpha_cycle=simulation.topology.alpha_cycle,
+            excluded_cycles=simulation.topology.excluded_cycles,
         )
 
     fig, ax = plt.subplots(figsize=(12, 7))
-    state = {"step": 0, "clear_streak": 0, "finished": False, "closed": False}
+    state = {
+        "step": 0,
+        "clear_streak": 0,
+        "finished": False,
+        "closed": False,
+        "history_cursor": len(simulation.cycle_label.history),
+    }
     saved_steps: Set[int] = set()
+
+    def nontrivial_history_entries(history_entries):
+        return [
+            (labels, alpha_change, boundary_change, time)
+            for labels, alpha_change, boundary_change, time in history_entries
+            if any(alpha_change) or boundary_change != (0, 0)
+        ]
 
     def draw_panel() -> None:
         ax.clear()
@@ -980,13 +1010,26 @@ def animate_online_reeb_graph(
         else:
             simulation.do_timestep()
             state["step"] += 1
-            builder.add_snapshot(
-                step=state["step"],
-                time=simulation.time,
-                labels=simulation.cycle_label.label,
-                alpha_cycle=simulation.topology.alpha_cycle,
-            )
-            if all_interior_cycles_false(simulation.cycle_label.label, simulation.topology.alpha_cycle):
+            new_history_entries = simulation.cycle_label.history[state["history_cursor"] :]
+            state["history_cursor"] = len(simulation.cycle_label.history)
+            nontrivial_entries = nontrivial_history_entries(new_history_entries)
+
+            if nontrivial_entries:
+                for labels, _alpha_change, _boundary_change, event_time in nontrivial_entries:
+                    builder.add_snapshot(
+                        step=state["step"],
+                        time=float(event_time),
+                        labels=labels,
+                        excluded_cycles=simulation.topology.excluded_cycles,
+                    )
+            else:
+                builder.add_snapshot(
+                    step=state["step"],
+                    time=simulation.time,
+                    labels=simulation.cycle_label.label,
+                    excluded_cycles=simulation.topology.excluded_cycles,
+                )
+            if all_interior_cycles_false(simulation.cycle_label.label, simulation.topology.excluded_cycles):
                 state["clear_streak"] += 1
             else:
                 state["clear_streak"] = 0
@@ -1024,7 +1067,7 @@ def print_atomic_change_report(
     uncovered_by_step = {s.step: s.n_true for s in summaries}
     history = simulation.cycle_label.history
     for labels, alpha_change, boundary_change, time in history[1:]:
-        if not any(alpha_change) and boundary_change == (0, 0):
+        if tuple(boundary_change) in {(0, 0), (1, 1)}:
             continue
         step = max(1, int(round(time / dt)))
         uncovered = uncovered_by_step.get(step)
@@ -1040,7 +1083,7 @@ def outer_cycle_exclusion_report(
     """
     Check whether the current outer/alpha cycle leaked into the Reeb event graph.
     """
-    alpha_key = cycle_key(simulation.topology.alpha_cycle)
+    alpha_key = cycle_key(simulation.topology.outer_cycle)
     alpha_in_graph = any(builder.graph.nodes[n].get("key") == alpha_key for n in builder.graph.nodes)
     return {
         "ok": not alpha_in_graph,

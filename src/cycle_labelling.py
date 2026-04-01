@@ -11,11 +11,9 @@ from topology import Topology
 
 
 class CycleLabelling:
-
     def __init__(self, topology: Topology):
+        self.topology = topology
         self.label = {g: True for g in topology.homology_generators if topology.is_connected_cycle(g)}
-        # self.label = {g: True for index, g in enumerate(topology.homology_generators) if print(f"Checking cycle at index {index}") or topology.is_connected_cycle(g)}
-        print("Initial labels: ", (list(self.label.values())))
         self.history = [(self.label.copy(), (0,)*topology.dim*2, (0, 0), 0)]
 
         self.reeb_graph = ReebGraph(self.label)
@@ -36,26 +34,20 @@ class CycleLabelling:
                                         state_change.new_topology.homology_generators)))
 
         persistent_cycles = state_change.new_topology.homology_generators.intersection(
-            state_change.old_topology.homology_generators)
+            state_change.old_topology.homology_generators
+        )
 
-        # Find cycles that were reconnected or disconnected during the transition
         reconnected_cycle = set(filter(was_reconnected, persistent_cycles))
-
         disconnected_cycles = set(filter(was_disconnected, persistent_cycles))
 
-        # Update labels based on cycle transitions
         for cycle in added_cycles.union(reconnected_cycle):
-            self.label[cycle] = any(self.label[cycle] for cycle in removed_cycles.union(disconnected_cycles))
+            self.label[cycle] = any(self.label[old_cycle] for old_cycle in removed_cycles.union(disconnected_cycles))
 
         for cycle in removed_cycles.union(disconnected_cycles):
             del self.label[cycle]
 
-        # for cycle in self.label:
-        #     canon_key = self.reeb_graph._canon(cycle)
-        #     if canon_key not in self.reeb_graph.stack:
-        #         print("⚠️  Cycle in label but missing from stack:", cycle)
-
         self.reeb_graph.update(time, self.label, self.history[-1][0])
+        self.topology = state_change.new_topology
         self.history.append((self.label.copy(), state_change.alpha_complex_change(), state_change.boundary_cycle_change(), time))
 
 
@@ -63,5 +55,5 @@ class CycleLabelling:
         self.reeb_graph.finalize(time, self.label)
 
     def has_intruder(self):
-        return sum(1 for _, value in self.label.items() if value) > 1
-
+        excluded = set(getattr(self.topology, "excluded_cycles", ()))
+        return any(bool(value) for cycle, value in self.label.items() if cycle not in excluded)

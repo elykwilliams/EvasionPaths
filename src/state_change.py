@@ -65,23 +65,47 @@ class StateChange:
 
     def alpha_complex_change(self):
         """(+E, -E, +T, -T, +V, -V)"""
+        if hasattr(self, "_alpha_complex_change_cache"):
+            return self._alpha_complex_change_cache
+
         case = ()
         for dim in range(1, self.dim + 1):
             case += (len(self.simplices_difference[dim].added()), len(self.simplices_difference[dim].removed()))
+        self._alpha_complex_change_cache = case
         return case
 
     def boundary_cycle_change(self):
         """(+B, -B)"""
-        return len(self.boundary_cycles_difference.added()), len(self.boundary_cycles_difference.removed())
+        if hasattr(self, "_boundary_cycle_change_cache"):
+            return self._boundary_cycle_change_cache
+
+        self._boundary_cycle_change_cache = (
+            len(self.boundary_cycles_difference.added()),
+            len(self.boundary_cycles_difference.removed()),
+        )
+        return self._boundary_cycle_change_cache
 
     @property
     def boundary_cycles_difference(self) -> SetDifference:
-        return SetDifference(self.new_topology.homology_generators, self.old_topology.homology_generators)
+        if hasattr(self, "_boundary_cycles_difference_cache"):
+            return self._boundary_cycles_difference_cache
+
+        self._boundary_cycles_difference_cache = SetDifference(
+            self.new_topology.homology_generators,
+            self.old_topology.homology_generators,
+        )
+        return self._boundary_cycles_difference_cache
 
     @property
     def simplices_difference(self) -> Dict[int, SetDifference]:
-        return {i: SetDifference(self.new_topology.simplices(i), self.old_topology.simplices(i))
-                for i in range(1, self.dim + 1)}
+        if hasattr(self, "_simplices_difference_cache"):
+            return self._simplices_difference_cache
+
+        self._simplices_difference_cache = {
+            i: SetDifference(self.new_topology.simplices(i), self.old_topology.simplices(i))
+            for i in range(1, self.dim + 1)
+        }
+        return self._simplices_difference_cache
 
     def is_local_change_added(self):
         for i in range(1, self.dim):

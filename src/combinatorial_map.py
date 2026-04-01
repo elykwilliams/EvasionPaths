@@ -143,9 +143,71 @@ class RotationInfo2D(RotationInfo):
 class RotationInfo3D(RotationInfo):
 
     def build_rotinfo(self):
+        points = np.asarray(self.points, dtype=float)
         for half_edge, temp in self.incident_simplices.items():
-            self.rotinfo[half_edge] = [OrientedSimplex(nodes) for nodes in
-                                       sorted(temp, key=lambda s: self.theta(temp[0], s))]
+            if len(temp) < 2:
+                self.rotinfo[half_edge] = [OrientedSimplex(nodes) for nodes in temp]
+                continue
+
+            signed_angles = self._signed_angles_against_anchor(temp, points)
+            # Use a stable sort to match the old sorted(..., key=...) tie behavior.
+            order = np.argsort(signed_angles, kind="mergesort")
+            self.rotinfo[half_edge] = [OrientedSimplex(temp[i]) for i in order]
+
+    def _signed_angles_against_anchor(self, simplex_nodes, points) -> np.ndarray:
+        nodes = np.asarray(simplex_nodes, dtype=int)
+        a = points[nodes[:, 0]]
+        b = points[nodes[:, 1]]
+        c = points[nodes[:, 2]]
+
+        # Anchor simplex defines the reference direction around the shared half-edge.
+        edge_normal = b[0] - a[0]
+        n0, n1, n2 = edge_normal
+        norm_sqr = float(n0 * n0 + n1 * n1 + n2 * n2)
+        eps = 1e-12
+        if norm_sqr <= eps:
+            return np.asarray([self.theta(simplex_nodes[0], s) for s in simplex_nodes], dtype=float)
+
+        edge_vectors = c - a
+        factors = (edge_vectors[:, 0] * n0 + edge_vectors[:, 1] * n1 + edge_vectors[:, 2] * n2) / norm_sqr
+
+        px = edge_vectors[:, 0] - factors * n0
+        py = edge_vectors[:, 1] - factors * n1
+        pz = edge_vectors[:, 2] - factors * n2
+
+        ax, ay, az = px[0], py[0], pz[0]
+        anchor_norm = float(np.sqrt(ax * ax + ay * ay + az * az))
+        proj_norms = np.sqrt(px * px + py * py + pz * pz)
+
+        if anchor_norm <= eps:
+            return np.asarray([self.theta(simplex_nodes[0], s) for s in simplex_nodes], dtype=float)
+
+        unit_anchor_x = ax / anchor_norm
+        unit_anchor_y = ay / anchor_norm
+        unit_anchor_z = az / anchor_norm
+
+        safe_norms = np.where(proj_norms > eps, proj_norms, 1.0)
+        upx = px / safe_norms
+        upy = py / safe_norms
+        upz = pz / safe_norms
+
+        cos_theta = np.clip(upx * unit_anchor_x + upy * unit_anchor_y + upz * unit_anchor_z, -1.0, 1.0)
+        angles = np.arccos(cos_theta)
+
+        # orientation = edge_normal dot (anchor_projection x projection_i)
+        cx = ay * pz - az * py
+        cy = az * px - ax * pz
+        cz = ax * py - ay * px
+        orientation = n0 * cx + n1 * cy + n2 * cz
+        signed = np.where(orientation >= 0.0, -angles, angles)
+
+        # Degenerate projected vectors are rare in general position; fall back to scalar theta.
+        degenerate = proj_norms <= eps
+        if np.any(degenerate):
+            anchor_nodes = simplex_nodes[0]
+            for idx in np.where(degenerate)[0]:
+                signed[idx] = self.theta(anchor_nodes, simplex_nodes[idx])
+        return signed
 
     def theta(self, simplex1_nodes, simplex2_nodes):
         # compute angle with respect to two_simplices[0]
