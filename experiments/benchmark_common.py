@@ -5,11 +5,17 @@ from __future__ import annotations
 
 import json
 import math
+import sys
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Dict, List, Sequence, Tuple
 
 import numpy as np
+
+REPO_ROOT = Path(__file__).resolve().parents[1]
+SRC_ROOT = REPO_ROOT / "src"
+if str(SRC_ROOT) not in sys.path:
+    sys.path.insert(0, str(SRC_ROOT))
 
 from boundary_geometry import BunimovichStadium, CircularDomain, Domain, RectangularDomain
 from motion_model import (
@@ -33,6 +39,10 @@ MODEL_DISPLAY = {
     "vicsek_high": "Vicsek (High)",
     "homological": "Homological Motion",
     "sequential_homological": "Sequential Homological Motion",
+}
+
+MODEL_ALIASES = {
+    "sequential_homological_motion": "sequential_homological",
 }
 
 DOMAIN_DISPLAY = {
@@ -82,6 +92,11 @@ def parse_csv_strs(raw: str) -> List[str]:
 
 def combo_key(n_sensors: int, radius: float) -> str:
     return f"n={int(n_sensors)},r={float(radius):.6f}"
+
+
+def canonical_model_name(model_name: str) -> str:
+    raw = str(model_name).strip()
+    return MODEL_ALIASES.get(raw, raw)
 
 
 def score_combo(combo_metrics: Dict[str, float], failure_penalty: float, worst_case_weight: float) -> float:
@@ -325,6 +340,31 @@ def clone_sensors(init: InitialCondition, radius: float) -> Tuple[List[Sensor], 
     return fence, mobile
 
 
+def _select_best_params_by_combo_from_trials(
+    trials: Sequence[Dict],
+    *,
+    failure_penalty: float,
+    worst_case_weight: float,
+) -> Dict[str, Dict]:
+    best_by_combo: Dict[str, Dict] = {}
+    for trial in trials:
+        params = dict(trial.get("params", trial.get("weights", {})))
+        trial_index = int(trial.get("trial", -1))
+        for key, combo_metrics in trial.get("by_combo", {}).items():
+            score = score_combo(combo_metrics, failure_penalty, worst_case_weight)
+            prev = best_by_combo.get(key)
+            if prev is None or score < float(prev["score"]):
+                best_by_combo[key] = {
+                    "params": params,
+                    "score": float(score),
+                    "trial": trial_index,
+                    "mean_tau": float(combo_metrics.get("mean_tau", float("inf"))),
+                    "worst_tau": float(combo_metrics.get("worst_tau", float("inf"))),
+                    "failure_rate": float(combo_metrics.get("failure_rate", 1.0)),
+                }
+    return best_by_combo
+
+
 def load_best_params_by_combo(
     trials_json: Path,
     *,
@@ -332,15 +372,110 @@ def load_best_params_by_combo(
     worst_case_weight: float,
 ) -> Dict[str, Dict]:
     trials = json.loads(trials_json.read_text(encoding="utf-8"))
-    best_by_combo: Dict[str, Dict] = {}
-    for trial in trials:
-        params = dict(trial.get("params", trial.get("weights", {})))
-        for key, combo_metrics in trial["by_combo"].items():
-            score = score_combo(combo_metrics, failure_penalty, worst_case_weight)
-            prev = best_by_combo.get(key)
-            if prev is None or score < float(prev["score"]):
-                best_by_combo[key] = {"params": params, "score": score, "trial": int(trial.get("trial", -1))}
-    return best_by_combo
+    if isinstance(trials, dict):
+        best_by_combo = trials.get("best_by_combo", {})
+        if isinstance(best_by_combo, dict):
+            return {
+                str(key): {
+                    "params": dict(value.get("params", {})),
+                    "score": float(value.get("score", float("inf"))),
+                    "trial": int(value.get("trial", -1)),
+                }
+                for key, value in best_by_combo.items()
+            }
+        raise ValueError(f"Unsupported params archive structure in {trials_json}")
+    return _select_best_params_by_combo_from_trials(
+        trials,
+        failure_penalty=failure_penalty,
+        worst_case_weight=worst_case_weight,
+    )
+
+
+def build_best_params_archive(
+    *,
+    model_name: str,
+    domain_name: str,
+    dt: float,
+    sensor_velocity: float,
+    t_cap: float,
+    failure_penalty: float,
+    worst_case_weight: float,
+    n_values: Sequence[int],
+    r_values: Sequence[float],
+    history: Sequence[Dict],
+    search_config: Dict,
+    source_run_dir: str,
+) -> Dict:
+    selected = _select_best_params_by_combo_from_trials(
+        history,
+        failure_penalty=failure_penalty,
+        worst_case_weight=worst_case_weight,
+    )
+
+    combos = []
+    for n_sensors in n_values:
+        for radius in r_values:
+            key = combo_key(n_sensors, radius)
+            item = dict(selected.get(key, {}))
+            item.update(
+                {
+                    "combo_key": key,
+                    "n": int(n_sensors),
+                    "r": float(radius),
+                }
+            )
+            combos.append(item)
+
+    return {
+        "format": "motion_model_params_by_combo/v1",
+        "model": canonical_model_name(model_name),
+        "domain": str(domain_name),
+        "domain_metadata": domain_metadata(domain_name),
+        "dt": float(dt),
+        "velocity": float(sensor_velocity),
+        "t_cap": float(t_cap),
+        "failure_penalty": float(failure_penalty),
+        "worst_case_weight": float(worst_case_weight),
+        "n_values": [int(v) for v in n_values],
+        "r_values": [float(v) for v in r_values],
+        "source_run_dir": str(source_run_dir),
+        "search_config": dict(search_config),
+        "best_by_combo": {
+            item["combo_key"]: {
+                "n": int(item["n"]),
+                "r": float(item["r"]),
+                "params": dict(item.get("params", {})),
+                "score": float(item.get("score", float("inf"))),
+                "trial": int(item.get("trial", -1)),
+                "mean_tau": float(item.get("mean_tau", float("inf"))),
+                "worst_tau": float(item.get("worst_tau", float("inf"))),
+                "failure_rate": float(item.get("failure_rate", 1.0)),
+            }
+            for item in combos
+        },
+    }
+
+
+def _float_slug(value: float) -> str:
+    text = f"{float(value):g}"
+    return text.replace("-", "m").replace(".", "p")
+
+
+def default_params_archive_path(
+    repo_root: Path,
+    *,
+    model_name: str,
+    domain_name: str,
+    dt: float,
+    sensor_velocity: float,
+    t_cap: float,
+) -> Path:
+    canonical = canonical_model_name(model_name)
+    filename = (
+        f"{canonical}_{domain_name}_dt{_float_slug(dt)}_"
+        f"v{_float_slug(sensor_velocity)}_tcap{_float_slug(t_cap)}.json"
+    )
+    return repo_root / "output" / "params" / filename
 
 
 def build_motion_model(
@@ -353,6 +488,7 @@ def build_motion_model(
     sensor_velocity: float,
     tuned_params_by_combo: Dict[str, Dict] | None = None,
 ):
+    model_name = canonical_model_name(model_name)
     tuned_params_by_combo = tuned_params_by_combo or {}
     if model_name == "billiard":
         return BilliardMotion()

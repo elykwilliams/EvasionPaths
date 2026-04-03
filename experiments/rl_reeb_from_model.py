@@ -236,6 +236,47 @@ def _policy_term_maps(
     return {"raw": raw, "weighted": weighted}
 
 
+def _active_policy_term_names(reward_config: RewardConfig) -> List[str]:
+    always_include = [
+        "true_cycles_closed",
+        "true_cycles_added",
+        "elapsed",
+        "effort",
+        "clear_indicator",
+        "timeout_indicator",
+        "success_time_bonus",
+    ]
+    weighted_terms = [
+        ("merge_hazard_count", reward_config.merge_hazard_penalty_weight),
+        ("neighbor_close_violation", reward_config.neighbor_close_penalty_weight),
+        ("neighbor_far_violation", reward_config.neighbor_far_penalty_weight),
+        ("fence_close_violation", reward_config.fence_close_penalty_weight),
+        ("fence_far_violation", reward_config.fence_far_penalty_weight),
+        ("area_progress_norm", reward_config.area_progress_reward_weight),
+        ("perimeter_progress_norm", reward_config.perimeter_progress_reward_weight),
+        ("largest_area_progress_norm", reward_config.largest_area_progress_reward_weight),
+        ("largest_perimeter_progress_norm", reward_config.largest_perimeter_progress_reward_weight),
+        ("area_regress_norm", reward_config.area_regress_penalty_weight),
+        ("perimeter_regress_norm", reward_config.perimeter_regress_penalty_weight),
+        ("largest_area_regress_norm", reward_config.largest_area_regress_penalty_weight),
+        ("largest_perimeter_regress_norm", reward_config.largest_perimeter_regress_penalty_weight),
+        ("area_residual_norm", reward_config.area_residual_penalty_weight),
+        ("perimeter_residual_norm", reward_config.perimeter_residual_penalty_weight),
+        ("largest_area_residual_norm", reward_config.largest_area_residual_penalty_weight),
+        ("largest_perimeter_residual_norm", reward_config.largest_perimeter_residual_penalty_weight),
+        ("one_hole_linger_penalty", reward_config.one_hole_linger_penalty_weight),
+    ]
+    if reward_config.area_progress_reward_weight != 0.0 or reward_config.area_regress_penalty_weight != 0.0:
+        weighted_terms.append(("one_hole_area_scale", reward_config.one_hole_area_scale_alpha))
+    if reward_config.perimeter_progress_reward_weight != 0.0 or reward_config.perimeter_regress_penalty_weight != 0.0:
+        weighted_terms.append(("one_hole_perimeter_scale", reward_config.one_hole_perimeter_scale_alpha))
+
+    names = list(always_include)
+    names.extend(name for name, weight in weighted_terms if float(weight) != 0.0)
+    # Preserve order while removing duplicates.
+    return list(dict.fromkeys(names))
+
+
 def main() -> None:
     args = _make_parser().parse_args()
     run_dir = Path(args.run_dir).resolve()
@@ -460,6 +501,7 @@ def main() -> None:
                 "interval_ms": int(max(1, args.frame_interval_ms)),
                 "highlight_half_width": float(max(0.001, 0.48 * config.dt)),
                 "reeb_graph": _build_reeb_graph_plot_data(builder),
+                "active_term_names": _active_policy_term_names(config.reward_config),
                 "frames": frame_records,
                 "export_config": {
                     "source_dir": str(sim_dir.resolve()),

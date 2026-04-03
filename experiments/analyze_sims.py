@@ -20,6 +20,7 @@ if str(SRC_ROOT) not in sys.path:
 from UI import _build_reeb_graph_plot_data, _open_via_local_viewer_server, _write_timeline_html
 from reeb_graph import ReebEventGraphBuilder
 from rl_reeb_from_model import (
+    _active_policy_term_names,
     _load_config,
     _policy_term_maps,
     _render_2d_frame,
@@ -414,6 +415,7 @@ def main() -> None:
             "interval_ms": int(max(1, args.frame_interval_ms)),
             "highlight_half_width": float(max(0.001, 0.48 * config.dt)),
             "reeb_graph": _build_reeb_graph_plot_data(builder),
+            "active_term_names": _active_policy_term_names(config.reward_config),
             "frames": frame_records,
             "export_config": {
                 "source_dir": str(sim_dir.resolve()),

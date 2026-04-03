@@ -16,9 +16,12 @@ from typing import Dict, List, Sequence, Tuple
 import numpy as np
 
 from benchmark_common import (
+    build_best_params_archive,
     build_domain,
     build_motion_model,
+    canonical_model_name,
     combo_key,
+    default_params_archive_path,
     domain_metadata,
     generate_connected_initial_condition,
     parse_csv_floats,
@@ -303,7 +306,12 @@ def run_random_search(
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Random search over homological-family motion-model parameters on an (n, r) grid.")
-    parser.add_argument("--model", type=str, required=True, choices=["homological", "sequential_homological"])
+    parser.add_argument(
+        "--model",
+        type=str,
+        required=True,
+        choices=["homological", "sequential_homological", "sequential_homological_motion"],
+    )
     parser.add_argument(
         "--domain",
         type=str,
@@ -323,6 +331,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--max-wall-seconds-per-run", type=float, default=20.0)
     parser.add_argument("--show-sim-output", action="store_true", default=False)
     parser.add_argument("--output-dir", type=str, default="experiments/output/motion_model_param_search")
+    parser.add_argument("--params-dir", type=str, default="output/params")
     parser.add_argument("--run-name", type=str, default="")
     parser.add_argument("--write-full-history", action="store_true", default=True)
     return parser.parse_args()
@@ -330,17 +339,19 @@ def parse_args() -> argparse.Namespace:
 
 def main() -> None:
     args = parse_args()
+    repo_root = Path(__file__).resolve().parents[1]
+    model_name = canonical_model_name(args.model)
     n_values = parse_csv_ints(args.n_values)
     r_values = parse_csv_floats(args.r_values)
     eval_seeds = parse_csv_ints(args.eval_seeds)
 
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-    run_name = args.run_name or f"{args.model}_{args.domain}_grid_t{int(args.t_cap)}_trials{args.trials}_seed{args.seed}_{timestamp}"
+    run_name = args.run_name or f"{model_name}_{args.domain}_grid_t{int(args.t_cap)}_trials{args.trials}_seed{args.seed}_{timestamp}"
     run_dir = Path(args.output_dir) / run_name
     run_dir.mkdir(parents=True, exist_ok=True)
 
     best, history = run_random_search(
-        model_name=args.model,
+        model_name=model_name,
         domain_name=args.domain,
         trials=int(args.trials),
         seed=int(args.seed),
@@ -357,7 +368,7 @@ def main() -> None:
     )
 
     config = {
-        "model": args.model,
+        "model": model_name,
         "domain": args.domain,
         "domain_metadata": domain_metadata(args.domain),
         "n_values": n_values,
@@ -376,6 +387,35 @@ def main() -> None:
     (run_dir / "search_config.json").write_text(json.dumps(config, indent=2, sort_keys=True), encoding="utf-8")
     (run_dir / "best_result.json").write_text(json.dumps(best, indent=2, sort_keys=True), encoding="utf-8")
 
+    params_archive = build_best_params_archive(
+        model_name=model_name,
+        domain_name=args.domain,
+        dt=float(args.dt),
+        sensor_velocity=float(args.velocity),
+        t_cap=float(args.t_cap),
+        failure_penalty=float(args.failure_penalty),
+        worst_case_weight=float(args.worst_case_weight),
+        n_values=n_values,
+        r_values=r_values,
+        history=history,
+        search_config=config,
+        source_run_dir=str(run_dir),
+    )
+    run_params_path = run_dir / "best_params_by_combo.json"
+    run_params_path.write_text(json.dumps(params_archive, indent=2, sort_keys=True), encoding="utf-8")
+    params_dir = repo_root / args.params_dir
+    params_dir.mkdir(parents=True, exist_ok=True)
+    shared_params_path = default_params_archive_path(
+        repo_root,
+        model_name=model_name,
+        domain_name=args.domain,
+        dt=float(args.dt),
+        sensor_velocity=float(args.velocity),
+        t_cap=float(args.t_cap),
+    )
+    shared_params_path = params_dir / shared_params_path.name
+    shared_params_path.write_text(json.dumps(params_archive, indent=2, sort_keys=True), encoding="utf-8")
+
     history_summary = [
         {
             "trial": int(item["trial"]),
@@ -393,6 +433,8 @@ def main() -> None:
 
     print(f"Search complete: {run_dir}")
     print(f"Best score: {best['score']:.4f}")
+    print(f"Per-combo params: {run_params_path}")
+    print(f"Shared params archive: {shared_params_path}")
 
 
 if __name__ == "__main__":

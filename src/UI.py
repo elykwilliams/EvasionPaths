@@ -472,7 +472,15 @@ def _write_timeline_html(output_html: Path, timeline_data: dict) -> None:
     const exportConfig = TIMELINE.export_config || null;
 
     let idx = 0;
-    let timer = null;
+    let playbackRun = 0;
+    const frameSrcs = frames.map((item) => `${{item.image}}?v=${{ASSET_VERSION}}&step=${{item.step}}`);
+    const framePreloads = frameSrcs.map((src) => {{
+      const img = new Image();
+      img.decoding = "async";
+      img.src = src;
+      return img;
+    }});
+    const activeTermNames = Array.isArray(TIMELINE.active_term_names) ? TIMELINE.active_term_names : null;
     const fullMin = Number(reebData.x_min ?? 0);
     const fullMax = Number(reebData.x_max ?? 1);
     const fullSpan = Math.max(1e-6, fullMax - fullMin);
@@ -480,9 +488,46 @@ def _write_timeline_html(output_html: Path, timeline_data: dict) -> None:
     let windowMax = fullMax;
 
     function stopPlayback() {{
-      if (timer) {{
-        clearInterval(timer);
-        timer = null;
+      playbackRun += 1;
+    }}
+
+    function frameSrcAt(index) {{
+      return frameSrcs[index] || "";
+    }}
+
+    function waitForFrame(index) {{
+      const img = framePreloads[index];
+      if (!img) {{
+        return Promise.resolve();
+      }}
+      if (img.complete && img.naturalWidth > 0) {{
+        return Promise.resolve();
+      }}
+      return new Promise((resolve) => {{
+        const done = () => resolve();
+        img.addEventListener("load", done, {{ once: true }});
+        img.addEventListener("error", done, {{ once: true }});
+      }});
+    }}
+
+    async function startPlayback({{ restart = false }} = {{}}) {{
+      stopPlayback();
+      const runId = playbackRun;
+
+      if (restart) {{
+        idx = 0;
+        render();
+      }}
+
+      while (runId === playbackRun && idx < frames.length - 1) {{
+        await waitForFrame(idx + 1);
+        if (runId !== playbackRun) return;
+
+        await new Promise((resolve) => setTimeout(resolve, TIMELINE.interval_ms || 130));
+        if (runId !== playbackRun) return;
+
+        idx += 1;
+        render();
       }}
     }}
 
@@ -608,7 +653,18 @@ def _write_timeline_html(output_html: Path, timeline_data: dict) -> None:
         return;
       }}
 
-      const entries = Object.entries(termMap);
+      let entries = Object.entries(termMap);
+      if (activeTermNames && activeTermNames.length) {{
+        const allowed = new Set(activeTermNames);
+        entries = entries.filter(([name]) => allowed.has(name));
+      }}
+      if (!entries.length) {{
+        const empty = document.createElement("div");
+        empty.className = "event";
+        empty.textContent = "No active policy terms for this experiment.";
+        container.appendChild(empty);
+        return;
+      }}
       const maxAbs = Math.max(1e-9, ...entries.map(([_, v]) => Math.abs(Number(v))));
       entries.forEach(([name, rawVal]) => {{
         const value = Number(rawVal);
@@ -644,7 +700,7 @@ def _write_timeline_html(output_html: Path, timeline_data: dict) -> None:
       }}
       const item = frames[idx];
       const phase = item.phase || "simplify";
-      frameImage.src = `${{item.image}}?v=${{ASSET_VERSION}}&step=${{item.step}}`;
+      frameImage.src = frameSrcAt(idx);
       stepLabel.textContent = `Step ${{item.step}} / ${{frames.length - 1}}`;
       slider.value = String(idx);
       timeLine.textContent = `time = ${{item.time.toFixed(6)}} | phase = ${{phase}}`;
@@ -719,29 +775,11 @@ def _write_timeline_html(output_html: Path, timeline_data: dict) -> None:
     }});
 
     document.getElementById("playBtn").addEventListener("click", () => {{
-      stopPlayback();
-      timer = setInterval(() => {{
-        if (idx >= frames.length - 1) {{
-          stopPlayback();
-          return;
-        }}
-        idx += 1;
-        render();
-      }}, TIMELINE.interval_ms || 130);
+      void startPlayback();
     }});
 
     document.getElementById("replayBtn").addEventListener("click", () => {{
-      stopPlayback();
-      idx = 0;
-      render();
-      timer = setInterval(() => {{
-        if (idx >= frames.length - 1) {{
-          stopPlayback();
-          return;
-        }}
-        idx += 1;
-        render();
-      }}, TIMELINE.interval_ms || 130);
+      void startPlayback({{ restart: true }});
     }});
 
     document.getElementById("pauseBtn").addEventListener("click", () => {{

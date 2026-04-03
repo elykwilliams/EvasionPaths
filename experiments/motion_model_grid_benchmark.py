@@ -21,8 +21,10 @@ from benchmark_common import (
     MODEL_DISPLAY,
     build_domain,
     build_motion_model,
+    canonical_model_name,
     clone_sensors,
     combo_key,
+    default_params_archive_path,
     domain_metadata,
     generate_connected_initial_condition,
     load_best_params_by_combo,
@@ -457,6 +459,8 @@ def parse_args() -> argparse.Namespace:
         default="billiard,brownian_low,brownian_med,brownian_high,vicsek_low,vicsek_med,vicsek_high,homological",
         help="Comma-separated model ids.",
     )
+    parser.add_argument("--homological-params-json", type=str, default="")
+    parser.add_argument("--sequential-homological-params-json", type=str, default="")
     parser.add_argument("--homological-trials-json", type=str, default="")
     parser.add_argument("--sequential-homological-trials-json", type=str, default="")
     parser.add_argument("--failure-penalty", type=float, default=10.0)
@@ -470,21 +474,42 @@ def parse_args() -> argparse.Namespace:
 
 def main() -> None:
     args = parse_args()
+    repo_root = Path(__file__).resolve().parents[1]
     domain_name = args.domain
     n_values = parse_csv_ints(args.n_values)
     r_values = parse_csv_floats(args.r_values)
-    models = parse_csv_strs(args.models)
+    models = [canonical_model_name(model) for model in parse_csv_strs(args.models)]
 
     unknown = [m for m in models if m not in MODEL_DISPLAY]
     if unknown:
         raise ValueError(f"Unknown model ids: {unknown}. Allowed: {list(MODEL_DISPLAY)}")
 
-    tuned_json_by_model = {
-        "homological": Path(args.homological_trials_json) if args.homological_trials_json else None,
-        "sequential_homological": Path(args.sequential_homological_trials_json)
-        if args.sequential_homological_trials_json
-        else None,
+    tuned_json_by_model: Dict[str, Path | None] = {}
+    explicit_params_by_model = {
+        "homological": args.homological_params_json,
+        "sequential_homological": args.sequential_homological_params_json,
     }
+    explicit_trials_by_model = {
+        "homological": args.homological_trials_json,
+        "sequential_homological": args.sequential_homological_trials_json,
+    }
+    for model_name in ["homological", "sequential_homological"]:
+        explicit_params = explicit_params_by_model[model_name]
+        explicit_trials = explicit_trials_by_model[model_name]
+        if explicit_params:
+            tuned_json_by_model[model_name] = Path(explicit_params)
+            continue
+        if explicit_trials:
+            tuned_json_by_model[model_name] = Path(explicit_trials)
+            continue
+        tuned_json_by_model[model_name] = default_params_archive_path(
+            repo_root,
+            model_name=model_name,
+            domain_name=domain_name,
+            dt=float(args.dt),
+            sensor_velocity=float(args.velocity),
+            t_cap=float(args.t_cap),
+        )
     tuned_params_by_model: Dict[str, Dict[str, Dict]] = {}
     for model_name in ["homological", "sequential_homological"]:
         if model_name not in models:
@@ -493,7 +518,8 @@ def main() -> None:
         if path is None or not path.exists():
             raise FileNotFoundError(
                 f"{model_name} benchmark requested but tuned-parameter archive is missing. "
-                f"Provide --{model_name}-trials-json."
+                f"Checked {path}. Provide --{model_name.replace('_', '-')}-params-json or "
+                f"--{model_name.replace('_', '-')}-trials-json."
             )
         tuned_params_by_model[model_name] = load_best_params_by_combo(
             path,

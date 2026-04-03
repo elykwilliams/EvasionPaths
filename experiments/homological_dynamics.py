@@ -253,6 +253,7 @@ def _write_homological_timeline_bundle(
         "interval_ms": int(interval_ms),
         "highlight_half_width": float(max(0.001, 0.48 * timestep_size)),
         "reeb_graph": _build_reeb_graph_plot_data(builder),
+        "active_term_names": [],
         "frames": frame_records,
         "export_config": {
             "source_dir": str(sim_dir.resolve()),
